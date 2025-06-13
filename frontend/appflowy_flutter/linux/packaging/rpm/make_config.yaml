@@ -5,7 +5,7 @@ vendor: AppFlowy
 packager: AppFlowy
 packagerEmail: support@appflowy.io
 license: APGL-3.0
-url: https://github.com/AppFlowy-IO/appflowy
+url: https://gitee.com/beijing-grimoire/xiaoma-note
 
 build_arch: x86_64
 

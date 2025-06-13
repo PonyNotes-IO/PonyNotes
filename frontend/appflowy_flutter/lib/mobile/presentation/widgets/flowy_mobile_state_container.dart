@@ -82,7 +82,7 @@ class FlowyMobileStateContainer extends StatelessWidget {
                           final String? version = snapshot.data?.version;
                           final String os = Platform.operatingSystem;
                           afLaunchUrlString(
-                            'https://github.com/AppFlowy-IO/AppFlowy/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Mobile:%20&version=$version&os=$os&context=Error%20log:%20$errorMsg',
+                            'https://gitee.com/beijing-grimoire/xiaoma-note/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Mobile:%20&version=$version&os=$os&context=Error%20log:%20$errorMsg',
                           );
                         },
                         child: Text(

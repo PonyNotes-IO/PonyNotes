@@ -1,7 +1,7 @@
 name: appflowy_result
 description: "A new Flutter package project."
 version: 0.0.1
-homepage: https://github.com/appflowy-io/appflowy
+homepage: https://gitee.com/beijing-grimoire/xiaoma-note
 
 environment:
   sdk: ">=3.3.0 <4.0.0"

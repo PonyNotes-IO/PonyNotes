@@ -2,6 +2,6 @@
 
 # Contributing to AppFlowy
 
-Hello, and welcome! Whether you are trying to report a bug, proposing a feature request, or want to work on the code you should go visit [Contributing to AppFlowy](https://appflowy.gitbook.io/docs/essential-documentation/contribute-to-appflowy/contributing-to-appflowy)
+Hello, and welcome! Whether you are trying to report a bug, proposing a feature request, or want to work on the code you should go visit [Contributing to AppFlowy](https://xiaomabiji.com/guide)
 
 We look forward to hearing from you!

@@ -28,7 +28,7 @@ class SocialMediaSection extends CustomActionCell {
               final url = switch (action.inner) {
                 SocialMedia.reddit => 'https://www.reddit.com/r/AppFlowy/',
                 SocialMedia.twitter => 'https://x.com/appflowy',
-                SocialMedia.forum => 'https://forum.appflowy.com/',
+                SocialMedia.forum => 'https://forum.xiaomabiji.com/',
               };
 
               afLaunchUrlString(url);

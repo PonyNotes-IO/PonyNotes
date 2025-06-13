@@ -143,7 +143,7 @@ class SubscribeButtons extends StatelessWidget {
               hoverColor: Colors.transparent,
               fillColor: Colors.transparent,
               onPressed: () =>
-                  afLaunchUrlString('https://github.com/AppFlowy-IO/appflowy'),
+                  afLaunchUrlString('https://gitee.com/beijing-grimoire/xiaoma-note'),
             ),
           ],
         ),

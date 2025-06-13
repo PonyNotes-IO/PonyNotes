@@ -1,1 +1,1 @@
-Please refer to https://github.com/flathub/io.appflowy.AppFlowy repo.
+Please refer to https://gitee.com/beijing-grimoire/xiaoma-note repo.

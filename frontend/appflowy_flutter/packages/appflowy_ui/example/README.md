@@ -38,4 +38,4 @@ For more information about the AppFlowy UI package, please refer to:
 
 - The main package documentation
 - [AppFlowy Website](https://appflowy.io)
-- [AppFlowy GitHub Repository](https://github.com/AppFlowy-IO/AppFlowy)
+- [AppFlowy GitHub Repository](https://gitee.com/beijing-grimoire/xiaoma-note)

@@ -113,7 +113,7 @@ class _ReportIssuesWidget extends StatelessWidget {
           onTap: () {
             final String os = Platform.operatingSystem;
             afLaunchUrlString(
-              'https://github.com/AppFlowy-IO/AppFlowy/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Mobile:%20&version=$version&os=$os',
+              'https://gitee.com/beijing-grimoire/xiaoma-note/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Mobile:%20&version=$version&os=$os',
             );
           },
         ),

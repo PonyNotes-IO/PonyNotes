@@ -25,14 +25,14 @@ class AboutSettingGroup extends StatelessWidget {
           trailing: MobileSettingTrailing(
             text: '',
           ),
-          onTap: () => afLaunchUrlString('https://appflowy.com/privacy'),
+          onTap: () => afLaunchUrlString('https://xiaomabiji.com/privacy'),
         ),
         MobileSettingItem(
           name: LocaleKeys.settings_mobile_termsAndConditions.tr(),
           trailing: MobileSettingTrailing(
             text: '',
           ),
-          onTap: () => afLaunchUrlString('https://appflowy.com/terms'),
+          onTap: () => afLaunchUrlString('https://xiaomabiji.com/terms'),
         ),
         if (kDebugMode)
           MobileSettingItem(

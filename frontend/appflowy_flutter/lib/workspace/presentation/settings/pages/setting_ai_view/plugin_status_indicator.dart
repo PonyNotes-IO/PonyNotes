@@ -243,7 +243,7 @@ class _LackOfResource extends StatelessWidget {
             recognizer: TapGestureRecognizer()
               ..onTap = () {
                 afLaunchUrlString(
-                  "https://appflowy.com/guide/appflowy-local-ai-ollama",
+                  "https://xiaomabiji.com/guide/appflowy-local-ai-ollama",
                 );
               },
           ),
@@ -279,7 +279,7 @@ class _LackOfResource extends StatelessWidget {
         recognizer: TapGestureRecognizer()
           ..onTap = () {
             afLaunchUrlString(
-              "https://appflowy.com/guide/appflowy-local-ai-ollama",
+              "https://xiaomabiji.com/guide/appflowy-local-ai-ollama",
             );
           },
       ),

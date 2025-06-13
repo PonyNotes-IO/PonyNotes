@@ -1,6 +1,6 @@
 <h1 align="center" style="border-bottom: none">
     <b>
-        <a href="https://www.appflowy.com">AppFlowy</a><br>
+        <a href="https://www.xiaomabiji.com">AppFlowy</a><br>
     </b>
     ⭐️  The Open Source Alternative To Notion  ⭐️ <br>
 </h1>
@@ -11,25 +11,25 @@ AppFlowy is the AI workspace where you achieve more without losing control of yo
 
 <p align="center">
 <a href="https://discord.gg/9Q2xaN37tV"><img src="https://img.shields.io/badge/AppFlowy.IO-discord-orange"></a>
-<a href="https://github.com/AppFlowy-IO/appflowy"><img src="https://img.shields.io/github/stars/AppFlowy-IO/appflowy.svg?style=flat&logo=github&colorB=deeppink&label=stars"></a>
-<a href="https://github.com/AppFlowy-IO/appflowy"><img src="https://img.shields.io/github/forks/AppFlowy-IO/appflowy.svg"></a>
+<a href="https://gitee.com/beijing-grimoire/xiaoma-note"><img src="https://img.shields.io/github/stars/AppFlowy-IO/appflowy.svg?style=flat&logo=github&colorB=deeppink&label=stars"></a>
+<a href="https://gitee.com/beijing-grimoire/xiaoma-note"><img src="https://img.shields.io/github/forks/AppFlowy-IO/appflowy.svg"></a>
 <a href="https://opensource.org/licenses/AGPL-3.0"><img src="https://img.shields.io/badge/license-AGPL-purple.svg" alt="License: AGPL"></a>
 
 </p>
 
 <p align="center">
-    <a href="https://www.appflowy.com"><b>Website</b></a> •
+    <a href="https://www.xiaomabiji.com"><b>Website</b></a> •
     <a href="https://forum.appflowy.io/"><b>Forum</b></a> •
     <a href="https://discord.gg/9Q2xaN37tV"><b>Discord</b></a> •
     <a href="https://www.reddit.com/r/AppFlowy"><b>Reddit</b></a> •
     <a href="https://twitter.com/appflowy"><b>Twitter</b></a>
 </p>
 
-<p align="center"><img src="https://appflowy.com/_next/static/media/tasks.796c753e.png" alt="AppFlowy Kanban Board for To-dos"  /></p>
-<p align="center"><img src="https://appflowy.com/_next/static/media/Grid.9e30484b.png" alt="AppFlowy Databases for Tasks and Projects"  /></p>
-<p align="center"><img src="https://appflowy.com/_next/static/media/sites.a8d5b2b9.png" alt="AppFlowy Sites for Beautiful documentation"  /></p>
-<p align="center"><img src="https://appflowy.com/_next/static/media/ai.e1460982.png" alt="AppFlowy AI" /></p>
-<p align="center"><img src="https://appflowy.com/_next/static/media/template.9ea13c3b.png" alt="AppFlowy Templates"  /></p>
+<p align="center"><img src="https://xiaomabiji.com/_next/static/media/tasks.796c753e.png" alt="AppFlowy Kanban Board for To-dos"  /></p>
+<p align="center"><img src="https://xiaomabiji.com/_next/static/media/Grid.9e30484b.png" alt="AppFlowy Databases for Tasks and Projects"  /></p>
+<p align="center"><img src="https://xiaomabiji.com/_next/static/media/sites.a8d5b2b9.png" alt="AppFlowy Sites for Beautiful documentation"  /></p>
+<p align="center"><img src="https://xiaomabiji.com/_next/static/media/ai.e1460982.png" alt="AppFlowy AI" /></p>
+<p align="center"><img src="https://xiaomabiji.com/_next/static/media/template.9ea13c3b.png" alt="AppFlowy Templates"  /></p>
 
 <br></br>
 <p align="center" >
@@ -41,14 +41,14 @@ AppFlowy is the AI workspace where you achieve more without losing control of yo
 
 ## User Installation
 
-- [Download AppFlowy Desktop (macOS, Windows, and Linux)](https://github.com/AppFlowy-IO/AppFlowy/releases)
+- [Download AppFlowy Desktop (macOS, Windows, and Linux)](https://gitee.com/beijing-grimoire/xiaoma-note/releases)
 - Other
   channels: [FlatHub](https://flathub.org/apps/io.appflowy.AppFlowy), [Snapcraft](https://snapcraft.io/appflowy), [Sourceforge](https://sourceforge.net/projects/appflowy/)
 - Available on
     - [App Store](https://apps.apple.com/app/appflowy/id6457261352): iPhone
     - [Play Store](https://play.google.com/store/apps/details?id=io.appflowy.appflowy): Android 10 or above; ARMv7 is
       not supported
-- [Self-hosting AppFlowy](https://appflowy.com/docs/self-host-appflowy-overview)
+- [Self-hosting AppFlowy](https://xiaomabiji.com/docs/self-host-appflowy-overview)
 - [Source](https://docs.appflowy.io/docs/documentation/appflowy/from-source)
 
 ## Built With
@@ -59,7 +59,7 @@ AppFlowy is the AI workspace where you achieve more without losing control of yo
 
 ## Stay Up-to-Date
 
-<p align="center"><img src="https://github.com/AppFlowy-IO/appflowy/blob/main/doc/imgs/howtostar.gif" alt="AppFlowy Github - how to star the repo" width="100%" /></p>
+<p align="center"><img src="https://gitee.com/beijing-grimoire/xiaoma-note/raw/main/doc/imgs/howtostar.gif" alt="AppFlowy Github - how to star the repo" width="100%" /></p>
 
 ## Getting Started with development
 
@@ -72,13 +72,13 @@ development instructions
 - [AppFlowy Public Roadmap](https://github.com/orgs/AppFlowy-IO/projects/5/views/12)
 
 If you'd like to propose a feature, submit a feature
-request [here](https://github.com/AppFlowy-IO/AppFlowy/issues/new?assignees=&labels=&template=feature_request.yaml&title=%5BFR%5D+) <br/>
+request [here](https://gitee.com/beijing-grimoire/xiaoma-note/issues/new?assignees=&labels=&template=feature_request.yaml&title=%5BFR%5D+) <br/>
 If you'd like to report a bug, submit a bug
-report [here](https://github.com/AppFlowy-IO/AppFlowy/issues/new?assignees=&labels=&template=bug_report.yaml&title=%5BBug%5D+)
+report [here](https://gitee.com/beijing-grimoire/xiaoma-note/issues/new?assignees=&labels=&template=bug_report.yaml&title=%5BBug%5D+)
 
 ## **Releases**
 
-Please see the [changelog](https://appflowy.com/what-is-new) for more details about a given release.
+Please see the [changelog](https://xiaomabiji.com/what-is-new) for more details about a given release.
 
 ## Contributing
 
@@ -93,16 +93,16 @@ the community, **Congratulations!** You are now an official contributor to AppFl
 
 ## Translations 🌎🗺
 
-[![translation badge](https://inlang.com/badge?url=github.com/AppFlowy-IO/AppFlowy)](https://inlang.com/editor/github.com/AppFlowy-IO/AppFlowy?ref=badge)
+[![translation badge](https://inlang.com/badge?url=gitee.com/beijing-grimoire/xiaoma-note)](https://inlang.com/editor/gitee.com/beijing-grimoire/xiaoma-note?ref=badge)
 
 To add translations, you can manually edit the JSON translation files in `/frontend/resources/translations`, use
-the [inlang online editor](https://inlang.com/editor/github.com/AppFlowy-IO/AppFlowy), or
+the [inlang online editor](https://inlang.com/editor/gitee.com/beijing-grimoire/xiaoma-note), or
 run `npx inlang machine translate` to add missing translations.
 
 ## Join the community to build AppFlowy together
 
-<a href="https://github.com/AppFlowy-IO/AppFlowy/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=AppFlowy-IO/AppFlowy" />
+<a href="https://gitee.com/beijing-grimoire/xiaoma-note/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=beijing-grimoire/xiaoma-note" />
 </a>
 
 ## Why Are We Building This?
@@ -145,7 +145,7 @@ beautiful things on their own by equipping them with a versatile toolbox of buil
 
 ## License
 
-Distributed under the AGPLv3 License. See [`LICENSE.md`](https://github.com/AppFlowy-IO/AppFlowy/blob/main/LICENSE) for
+Distributed under the AGPLv3 License. See [`LICENSE.md`](https://gitee.com/beijing-grimoire/xiaoma-note/blob/main/LICENSE) for
 more information.
 
 ## Acknowledgments

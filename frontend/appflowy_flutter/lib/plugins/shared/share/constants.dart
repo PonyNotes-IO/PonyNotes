@@ -2,8 +2,8 @@ import 'package:appflowy/env/cloud_env.dart';
 import 'package:appflowy/startup/startup.dart';
 
 class ShareConstants {
-  static const String testBaseWebDomain = 'test.appflowy.com';
-  static const String defaultBaseWebDomain = 'https://appflowy.com';
+  static const String testBaseWebDomain = 'test.xiaomabiji.com';
+  static const String defaultBaseWebDomain = 'https://xiaomabiji.com';
 
   static String buildPublishUrl({
     required String nameSpace,

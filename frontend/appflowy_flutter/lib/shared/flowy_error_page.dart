@@ -129,7 +129,7 @@ class _DesktopSyncErrorPage extends StatelessWidget {
                   ),
                 ),
                 TextSpan(
-                  text: 'Github',
+                  text: 'Gitee',
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.primary,
@@ -138,7 +138,7 @@ class _DesktopSyncErrorPage extends StatelessWidget {
                   recognizer: TapGestureRecognizer()
                     ..onTap = () {
                       afLaunchUrlString(
-                        'https://github.com/AppFlowy-IO/AppFlowy/issues/new?template=bug_report.yaml',
+                        'https://gitee.com/beijing-grimoire/xiaoma-note/issues/new?template=bug_report.yaml',
                       );
                     },
                 ),

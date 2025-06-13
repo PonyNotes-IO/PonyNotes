@@ -37,7 +37,7 @@ class TextFieldPage extends StatelessWidget {
             'TextField with initial text',
             [
               AFTextField(
-                initialText: 'https://appflowy.com',
+                initialText: 'https://xiaomabiji.com',
               ),
             ],
           ),

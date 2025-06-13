@@ -120,7 +120,7 @@
             {
               "insert": "guide",
               "attributes": {
-                "href": "https://appflowy.gitbook.io/docs/essential-documentation/shortcuts"
+                "href": "https://xiaomabiji.com/guide"
               }
             },
             { "retain": 1, "attributes": { "strikethrough": true } }
@@ -138,7 +138,7 @@
             {
               "insert": "reference",
               "attributes": {
-                "href": "https://appflowy.gitbook.io/docs/essential-documentation/markdown"
+                "href": "https://xiaomabiji.com/guide"
               }
             },
             { "retain": 1, "attributes": { "strikethrough": true } }
@@ -209,7 +209,7 @@
                 {
                   "insert": "GitHub",
                   "attributes": {
-                    "href": "https://github.com/AppFlowy-IO/AppFlowy"
+                    "href": "https://gitee.com/beijing-grimoire/xiaoma-note"
                   }
                 }
               ]

@@ -53,7 +53,7 @@ class _WorkspaceFailedScreenState extends State<WorkspaceFailedScreen> {
                             LocaleKeys.workspace_errorActions_reportIssue.tr(),
                         height: 40,
                         onPressed: () => afLaunchUrlString(
-                          'https://github.com/AppFlowy-IO/AppFlowy/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Workspace%20failed%20to%20load&version=$version&os=$os',
+                          'https://gitee.com/beijing-grimoire/xiaoma-note/issues/new?assignees=&labels=&projects=&template=bug_report.yaml&title=[Bug]%20Workspace%20failed%20to%20load&version=$version&os=$os',
                         ),
                       ),
                     ),

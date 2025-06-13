@@ -21,8 +21,8 @@ abstract class IUserBackendService {
   );
 }
 
-const _baseBetaUrl = 'https://beta.appflowy.com';
-const _baseProdUrl = 'https://appflowy.com';
+const _baseBetaUrl = 'https://beta.xiaomabiji.com';
+const _baseProdUrl = 'https://xiaomabiji.com';
 
 class UserBackendService implements IUserBackendService {
   UserBackendService({required this.userId});

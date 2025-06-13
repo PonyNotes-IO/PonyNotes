@@ -24,7 +24,7 @@ class WebUrlHintWidget extends StatelessWidget {
           ),
           onPressed: () {
             afLaunchUrlString(
-              'https://appflowy.com/docs/self-host-appflowy-run-appflowy-web',
+              'https://xiaomabiji.com/docs/self-host-appflowy-run-appflowy-web',
             );
           },
         ),
