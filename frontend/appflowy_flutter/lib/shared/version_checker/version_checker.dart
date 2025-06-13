@@ -66,7 +66,7 @@ class VersionChecker {
   Future<void> checkForUpdate() async {
     if (UniversalPlatform.isLinux) {
       // open the official website in the browser
-      await afLaunchUrlString('https://xiaomabiji.com/download');
+      await afLaunchUrlString('https://appflowy.com/download');
     } else {
       await autoUpdater.checkForUpdates();
     }

@@ -32,7 +32,7 @@ class SignInAgreement extends StatelessWidget {
             style: underlinedTextStyle,
             mouseCursor: SystemMouseCursors.click,
             recognizer: TapGestureRecognizer()
-              ..onTap = () => afLaunchUrlString('https://xiaomabiji.com/terms'),
+              ..onTap = () => afLaunchUrlString('https://appflowy.com/terms'),
           ),
           TextSpan(
             text: '${LocaleKeys.web_and.tr()} ',
@@ -43,7 +43,7 @@ class SignInAgreement extends StatelessWidget {
             style: underlinedTextStyle,
             mouseCursor: SystemMouseCursors.click,
             recognizer: TapGestureRecognizer()
-              ..onTap = () => afLaunchUrlString('https://xiaomabiji.com/privacy'),
+              ..onTap = () => afLaunchUrlString('https://appflowy.com/privacy'),
           ),
         ],
       ),

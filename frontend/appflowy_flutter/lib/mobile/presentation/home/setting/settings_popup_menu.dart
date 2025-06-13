@@ -135,7 +135,7 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
   }
 
   void _openHelpAndDocumentationPage(BuildContext context) {
-    afLaunchUrlString('https://xiaomabiji.com/guide');
+    afLaunchUrlString('https://appflowy.com/guide');
   }
 }
 

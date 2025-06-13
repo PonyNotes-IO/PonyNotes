@@ -4,7 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/text_input.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+// import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:provider/provider.dart';
 
 class InlineMathEquationKeys {
@@ -71,27 +71,43 @@ class _InlineMathEquationState extends State<InlineMathEquation> {
 
   Widget _buildMathEquation(BuildContext context) {
     final theme = Theme.of(context);
-    final longEq = Math.tex(
-      widget.formula,
-      textStyle: widget.textStyle,
-      mathStyle: MathStyle.text,
-      options: MathOptions(
-        style: MathStyle.text,
-        mathFontOptions: const FontOptions(
-          fontShape: FontStyle.italic,
-        ),
+    // Temporarily disabled flutter_math_fork due to Flutter 3.27 compatibility issues
+    // final longEq = Math.tex(
+    //   widget.formula,
+    //   textStyle: widget.textStyle,
+    //   mathStyle: MathStyle.text,
+    //   options: MathOptions(
+    //     style: MathStyle.text,
+    //     mathFontOptions: const FontOptions(
+    //       fontShape: FontStyle.italic,
+    //     ),
+    //     fontSize: widget.textStyle?.fontSize ?? 14.0,
+    //     color: widget.textStyle?.color ?? theme.colorScheme.onSurface,
+    //   ),
+    //   onErrorFallback: (errmsg) {
+    //     return FlowyText(
+    //       errmsg.message,
+    //       fontSize: widget.textStyle?.fontSize ?? 14.0,
+    //       color: widget.textStyle?.color ?? theme.colorScheme.onSurface,
+    //     );
+    //   },
+    // );
+    // return longEq;
+    
+    // Temporary fallback - display formula as text
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(4.0),
+      ),
+      child: FlowyText(
+        widget.formula.isEmpty ? 'Math Formula' : widget.formula,
         fontSize: widget.textStyle?.fontSize ?? 14.0,
         color: widget.textStyle?.color ?? theme.colorScheme.onSurface,
+        fontFamily: 'monospace',
       ),
-      onErrorFallback: (errmsg) {
-        return FlowyText(
-          errmsg.message,
-          fontSize: widget.textStyle?.fontSize ?? 14.0,
-          color: widget.textStyle?.color ?? theme.colorScheme.onSurface,
-        );
-      },
     );
-    return longEq;
   }
 }
 

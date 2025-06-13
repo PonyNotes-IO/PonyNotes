@@ -11,7 +11,7 @@ import 'package:flowy_infra_ui/widget/buttons/primary_button.dart';
 import 'package:flowy_infra_ui/widget/buttons/secondary_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+// import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -222,10 +222,31 @@ class MathEquationBlockComponentWidgetState
   }
 
   Widget _buildMathEquation(BuildContext context) {
+    // Temporarily disabled flutter_math_fork due to Flutter 3.27 compatibility issues
+    // return Center(
+    //   child: Math.tex(
+    //     formula,
+    //     textStyle: const TextStyle(fontSize: 20),
+    //   ),
+    // );
+    
+    // Temporary fallback - display formula as text
     return Center(
-      child: Math.tex(
-        formula,
-        textStyle: const TextStyle(fontSize: 20),
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8.0),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        child: FlowyText(
+          formula.isEmpty ? 'Math Formula' : formula,
+          fontSize: 20,
+          fontFamily: 'monospace',
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }

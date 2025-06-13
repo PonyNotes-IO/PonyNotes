@@ -141,12 +141,12 @@ class _BubbleActionListState extends State<BubbleActionList> {
               break;
             case BubbleAction.github:
               afLaunchUrlString(
-                'https://gitee.com/beijing-grimoire/xiaoma-note/issues/new/choose',
+                'https://github.com/AppFlowy-IO/AppFlowy/issues/new/choose',
               );
               break;
             case BubbleAction.helpAndDocumentation:
               afLaunchUrlString(
-                'https://xiaomabiji.com/guide',
+                'https://appflowy.com/guide',
               );
               break;
           }

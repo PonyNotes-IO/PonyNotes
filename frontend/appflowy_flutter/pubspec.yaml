@@ -4,7 +4,7 @@ description: Bring projects, wikis, and teams together with AI. AppFlowy is an
   your data. The best open source alternative to Notion.
 publish_to: "none"
 
-version: 0.9.3
+version: 0.9.4
 
 environment:
   flutter: ">=3.27.4"
@@ -17,7 +17,7 @@ dependencies:
     path: packages/appflowy_backend
   appflowy_board:
     git:
-      url: https://gitee.com/beijing-grimoire/xiaoma-note-board.git
+      url: https://github.com/AppFlowy-IO/appflowy-board.git
       ref: e8317c0d1af8d23dc5707b02ea43864536b6de91
   appflowy_editor:
   appflowy_editor_plugins:
@@ -76,7 +76,6 @@ dependencies:
     git:
       url: https://github.com/LucasXu0/emoji_mart.git
       ref: "355aa56"
-  flutter_math_fork: ^0.7.3
   flutter_slidable: ^3.0.0
 
   flutter_staggered_grid_view: ^0.7.0
@@ -147,8 +146,9 @@ dependencies:
   xml: ^6.5.0
   window_manager: ^0.4.3
   saver_gallery: ^4.0.1
-  talker_bloc_logger: ^4.7.1
+  talker_bloc_logger: ^4.8.1
   talker: ^4.7.1
+  # flutter_math_fork: ^0.7.3  # Temporarily disabled due to Flutter 3.27 compatibility issues
 
   analyzer: 6.11.0
 
@@ -179,17 +179,17 @@ dependency_overrides:
 
   url_protocol:
     git:
-      url: https://gitee.com/beijing-grimoire/flutter_url_protocol.git
+      url: https://github.com/LucasXu0/flutter_url_protocol.git
       commit: 737681d
 
   appflowy_editor:
     git:
-      url: https://gitee.com/beijing-grimoire/xiaoma-note-editor.git
+      url: https://github.com/AppFlowy-IO/appflowy-editor.git
       ref: "470c4e7"
 
   appflowy_editor_plugins:
     git:
-      url: https://gitee.com/beijing-grimoire/xiaoma-note-plugins.git
+      url: https://github.com/AppFlowy-IO/AppFlowy-plugins.git
       path: "packages/appflowy_editor_plugins"
       ref: "4efcff7"
 

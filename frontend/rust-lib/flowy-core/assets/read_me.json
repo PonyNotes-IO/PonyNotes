@@ -124,7 +124,7 @@
           { "insert": "Keyboard shortcuts " },
           {
             "attributes": {
-              "href": "https://xiaomabiji.com/guide"
+              "href": "https://appflowy.gitbook.io/docs/essential-documentation/shortcuts"
             },
             "insert": "guide"
           }
@@ -138,7 +138,7 @@
           { "insert": "Markdown " },
           {
             "attributes": {
-              "href": "https://xiaomabiji.com/guide"
+              "href": "https://appflowy.gitbook.io/docs/essential-documentation/markdown"
             },
             "insert": "reference"
           }
