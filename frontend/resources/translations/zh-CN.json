@@ -1,5 +1,5 @@
 {
-  "appName": "AppFlowy",
+  "appName": "小马笔记",
   "defaultUsername": "我",
   "welcomeText": "欢迎使用 @:appName",
   "welcomeTo": "欢迎来到",
@@ -357,7 +357,7 @@
     "storageLimitDialogTitleIOS": "你已用尽免费存储。",
     "aiResponseLimitTitle": "你已用尽免费 AI 回应。升级到专业版或者购买 AI 插件来解锁无限制回应",
     "aiResponseLimitDialogTitle": "已达到 AI 回应限额",
-    "aiResponseLimit": "你已用尽了免费 AI 回应。\n\n转到“设置 -> 计划 -> 点击 AI Max 或 Pro 计划”获取更多 AI 回应",
+    "aiResponseLimit": "你已用尽了免费 AI 回应。\n\n转到"设置 -> 计划 -> 点击 AI Max 或 Pro 计划"获取更多 AI 回应",
     "askOwnerToUpgradeToPro": "你的工作区即将用尽免费存储。请联系工作区所有者升级到专业版计划",
     "askOwnerToUpgradeToProIOS": "你的工作区即将用尽免费存储。",
     "askOwnerToUpgradeToAIMax": "你的工作区即将用尽免费 AI 回应。请联系工作区所有者升级计划或购买 AI 插件",
@@ -817,10 +817,10 @@
       "inputEncryptPrompt": "请输入您的加密密钥",
       "clickToCopySecret": "点击复制密钥",
       "configServerSetting": "配置您的服务器设置",
-      "configServerGuide": "选择“快速启动”后，导航至“设置”，然后选择“云设置”以配置您的自托管服务器。",
+      "configServerGuide": "选择"快速启动"后，导航至"设置"，然后选择"云设置"以配置您的自托管服务器。",
       "inputTextFieldHint": "你的秘密",
       "historicalUserList": "用户登录历史记录",
-      "historicalUserListTooltip": "此列表显示您的匿名帐户。您可以单击某个帐户来查看其详细信息。单击“开始”按钮即可创建匿名帐户",
+      "historicalUserListTooltip": "此列表显示您的匿名帐户。您可以单击某个帐户来查看其详细信息。单击"开始"按钮即可创建匿名帐户",
       "openHistoricalUser": "点击开设匿名账户",
       "customPathPrompt": "将 @:appName 数据文件夹存储在云同步文件夹（例如 Google Drive）中可能会带来风险。如果同时从多个位置访问或修改此文件夹中的数据库，可能会导致同步冲突和潜在的数据损坏",
       "importAppFlowyData": "从外部 @:appName 文件夹导入数据",
@@ -1544,7 +1544,7 @@
       "placeholder": "目录"
     },
     "textBlock": {
-      "placeholder": "输入 “/” 作为命令"
+      "placeholder": "输入 "/"" 作为命令"
     },
     "title": {
       "placeholder": "无标题"
@@ -1666,7 +1666,7 @@
     "notesTooltip": "内含笔记",
     "mobile": {
       "editURL": "编辑 URL",
-      "showGroup": "“显示”组",
+      "showGroup": ""显示"组",
       "showGroupContent": "您确定要在公告板上显示该组吗？",
       "failedToLoad": "无法加载版面视图",
       "unhideGroup": "显示隐藏的组",
@@ -1971,7 +1971,7 @@
     "noFavoriteHintText": "向左滑动页面即可将其添加到您的收藏夹"
   },
   "cardDetails": {
-    "notesPlaceholder": "输入 “/” 以插入块，或开始键入"
+    "notesPlaceholder": "输入 "/"" 以插入块，或开始键入"
   },
   "blockPlaceholders": {
     "todoList": "待办",
