@@ -40,7 +40,7 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.discord:
         return FlowySvgs.m_discord_icon_xl;
       case ThirdPartySignInButtonType.wechat:
-        return FlowySvgs.m_wechat_icon_xl;
+        return FlowySvgs.m_wechat_icon_xl; // 使用生成的微信图标
       case ThirdPartySignInButtonType.anonymous:
         return FlowySvgs.m_discord_icon_xl;
     }
@@ -107,6 +107,8 @@ enum ThirdPartySignInButtonType {
   }
 }
 
+
+
 class MobileThirdPartySignInButton extends StatelessWidget {
   const MobileThirdPartySignInButton({
     super.key,
@@ -163,4 +165,4 @@ class DesktopThirdPartySignInButton extends StatelessWidget {
       },
     );
   }
-}
+} 

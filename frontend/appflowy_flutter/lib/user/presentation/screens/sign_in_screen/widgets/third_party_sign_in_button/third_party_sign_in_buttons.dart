@@ -65,6 +65,11 @@ class _DesktopThirdPartySignInState extends State<_DesktopThirdPartySignIn> {
     return Column(
       children: [
         DesktopThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.wechat,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.wechat),
+        ),
+        VSpace(theme.spacing.l),
+        DesktopThirdPartySignInButton(
           key: signInWithGoogleButtonKey,
           type: ThirdPartySignInButtonType.google,
           onTap: () => widget.onSignIn(ThirdPartySignInButtonType.google),
@@ -148,6 +153,11 @@ class _MobileThirdPartySignInState extends State<_MobileThirdPartySignIn> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        MobileThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.wechat,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.wechat),
+        ),
+        const VSpace(padding),
         // only display apple sign in button on iOS
         if (Platform.isIOS) ...[
           MobileThirdPartySignInButton(

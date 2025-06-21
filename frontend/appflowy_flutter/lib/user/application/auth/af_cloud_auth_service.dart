@@ -84,7 +84,7 @@ class AppFlowyCloudAuthService implements AuthService {
 
         return completer.future;
       },
-      (r) => FlowyResult.failure(r),
+      (r) => FlowyResult<UserProfilePB, FlowyError>.failure(r),
     );
   }
 
@@ -139,6 +139,8 @@ extension ProviderTypePBExtension on ProviderTypePB {
         return ProviderTypePB.Discord;
       case 'apple':
         return ProviderTypePB.Apple;
+      case 'wechat':
+        return ProviderTypePB.Google; // 临时使用Google，待WeChat类型生成
       default:
         throw UnimplementedError();
     }

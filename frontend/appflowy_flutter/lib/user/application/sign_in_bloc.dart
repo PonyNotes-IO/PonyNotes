@@ -203,14 +203,30 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       ),
     );
 
-    final result = await authService.signUpWithOAuth(platform: platform);
+    // 处理微信登录
+    if (platform == 'wechat') {
+      // 微信登录暂时返回失败，需要实现具体的微信登录逻辑
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: FlowyResult.failure(
+            FlowyError()..msg = '微信登录功能正在开发中',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final result = await authService.signUpWithOAuth(
+      platform: platform,
+    );
     emit(
       result.fold(
-        (userProfile) => state.copyWith(
+        (s) => state.copyWith(
           isSubmitting: false,
-          successOrFail: FlowyResult.success(userProfile),
+          successOrFail: FlowyResult.success(s),
         ),
-        (error) => _stateFromCode(error),
+        (f) => _stateFromCode(f),
       ),
     );
   }
