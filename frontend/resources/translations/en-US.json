@@ -52,6 +52,8 @@
     "syncPromptMessage": "Syncing the data might take a while. Please don't close this page",
     "or": "or",
     "signInWithGoogle": "Continue with Google",
+    "signInWithQQ": "Continue with QQ",
+    "signInWithTiktok": "Continue with Tiktok",
     "signInWithGithub": "Continue with GitHub",
     "signInWithDiscord": "Continue with Discord",
     "signInWithApple": "Continue with Apple",
@@ -64,6 +66,7 @@
     "signInWithMagicLink": "Continue",
     "signUpWithMagicLink": "Sign up with Magic Link",
     "pleaseInputYourEmail": "Please enter your email address",
+    "pleaseInputYourEmailOrMobile": "Please enter your email or mobile number",
     "settings": "Settings",
     "magicLinkSent": "Magic Link sent!",
     "invalidEmail": "Please enter a valid email address",
@@ -107,7 +110,13 @@
     "verifying": "Verifying...",
     "continueWithPassword": "Continue with password",
     "youAreInLocalMode": "You're in local mode.",
-    "loginToAppFlowyCloud": "Login to AppFlowy Cloud"
+    "loginToAppFlowyCloud": "Login to AppFlowy Cloud",
+    "loginOrRegister": "Login/Register",
+    "logInWithMagicLink": "Sign in with magic link",
+    "agreePrefix": "I have read and agree to",
+    "userAgreement": "User Agreement",
+    "and": "and",
+    "privacyPolicy": "Privacy Policy"
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",

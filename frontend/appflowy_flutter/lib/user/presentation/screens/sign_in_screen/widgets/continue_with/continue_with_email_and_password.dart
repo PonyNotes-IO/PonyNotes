@@ -10,6 +10,7 @@ import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:string_validator/string_validator.dart';
+import 'package:appflowy/util/validator.dart';
 
 class ContinueWithEmailAndPassword extends StatefulWidget {
   const ContinueWithEmailAndPassword({super.key});
@@ -26,6 +27,7 @@ class _ContinueWithEmailAndPasswordState
   final emailKey = GlobalKey<AFTextFieldState>();
 
   bool _hasPushedContinueWithMagicLinkOrPasscodePage = false;
+  bool _agreed = false;
 
   @override
   void dispose() {
@@ -59,25 +61,85 @@ class _ContinueWithEmailAndPasswordState
           AFTextField(
             key: emailKey,
             controller: controller,
-            hintText: LocaleKeys.signIn_pleaseInputYourEmail.tr(),
+            hintText: LocaleKeys.signIn_pleaseInputYourEmailOrMobile.tr(),
             onSubmitted: (value) => _signInWithEmail(
               context,
               value,
             ),
           ),
           VSpace(theme.spacing.l),
+          /*
           ContinueWithEmail(
             onTap: () => _signInWithEmail(
               context,
               controller.text,
             ),
           ),
+          */
           VSpace(theme.spacing.l),
+          AFFilledTextButton.primary(
+            text: LocaleKeys.signIn_loginOrRegister.tr(),
+            size: AFButtonSize.l,
+            alignment: Alignment.center,
+            onTap: () {
+              // 这里可以添加实际的登录/注册逻辑，当前先打印日志
+              debugPrint('点击了登录/注册按钮');
+            },
+          ),
+          VSpace(theme.spacing.l),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Checkbox(
+                value: _agreed,
+                onChanged: (value) {
+                  setState(() {
+                    _agreed = value ?? false;
+                  });
+                },
+              ),
+              Expanded(
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(LocaleKeys.signIn_agreePrefix.tr()),
+                    GestureDetector(
+                      onTap: () {
+                        // TODO: 跳转到用户协议页面
+                        debugPrint('点击了用户协议');
+                      },
+                      child: Text(
+                        LocaleKeys.signIn_userAgreement.tr(),
+                        style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline),
+                      ),
+                    ),
+                    Text(LocaleKeys.signIn_and.tr()),
+                    GestureDetector(
+                      onTap: () {
+                        // TODO: 跳转到隐私政策页面
+                        debugPrint('点击了隐私政策');
+                      },
+                      child: Text(
+                        LocaleKeys.signIn_privacyPolicy.tr(),
+                        style: TextStyle(
+                            color: Colors.blue,
+                            decoration: TextDecoration.underline),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          VSpace(theme.spacing.l),
+          /*
           ContinueWithPassword(
             onTap: () {
               final email = controller.text;
 
-              if (!isEmail(email)) {
+              if (!_isValidEmailOrPhone(email)) {
                 emailKey.currentState?.syncError(
                   errorText: LocaleKeys.signIn_invalidEmail.tr(),
                 );
@@ -90,26 +152,31 @@ class _ContinueWithEmailAndPasswordState
               );
             },
           ),
+          */
         ],
       ),
     );
   }
 
-  void _signInWithEmail(BuildContext context, String email) {
-    if (!isEmail(email)) {
+  void _signInWithEmail(BuildContext context, String input) {
+    if (!Validator.isValidEmailOrPhone(input)) {
+      String errorText;
+      if (input.contains('@')) {
+        errorText = '请输入有效的邮箱地址';
+      } else {
+        errorText = '请输入有效的手机号';
+      }
       emailKey.currentState?.syncError(
-        errorText: LocaleKeys.signIn_invalidEmail.tr(),
+        errorText: errorText,
       );
       return;
     }
-
     context
         .read<SignInBloc>()
-        .add(SignInEvent.signInWithMagicLink(email: email));
-
+        .add(SignInEvent.signInWithMagicLink(email: input));
     _pushContinueWithMagicLinkOrPasscodePage(
       context,
-      email,
+      input,
     );
   }
 

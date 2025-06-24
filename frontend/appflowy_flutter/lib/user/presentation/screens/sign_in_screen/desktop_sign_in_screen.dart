@@ -47,6 +47,8 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
                   logoSize: Size.square(36),
                 ),
                 VSpace(theme.spacing.xxl),
+                const _OrDivider(),
+                VSpace(theme.spacing.xxl),
 
                 // continue with email and password
                 isLocalAuthEnabled

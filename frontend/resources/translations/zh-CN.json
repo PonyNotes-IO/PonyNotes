@@ -1,5 +1,5 @@
 {
-  "appName": "AppFlowy",
+  "appName": "小马笔记",
   "defaultUsername": "我",
   "welcomeText": "欢迎使用 @:appName",
   "welcomeTo": "欢迎来到",
@@ -49,6 +49,8 @@
     "or": "或",
     "signInWithGoogle": "使用 Google 账户登录",
     "signInWithGithub": "使用 Github 账户登录",
+    "signInWithQQ": "使用QQ账户登录",
+    "signInWithTiktok": "使用抖音账户登录",
     "signInWithDiscord": "使用 Discord 账户登录",
     "signInWithApple": "使用 Apple 账户登录",
     "continueAnotherWay": "使用其他方式登录",
@@ -60,6 +62,7 @@
     "signInWithMagicLink": "使用魔法链接登录",
     "signUpWithMagicLink": "使用魔法链接注册",
     "pleaseInputYourEmail": "请输入邮箱地址",
+    "pleaseInputYourEmailOrMobile": "请输入邮箱或手机号",
     "settings": "设置",
     "magicLinkSent": "魔法链接已经发送到您的邮箱，请检查！",
     "invalidEmail": "请输入一个有效的邮箱地址",
@@ -73,7 +76,12 @@
     "LogInWithGithub": "使用 Github 登录",
     "LogInWithDiscord": "使用 Discord 登录",
     "loginAsGuestButtonText": "开始使用",
-    "logInWithMagicLink": "使用魔法链接登录"
+    "logInWithMagicLink": "使用魔法链接登录",
+    "loginOrRegister": "登录/注册",
+    "agreePrefix": "我已阅读并同意",
+    "userAgreement": "用户协议",
+    "and": "和",
+    "privacyPolicy": "隐私政策"
   },
   "workspace": {
     "chooseWorkspace": "选择您的工作区",

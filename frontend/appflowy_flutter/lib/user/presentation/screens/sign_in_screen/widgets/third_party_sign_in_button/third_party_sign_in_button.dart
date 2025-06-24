@@ -10,6 +10,8 @@ enum ThirdPartySignInButtonType {
   github,
   discord,
   wechat,
+  tikTok,
+  qq,
   anonymous;
 
   String get provider {
@@ -24,6 +26,10 @@ enum ThirdPartySignInButtonType {
         return 'discord';
       case ThirdPartySignInButtonType.wechat:
         return 'wechat';
+      case ThirdPartySignInButtonType.qq:
+        return 'qq';
+      case ThirdPartySignInButtonType.tikTok:
+        return 'tikTok';
       case ThirdPartySignInButtonType.anonymous:
         throw UnsupportedError('Anonymous session does not have a provider');
     }
@@ -41,6 +47,10 @@ enum ThirdPartySignInButtonType {
         return FlowySvgs.m_discord_icon_xl;
       case ThirdPartySignInButtonType.wechat:
         return FlowySvgs.m_wechat_icon_xl;
+      case ThirdPartySignInButtonType.qq:
+        return FlowySvgs.m_qq_icon_xl;
+      case ThirdPartySignInButtonType.tikTok:
+        return FlowySvgs.m_tiktok_icon_xl;
       case ThirdPartySignInButtonType.anonymous:
         return FlowySvgs.m_discord_icon_xl;
     }
@@ -58,6 +68,10 @@ enum ThirdPartySignInButtonType {
         return LocaleKeys.signIn_signInWithDiscord.tr();
       case ThirdPartySignInButtonType.wechat:
         return '微信登录';
+      case ThirdPartySignInButtonType.qq:
+        return LocaleKeys.signIn_signInWithQQ.tr();
+      case ThirdPartySignInButtonType.tikTok:
+        return LocaleKeys.signIn_signInWithTiktok.tr();
       case ThirdPartySignInButtonType.anonymous:
         return 'Anonymous session';
     }
@@ -75,6 +89,8 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.github:
       case ThirdPartySignInButtonType.discord:
       case ThirdPartySignInButtonType.anonymous:
+      case ThirdPartySignInButtonType.tikTok:
+      case ThirdPartySignInButtonType.qq:
         return isDarkMode ? Colors.black : Colors.grey.shade100;
     }
   }
@@ -90,6 +106,8 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.github:
       case ThirdPartySignInButtonType.discord:
       case ThirdPartySignInButtonType.anonymous:
+      case ThirdPartySignInButtonType.tikTok:
+      case ThirdPartySignInButtonType.qq:
         return isDarkMode ? Colors.white : Colors.black;
     }
   }
