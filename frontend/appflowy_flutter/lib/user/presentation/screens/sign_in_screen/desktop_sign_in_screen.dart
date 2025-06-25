@@ -36,52 +36,43 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
         final bottomPadding = UniversalPlatform.isDesktop ? 20.0 : 24.0;
         return Scaffold(
           appBar: _buildAppBar(),
-          body: Center(
-            child: AuthFormContainer(
-              children: [
-                const Spacer(),
+          body: CenteredAuthContainer(
+            children: [
+              // logo and title
+              FlowyLogoTitle(
+                title: LocaleKeys.welcomeText.tr(),
+                logoSize: Size.square(36),
+              ),
+              VSpace(theme.spacing.xxl),
+              const _OrDivider(),
+              VSpace(theme.spacing.xxl),
 
-                // logo and title
-                FlowyLogoTitle(
-                  title: LocaleKeys.welcomeText.tr(),
-                  logoSize: Size.square(36),
-                ),
-                VSpace(theme.spacing.xxl),
+              // continue with email and password
+              isLocalAuthEnabled
+                  ? const SignInAnonymousButtonV3()
+                  : const ContinueWithEmailAndPassword(),
+
+              VSpace(theme.spacing.xxl),
+
+              // third-party sign in.
+              if (isAuthEnabled) ...[
                 const _OrDivider(),
                 VSpace(theme.spacing.xxl),
-
-                // continue with email and password
-                isLocalAuthEnabled
-                    ? const SignInAnonymousButtonV3()
-                    : const ContinueWithEmailAndPassword(),
-
+                const ThirdPartySignInButtons(),
                 VSpace(theme.spacing.xxl),
-
-                // third-party sign in.
-                if (isAuthEnabled) ...[
-                  const _OrDivider(),
-                  VSpace(theme.spacing.xxl),
-                  const ThirdPartySignInButtons(),
-                  VSpace(theme.spacing.xxl),
-                ],
-
-                // sign in agreement
-                const SignInAgreement(),
-
-                const Spacer(),
-
-                // anonymous sign in and settings
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DesktopSignInSettingsButton(),
-                    HSpace(20),
-                    SignInAnonymousButtonV2(),
-                  ],
-                ),
-                VSpace(bottomPadding),
               ],
-            ),
+
+              // anonymous sign in and settings
+              const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DesktopSignInSettingsButton(),
+                  HSpace(20),
+                  SignInAnonymousButtonV2(),
+                ],
+              ),
+              VSpace(bottomPadding),
+            ],
           ),
         );
       },

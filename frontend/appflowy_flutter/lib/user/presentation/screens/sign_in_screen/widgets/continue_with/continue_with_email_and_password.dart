@@ -4,11 +4,15 @@ import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/contin
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password_page.dart';
+import 'package:appflowy/user/presentation/screens/user_agreement_screen.dart';
+import 'package:appflowy/user/presentation/screens/privacy_policy_screen.dart';
+import 'package:appflowy/user/presentation/utils/legal_document_navigator.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:string_validator/string_validator.dart';
 import 'package:appflowy/util/validator.dart';
 
@@ -57,6 +61,8 @@ class _ContinueWithEmailAndPasswordState
         }
       },
       child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AFTextField(
             key: emailKey,
@@ -88,47 +94,56 @@ class _ContinueWithEmailAndPasswordState
           ),
           VSpace(theme.spacing.l),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              Checkbox(
-                value: _agreed,
-                onChanged: (value) {
-                  setState(() {
-                    _agreed = value ?? false;
-                  });
-                },
+              SizedBox(
+                height: 20.0,
+                child: Checkbox(
+                  value: _agreed,
+                  onChanged: (value) {
+                    setState(() {
+                      _agreed = value ?? false;
+                    });
+                  },
+                ),
               ),
+              const HSpace(4.0),
               Expanded(
-                child: Wrap(
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(LocaleKeys.signIn_agreePrefix.tr()),
-                    GestureDetector(
-                      onTap: () {
-                        // TODO: 跳转到用户协议页面
-                        debugPrint('点击了用户协议');
-                      },
-                      child: Text(
-                        LocaleKeys.signIn_userAgreement.tr(),
-                        style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline),
+                child: Padding(
+                  padding: const EdgeInsets.only(top: 2.0),
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    alignment: WrapAlignment.start,
+                    children: [
+                      Text(LocaleKeys.signIn_agreePrefix.tr()),
+                      GestureDetector(
+                        onTap: () {
+                          LegalDocumentNavigator.navigateToUserAgreement(
+                              context);
+                        },
+                        child: Text(
+                          LocaleKeys.signIn_userAgreement.tr(),
+                          style: TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline),
+                        ),
                       ),
-                    ),
-                    Text(LocaleKeys.signIn_and.tr()),
-                    GestureDetector(
-                      onTap: () {
-                        // TODO: 跳转到隐私政策页面
-                        debugPrint('点击了隐私政策');
-                      },
-                      child: Text(
-                        LocaleKeys.signIn_privacyPolicy.tr(),
-                        style: TextStyle(
-                            color: Colors.blue,
-                            decoration: TextDecoration.underline),
+                      Text(LocaleKeys.signIn_and.tr()),
+                      GestureDetector(
+                        onTap: () {
+                          LegalDocumentNavigator.navigateToPrivacyPolicy(
+                              context);
+                        },
+                        child: Text(
+                          LocaleKeys.signIn_privacyPolicy.tr(),
+                          style: TextStyle(
+                              color: Colors.blue,
+                              decoration: TextDecoration.underline),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
