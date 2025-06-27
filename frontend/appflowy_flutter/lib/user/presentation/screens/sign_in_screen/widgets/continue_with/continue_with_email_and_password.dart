@@ -93,24 +93,28 @@ class _ContinueWithEmailAndPasswordState
                 showDialog(
                   context: parentContext,
                   builder: (dialogContext) => AlertDialog(
-                    title: const Text('为了更好的使用服务'),
+                    title: Text(LocaleKeys.signIn_betterUseService.tr()),
                     content: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('登录前请阅读并同意以下协议\n小马笔记'),
+                        Text(LocaleKeys.signIn_pleaseReadAndAgreeBeforeLogin
+                            .tr()),
                         const SizedBox(height: 8),
-                        Wrap(
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
+                            Text(LocaleKeys.appName.tr()),
+                            const SizedBox(width: 4),
                             GestureDetector(
                               onTap: () {
                                 Navigator.of(dialogContext).pop();
                                 LegalDocumentNavigator.navigateToUserAgreement(
                                     parentContext);
                               },
-                              child: const Text(
-                                '用户协议',
-                                style: TextStyle(
+                              child: Text(
+                                LocaleKeys.signIn_userAgreement.tr(),
+                                style: const TextStyle(
                                   color: Colors.blue,
                                   decoration: TextDecoration.underline,
                                 ),
@@ -123,9 +127,9 @@ class _ContinueWithEmailAndPasswordState
                                 LegalDocumentNavigator.navigateToPrivacyPolicy(
                                     parentContext);
                               },
-                              child: const Text(
-                                '隐私政策',
-                                style: TextStyle(
+                              child: Text(
+                                LocaleKeys.signIn_privacyPolicy.tr(),
+                                style: const TextStyle(
                                   color: Colors.blue,
                                   decoration: TextDecoration.underline,
                                 ),
@@ -139,9 +143,9 @@ class _ContinueWithEmailAndPasswordState
                                     .navigateToPersonalInfoProtection(
                                         parentContext);
                               },
-                              child: const Text(
-                                '个人信息保护声明',
-                                style: TextStyle(
+                              child: Text(
+                                LocaleKeys.signIn_personalInfoProtection.tr(),
+                                style: const TextStyle(
                                   color: Colors.blue,
                                   decoration: TextDecoration.underline,
                                 ),
