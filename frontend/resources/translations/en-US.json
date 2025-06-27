@@ -70,6 +70,7 @@
     "settings": "Settings",
     "magicLinkSent": "Magic Link sent!",
     "invalidEmail": "Please enter a valid email address",
+    "invalidEmailOrPhone": "Please enter a valid email address or mobile number",
     "alreadyHaveAnAccount": "Already have an account?",
     "logIn": "Log in",
     "generalError": "Something went wrong. Please try again later",
@@ -123,7 +124,9 @@
     "personalInfoProtection": "Personal Information Protection Statement",
     "personalInfoProtectionContent": "This is the content of the Personal Information Protection Statement. Please fill in as needed.",
     "pleaseReadAndAgreeBeforeLogin": "Please read and agree to the following agreements before logging in.",
-    "betterUseService": "For better use of the service."
+    "betterUseService": "For better use of the service.",
+    "disagree": "Disagree",
+    "agreeAndContinue": "Agree and Continue"
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",

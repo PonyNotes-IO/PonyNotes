@@ -88,6 +88,13 @@ class _ContinueWithEmailAndPasswordState
             size: AFButtonSize.l,
             alignment: Alignment.center,
             onTap: () {
+              final emailOrPhone = controller.text.trim();
+              if (!Validator.isValidEmailOrPhone(emailOrPhone)) {
+                emailKey.currentState?.syncError(
+                  errorText: LocaleKeys.signIn_invalidEmail.tr(),
+                );
+                return;
+              }
               if (!_agreed) {
                 final parentContext = context;
                 showDialog(
@@ -157,8 +164,19 @@ class _ContinueWithEmailAndPasswordState
                     ),
                     actions: [
                       TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text(LocaleKeys.button_ok.tr()),
+                        onPressed: () {
+                          Navigator.of(dialogContext).pop();
+                        },
+                        child: Text(LocaleKeys.signIn_disagree.tr()),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _agreed = true;
+                          });
+                          Navigator.of(dialogContext).pop();
+                        },
+                        child: Text(LocaleKeys.signIn_agreeAndContinue.tr()),
                       ),
                     ],
                   ),

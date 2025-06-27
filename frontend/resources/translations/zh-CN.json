@@ -66,6 +66,7 @@
     "settings": "设置",
     "magicLinkSent": "魔法链接已经发送到您的邮箱，请检查！",
     "invalidEmail": "请输入一个有效的邮箱地址",
+    "invalidEmailOrPhone": "请输入一个有效的邮箱地址或手机号",
     "alreadyHaveAnAccount": "已经有账户了？",
     "logIn": "登陆",
     "generalError": "出现错误，请稍后再试",
@@ -87,7 +88,9 @@
     "personalInfoProtection": "个人信息保护声明",
     "personalInfoProtectionContent": "这里是个人信息保护声明的内容，请根据实际需求填写。",
     "pleaseReadAndAgreeBeforeLogin": "登录前请阅读并同意以下协议",
-    "betterUseService": "为了更好的使用服务"
+    "betterUseService": "为了更好的使用服务",
+    "disagree": "不同意",
+    "agreeAndContinue": "同意并继续"
   },
   "workspace": {
     "chooseWorkspace": "选择您的工作区",
