@@ -88,6 +88,79 @@ class _ContinueWithEmailAndPasswordState
             size: AFButtonSize.l,
             alignment: Alignment.center,
             onTap: () {
+              if (!_agreed) {
+                final parentContext = context;
+                showDialog(
+                  context: parentContext,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('为了更好的使用服务'),
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('登录前请阅读并同意以下协议\n小马笔记'),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(dialogContext).pop();
+                                LegalDocumentNavigator.navigateToUserAgreement(
+                                    parentContext);
+                              },
+                              child: const Text(
+                                '用户协议',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                            const Text('、'),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(dialogContext).pop();
+                                LegalDocumentNavigator.navigateToPrivacyPolicy(
+                                    parentContext);
+                              },
+                              child: const Text(
+                                '隐私政策',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                            const Text('、'),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.of(dialogContext).pop();
+                                LegalDocumentNavigator
+                                    .navigateToPersonalInfoProtection(
+                                        parentContext);
+                              },
+                              child: const Text(
+                                '个人信息保护声明',
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: Text(LocaleKeys.button_ok.tr()),
+                      ),
+                    ],
+                  ),
+                );
+                return;
+              }
               // 这里可以添加实际的登录/注册逻辑，当前先打印日志
               debugPrint('点击了登录/注册按钮');
             },

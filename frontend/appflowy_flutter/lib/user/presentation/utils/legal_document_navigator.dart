@@ -26,4 +26,15 @@ class LegalDocumentNavigator {
       },
     );
   }
+
+  /// 导航到个人信息保护声明页面
+  static void navigateToPersonalInfoProtection(BuildContext context) {
+    context.push(
+      LegalDocumentScreen.routeName,
+      extra: {
+        'title': LocaleKeys.signIn_personalInfoProtection.tr(),
+        'content': LocaleKeys.signIn_personalInfoProtectionContent.tr(),
+      },
+    );
+  }
 }
