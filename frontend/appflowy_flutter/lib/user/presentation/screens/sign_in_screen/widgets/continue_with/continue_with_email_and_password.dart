@@ -91,7 +91,7 @@ class _ContinueWithEmailAndPasswordState
               final emailOrPhone = controller.text.trim();
               if (!Validator.isValidEmailOrPhone(emailOrPhone)) {
                 emailKey.currentState?.syncError(
-                  errorText: LocaleKeys.signIn_invalidEmail.tr(),
+                  errorText: LocaleKeys.signIn_invalidEmailOrPhone.tr(),
                 );
                 return;
               }
