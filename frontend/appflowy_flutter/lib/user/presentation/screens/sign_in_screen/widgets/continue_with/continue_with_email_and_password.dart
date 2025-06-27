@@ -184,7 +184,11 @@ class _ContinueWithEmailAndPasswordState
                 return;
               }
               // 这里可以添加实际的登录/注册逻辑，当前先打印日志
-              debugPrint('点击了登录/注册按钮');
+              if (isEmail(emailOrPhone)) {
+                debugPrint('用户输入的是邮箱地址: ' + emailOrPhone);
+              } else {
+                debugPrint('用户输入的是手机号: ' + emailOrPhone);
+              }
             },
           ),
           VSpace(theme.spacing.l),
