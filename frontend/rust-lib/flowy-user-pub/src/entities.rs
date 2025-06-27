@@ -145,13 +145,14 @@ impl UserWorkspace {
 #[derive(Default, Debug, Clone)]
 pub struct UserProfile {
   pub uid: i64,
-  pub email: String,
+  pub email: Option<String>,
   pub name: String,
   pub token: String,
   pub icon_url: String,
   pub auth_type: AuthType,
   pub workspace_type: WorkspaceType,
   pub updated_at: i64,
+  pub phone_number: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, Eq, PartialEq)]
@@ -211,13 +212,14 @@ where
     let workspace_type = WorkspaceType::from(auth_type);
     Self {
       uid: value.user_id(),
-      email: value.user_email().unwrap_or_default(),
+      email: value.user_email().clone(),
       name: value.user_name().to_owned(),
       token: value.user_token().unwrap_or_default(),
       icon_url,
       auth_type: *auth_type,
       workspace_type,
       updated_at: value.updated_at(),
+      phone_number: None,
     }
   }
 }
@@ -230,6 +232,7 @@ pub struct UpdateUserProfileParams {
   pub password: Option<String>,
   pub icon_url: Option<String>,
   pub token: Option<String>,
+  pub phone_number: Option<String>,
 }
 
 impl UpdateUserProfileParams {
@@ -262,6 +265,11 @@ impl UpdateUserProfileParams {
 
   pub fn with_icon_url<T: ToString>(mut self, icon_url: T) -> Self {
     self.icon_url = Some(icon_url.to_string());
+    self
+  }
+
+  pub fn with_phone_number<T: ToString>(mut self, phone_number: T) -> Self {
+    self.phone_number = Some(phone_number.to_string());
     self
   }
 }

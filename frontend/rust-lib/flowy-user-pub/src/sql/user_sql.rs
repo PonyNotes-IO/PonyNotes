@@ -19,9 +19,10 @@ pub struct UserTable {
   pub(crate) name: String,
   pub(crate) icon_url: String,
   pub(crate) token: String,
-  pub(crate) email: String,
+  pub(crate) email: Option<String>,
   pub(crate) auth_type: i32,
   pub(crate) updated_at: i64,
+  pub(crate) phone_number: Option<String>,
 }
 
 #[allow(deprecated)]
@@ -37,6 +38,7 @@ impl From<(UserProfile, AuthType)> for UserTable {
       email: user_profile.email,
       auth_type: auth_type as i32,
       updated_at: user_profile.updated_at,
+      phone_number: user_profile.phone_number,
     }
   }
 }
@@ -49,6 +51,7 @@ pub struct UserTableChangeset {
   pub email: Option<String>,
   pub icon_url: Option<String>,
   pub token: Option<String>,
+  pub phone_number: Option<String>,
 }
 
 impl UserTableChangeset {
@@ -59,6 +62,7 @@ impl UserTableChangeset {
       email: params.email,
       icon_url: params.icon_url,
       token: params.token,
+      phone_number: params.phone_number,
     }
   }
 
@@ -66,9 +70,10 @@ impl UserTableChangeset {
     UserTableChangeset {
       id: user_profile.uid.to_string(),
       name: Some(user_profile.name),
-      email: Some(user_profile.email),
+      email: user_profile.email,
       icon_url: Some(user_profile.icon_url),
       token: Some(user_profile.token),
+      phone_number: user_profile.phone_number,
     }
   }
 }
@@ -106,7 +111,7 @@ pub fn insert_local_workspace(
   conn.immediate_transaction(|conn| {
     let row = select_user_table_row(uid, conn)?;
     let row = WorkspaceMemberTable {
-      email: row.email,
+      email: row.email.unwrap_or_default(),
       role: Role::Owner as i32,
       name: row.name,
       avatar_url: Some(row.icon_url),
@@ -155,6 +160,7 @@ pub fn select_user_profile(
     auth_type: AuthType::from(row.auth_type),
     workspace_type,
     updated_at: row.updated_at,
+    phone_number: row.phone_number,
   };
 
   Ok(user)

@@ -30,6 +30,12 @@ class BackendAuthService implements AuthService {
       ..password = password
       ..authType = authType
       ..deviceId = await getDeviceId();
+
+    // 如果参数中包含手机号，则设置手机号字段
+    if (params.containsKey('phone_number')) {
+      request.phoneNumber = params['phone_number']!;
+    }
+
     return UserEventSignInWithEmailPassword(request).send();
   }
 
