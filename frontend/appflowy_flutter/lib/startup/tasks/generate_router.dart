@@ -29,8 +29,6 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/startup/tasks/app_widget.dart';
 import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy/user/presentation/presentation.dart';
-import 'package:appflowy/user/presentation/screens/user_agreement_screen.dart';
-import 'package:appflowy/user/presentation/screens/privacy_policy_screen.dart';
 import 'package:appflowy/user/presentation/screens/legal_document_screen.dart';
 import 'package:appflowy/workspace/presentation/home/desktop_home_screen.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/feature_flags/mobile_feature_flag_screen.dart';
@@ -57,8 +55,6 @@ GoRouter generateRouter(Widget child) {
       _rootRoute(child),
       // Routes in both desktop and mobile
       _signInScreenRoute(),
-      _userAgreementScreenRoute(),
-      _privacyPolicyScreenRoute(),
       _legalDocumentScreenRoute(),
       _skipLogInScreenRoute(),
       _workspaceErrorScreenRoute(),
@@ -566,32 +562,6 @@ GoRoute _signInScreenRoute() {
     pageBuilder: (context, state) {
       return CustomTransitionPage(
         child: const SignInScreen(),
-        transitionsBuilder: _buildFadeTransition,
-        transitionDuration: _slowDuration,
-      );
-    },
-  );
-}
-
-GoRoute _userAgreementScreenRoute() {
-  return GoRoute(
-    path: UserAgreementScreen.routeName,
-    pageBuilder: (context, state) {
-      return CustomTransitionPage(
-        child: const UserAgreementScreen(),
-        transitionsBuilder: _buildFadeTransition,
-        transitionDuration: _slowDuration,
-      );
-    },
-  );
-}
-
-GoRoute _privacyPolicyScreenRoute() {
-  return GoRoute(
-    path: PrivacyPolicyScreen.routeName,
-    pageBuilder: (context, state) {
-      return CustomTransitionPage(
-        child: const PrivacyPolicyScreen(),
         transitionsBuilder: _buildFadeTransition,
         transitionDuration: _slowDuration,
       );

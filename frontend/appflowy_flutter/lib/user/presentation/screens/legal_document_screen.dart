@@ -33,7 +33,9 @@ class LegalDocumentScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Text(
           content,
-          style: theme.textStyle.body.standard(),
+          style: theme.textStyle.body.standard(
+            color: theme.textColorScheme.primary,
+          ),
         ),
       ),
     );

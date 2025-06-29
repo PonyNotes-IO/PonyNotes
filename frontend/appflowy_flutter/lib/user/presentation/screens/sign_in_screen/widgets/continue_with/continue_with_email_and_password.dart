@@ -4,8 +4,6 @@ import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/contin
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password_page.dart';
-import 'package:appflowy/user/presentation/screens/user_agreement_screen.dart';
-import 'package:appflowy/user/presentation/screens/privacy_policy_screen.dart';
 import 'package:appflowy/user/presentation/utils/legal_document_navigator.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -121,8 +119,10 @@ class _ContinueWithEmailAndPasswordState
                               },
                               child: Text(
                                 LocaleKeys.signIn_userAgreement.tr(),
-                                style: const TextStyle(
-                                  color: Colors.blue,
+                                style: TextStyle(
+                                  color: AppFlowyTheme.of(parentContext)
+                                      .textColorScheme
+                                      .action,
                                   decoration: TextDecoration.underline,
                                 ),
                               ),
@@ -136,8 +136,10 @@ class _ContinueWithEmailAndPasswordState
                               },
                               child: Text(
                                 LocaleKeys.signIn_privacyPolicy.tr(),
-                                style: const TextStyle(
-                                  color: Colors.blue,
+                                style: TextStyle(
+                                  color: AppFlowyTheme.of(parentContext)
+                                      .textColorScheme
+                                      .action,
                                   decoration: TextDecoration.underline,
                                 ),
                               ),
@@ -152,8 +154,10 @@ class _ContinueWithEmailAndPasswordState
                               },
                               child: Text(
                                 LocaleKeys.signIn_personalInfoProtection.tr(),
-                                style: const TextStyle(
-                                  color: Colors.blue,
+                                style: TextStyle(
+                                  color: AppFlowyTheme.of(parentContext)
+                                      .textColorScheme
+                                      .action,
                                   decoration: TextDecoration.underline,
                                 ),
                               ),
@@ -224,7 +228,7 @@ class _ContinueWithEmailAndPasswordState
                         child: Text(
                           LocaleKeys.signIn_userAgreement.tr(),
                           style: TextStyle(
-                              color: Colors.blue,
+                              color: theme.textColorScheme.action,
                               decoration: TextDecoration.underline),
                         ),
                       ),
@@ -237,7 +241,7 @@ class _ContinueWithEmailAndPasswordState
                         child: Text(
                           LocaleKeys.signIn_privacyPolicy.tr(),
                           style: TextStyle(
-                              color: Colors.blue,
+                              color: theme.textColorScheme.action,
                               decoration: TextDecoration.underline),
                         ),
                       ),

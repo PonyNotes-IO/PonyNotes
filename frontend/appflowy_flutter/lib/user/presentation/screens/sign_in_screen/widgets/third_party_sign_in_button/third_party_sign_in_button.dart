@@ -67,7 +67,7 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.discord:
         return LocaleKeys.signIn_signInWithDiscord.tr();
       case ThirdPartySignInButtonType.wechat:
-        return '微信登录';
+        return LocaleKeys.signIn_signInWithWechat.tr();
       case ThirdPartySignInButtonType.qq:
         return LocaleKeys.signIn_signInWithQQ.tr();
       case ThirdPartySignInButtonType.tikTok:
