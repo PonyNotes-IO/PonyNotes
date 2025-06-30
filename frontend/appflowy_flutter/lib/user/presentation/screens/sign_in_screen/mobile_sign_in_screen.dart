@@ -4,6 +4,7 @@ import 'package:appflowy/env/cloud_env.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/setting/launch_settings_page.dart';
+import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
@@ -23,51 +24,64 @@ class MobileSignInScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SignInBloc, SignInState>(
-      builder: (context, state) {
-        final theme = AppFlowyTheme.of(context);
-
-        return Scaffold(
-          resizeToAvoidBottomInset: false,
-          body: Container(
-            width: double.infinity,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  theme.surfaceColorScheme.primary,
-                  theme.surfaceColorScheme.primary.withOpacity(0.95),
-                ],
-              ),
-            ),
-            child: SafeArea(
-              child: Column(
-                children: [
-                  // 顶部区域 - Logo和标题
-                  Expanded(
-                    flex: 2,
-                    child: _buildTopSection(context, theme),
-                  ),
-
-                  // 中间区域 - 登录表单
-                  Expanded(
-                    flex: 3,
-                    child: _buildLoginSection(context, theme),
-                  ),
-
-                  // 底部区域 - 设置和匿名登录
-                  Expanded(
-                    flex: 1,
-                    child: _buildBottomSection(context, theme),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+    return BlocListener<SignInBloc, SignInState>(
+      listener: (context, state) async {
+        final successOrFail = state.successOrFail;
+        if (successOrFail != null && successOrFail.isSuccess) {
+          successOrFail.onSuccess((userProfile) async {
+            // 匿名登录成功，启动应用
+            if (userProfile != null) {
+              await runAppFlowy();
+            }
+          });
+        }
       },
+      child: BlocBuilder<SignInBloc, SignInState>(
+        builder: (context, state) {
+          final theme = AppFlowyTheme.of(context);
+
+          return Scaffold(
+            resizeToAvoidBottomInset: false,
+            body: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    theme.surfaceColorScheme.primary,
+                    theme.surfaceColorScheme.primary.withOpacity(0.95),
+                  ],
+                ),
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // 顶部区域 - Logo和标题
+                    Expanded(
+                      flex: 2,
+                      child: _buildTopSection(context, theme),
+                    ),
+
+                    // 中间区域 - 登录表单
+                    Expanded(
+                      flex: 3,
+                      child: _buildLoginSection(context, theme),
+                    ),
+
+                    // 底部区域 - 设置和匿名登录
+                    Expanded(
+                      flex: 1,
+                      child: _buildBottomSection(context, theme),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -92,6 +106,24 @@ class MobileSignInScreen extends StatelessWidget {
               color: theme.textColorScheme.secondary,
             ),
             textAlign: TextAlign.center,
+          ),
+
+          VSpace(theme.spacing.l),
+
+          // 快速开始按钮
+          Container(
+            width: double.infinity,
+            constraints: const BoxConstraints(maxWidth: 320),
+            child: AFOutlinedTextButton.normal(
+              text: LocaleKeys.signIn_quickStart.tr(),
+              size: AFButtonSize.l,
+              onTap: () {
+                // 匿名登录逻辑
+                context
+                    .read<SignInBloc>()
+                    .add(const SignInEvent.signInAsGuest());
+              },
+            ),
           ),
         ],
       ),

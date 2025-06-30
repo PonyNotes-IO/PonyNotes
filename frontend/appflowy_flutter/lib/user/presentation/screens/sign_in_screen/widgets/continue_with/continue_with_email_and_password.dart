@@ -1,4 +1,5 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_email.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
@@ -49,7 +50,13 @@ class _ContinueWithEmailAndPasswordState
         // only push the continue with magic link or passcode page if the magic link is sent successfully
         if (successOrFail != null) {
           successOrFail.fold(
-            (_) => emailKey.currentState?.clearError(),
+            (userProfile) async {
+              emailKey.currentState?.clearError();
+              // 如果是匿名登录成功，启动应用
+              if (userProfile != null) {
+                await runAppFlowy();
+              }
+            },
             (error) => emailKey.currentState?.syncError(
               errorText: error.msg,
             ),
@@ -190,6 +197,10 @@ class _ContinueWithEmailAndPasswordState
               // 这里可以添加实际的登录/注册逻辑，当前先打印日志
               if (isEmail(emailOrPhone)) {
                 debugPrint('用户输入的是邮箱地址: ' + emailOrPhone);
+                //TODO 调用后端接口检查是否是新用户
+                // 如果是新用户，进入验证码接收界面
+                _signInWithEmail(context, emailOrPhone);
+                // 如果不是新用户，进入密码登录界面
               } else {
                 debugPrint('用户输入的是手机号: ' + emailOrPhone);
               }
@@ -277,18 +288,6 @@ class _ContinueWithEmailAndPasswordState
   }
 
   void _signInWithEmail(BuildContext context, String input) {
-    if (!Validator.isValidEmailOrPhone(input)) {
-      String errorText;
-      if (input.contains('@')) {
-        errorText = '请输入有效的邮箱地址';
-      } else {
-        errorText = '请输入有效的手机号';
-      }
-      emailKey.currentState?.syncError(
-        errorText: errorText,
-      );
-      return;
-    }
     context
         .read<SignInBloc>()
         .add(SignInEvent.signInWithMagicLink(email: input));

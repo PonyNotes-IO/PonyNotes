@@ -91,7 +91,8 @@
     "pleaseReadAndAgreeBeforeLogin": "登录前请阅读并同意以下协议",
     "betterUseService": "为了更好的使用服务",
     "disagree": "不同意",
-    "agreeAndContinue": "同意并继续"
+    "agreeAndContinue": "同意并继续",
+    "quickStart": "快速开始"
   },
   "workspace": {
     "chooseWorkspace": "选择您的工作区",

@@ -127,7 +127,8 @@
     "pleaseReadAndAgreeBeforeLogin": "Please read and agree to the following agreements before logging in.",
     "betterUseService": "For better use of the service.",
     "disagree": "Disagree",
-    "agreeAndContinue": "Agree and Continue"
+    "agreeAndContinue": "Agree and Continue",
+    "quickStart": "Quick Start"
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",

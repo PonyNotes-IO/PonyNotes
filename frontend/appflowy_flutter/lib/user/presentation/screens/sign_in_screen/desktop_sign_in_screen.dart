@@ -4,6 +4,7 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/shared/settings/show_settings.dart';
 import 'package:appflowy/shared/window_title_bar.dart';
+import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
@@ -31,51 +32,82 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
   Widget build(BuildContext context) {
     final theme = AppFlowyTheme.of(context);
 
-    return BlocBuilder<SignInBloc, SignInState>(
-      builder: (context, state) {
-        final bottomPadding = UniversalPlatform.isDesktop ? 20.0 : 24.0;
-        return Scaffold(
-          appBar: _buildAppBar(),
-          body: CenteredAuthContainer(
-            children: [
-              // logo and title
-              FlowyLogoTitle(
-                title: LocaleKeys.welcomeText.tr(),
-                logoSize: Size.square(36),
-              ),
-              VSpace(theme.spacing.xxl),
-              const _OrDivider(),
-              VSpace(theme.spacing.xxl),
+    return BlocListener<SignInBloc, SignInState>(
+      listener: (context, state) async {
+        final successOrFail = state.successOrFail;
+        if (successOrFail != null && successOrFail.isSuccess) {
+          successOrFail.onSuccess((userProfile) async {
+            // 匿名登录成功，启动应用
+            if (userProfile != null) {
+              await runAppFlowy();
+            }
+          });
+        }
+      },
+      child: BlocBuilder<SignInBloc, SignInState>(
+        builder: (context, state) {
+          final bottomPadding = UniversalPlatform.isDesktop ? 20.0 : 24.0;
+          return Scaffold(
+            appBar: _buildAppBar(),
+            body: CenteredAuthContainer(
+              children: [
+                // logo and title
+                FlowyLogoTitle(
+                  title: LocaleKeys.welcomeText.tr(),
+                  logoSize: Size.square(36),
+                ),
+                VSpace(theme.spacing.xxl),
 
-              // continue with email and password
-              isLocalAuthEnabled
-                  ? const SignInAnonymousButtonV3()
-                  : const ContinueWithEmailAndPassword(),
+                // 快速开始按钮
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: AFOutlinedTextButton.normal(
+                    text: LocaleKeys.signIn_quickStart.tr(),
+                    size: AFButtonSize.l,
+                    onTap: () {
+                      // 匿名登录逻辑
+                      context
+                          .read<SignInBloc>()
+                          .add(const SignInEvent.signInAsGuest());
+                    },
+                  ),
+                ),
+                VSpace(theme.spacing.xxl),
 
-              VSpace(theme.spacing.xxl),
-
-              // third-party sign in.
-              if (isAuthEnabled) ...[
                 const _OrDivider(),
                 VSpace(theme.spacing.xxl),
-                const ThirdPartySignInButtons(),
-                VSpace(theme.spacing.xxl),
-              ],
 
-              // anonymous sign in and settings
-              const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DesktopSignInSettingsButton(),
-                  HSpace(20),
-                  SignInAnonymousButtonV2(),
+                // continue with email and password
+                isLocalAuthEnabled
+                    ? const SignInAnonymousButtonV3()
+                    : const ContinueWithEmailAndPassword(),
+
+                VSpace(theme.spacing.xxl),
+
+                // third-party sign in.
+                if (isAuthEnabled) ...[
+                  const _OrDivider(),
+                  VSpace(theme.spacing.xxl),
+                  const ThirdPartySignInButtons(),
+                  VSpace(theme.spacing.xxl),
                 ],
-              ),
-              VSpace(bottomPadding),
-            ],
-          ),
-        );
-      },
+
+                // anonymous sign in and settings
+                const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DesktopSignInSettingsButton(),
+                    HSpace(20),
+                    SignInAnonymousButtonV2(),
+                  ],
+                ),
+                VSpace(bottomPadding),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
