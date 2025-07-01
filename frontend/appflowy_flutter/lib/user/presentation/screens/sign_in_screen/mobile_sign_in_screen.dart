@@ -9,6 +9,7 @@ import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
 import 'package:appflowy/user/presentation/widgets/flowy_logo_title.dart';
+import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:appflowy_ui/src/theme/definition/theme_data.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -27,13 +28,23 @@ class MobileSignInScreen extends StatelessWidget {
     return BlocListener<SignInBloc, SignInState>(
       listener: (context, state) async {
         final successOrFail = state.successOrFail;
-        if (successOrFail != null && successOrFail.isSuccess) {
-          successOrFail.onSuccess((userProfile) async {
-            // 匿名登录成功，启动应用
-            if (userProfile != null) {
-              await runAppFlowy();
-            }
-          });
+        if (successOrFail != null) {
+          if (successOrFail.isSuccess) {
+            successOrFail.onSuccess((userProfile) async {
+              // 匿名登录成功，启动应用
+              if (userProfile != null) {
+                await runAppFlowy();
+              }
+            });
+          } else {
+            // 显示错误Toast
+            successOrFail.onFailure((error) {
+              showToastNotification(
+                message: error.msg,
+                type: ToastificationType.error,
+              );
+            });
+          }
         }
       },
       child: BlocBuilder<SignInBloc, SignInState>(
@@ -118,7 +129,7 @@ class MobileSignInScreen extends StatelessWidget {
               text: LocaleKeys.signIn_quickStart.tr(),
               size: AFButtonSize.l,
               onTap: () {
-                // 匿名登录逻辑
+                // 直接调用匿名登录
                 context
                     .read<SignInBloc>()
                     .add(const SignInEvent.signInAsGuest());
