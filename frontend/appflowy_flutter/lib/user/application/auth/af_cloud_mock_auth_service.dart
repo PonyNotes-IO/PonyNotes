@@ -105,7 +105,7 @@ class AppFlowyCloudMockAuthService implements AuthService {
 
   @override
   Future<FlowyResult<UserProfilePB, FlowyError>> getUser() async {
-    return UserBackendService.getCurrentUserProfile();
+    return _appFlowyAuthService.getUser();
   }
 
   @override
@@ -114,5 +114,13 @@ class AppFlowyCloudMockAuthService implements AuthService {
     required String passcode,
   }) async {
     throw UnimplementedError();
+  }
+
+  @override
+  Future<FlowyResult<bool, FlowyError>> checkUserExists({
+    required String email,
+  }) async {
+    // Mock implementation - 为了测试目的，我们假设所有邮箱都是新用户
+    return FlowyResult.success(false);
   }
 }

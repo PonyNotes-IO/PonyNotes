@@ -123,6 +123,13 @@ class AppFlowyCloudAuthService implements AuthService {
   }
 
   @override
+  Future<FlowyResult<bool, FlowyError>> checkUserExists({
+    required String email,
+  }) async {
+    return _backendAuthService.checkUserExists(email: email);
+  }
+
+  @override
   Future<FlowyResult<UserProfilePB, FlowyError>> getUser() async {
     return UserBackendService.getCurrentUserProfile();
   }

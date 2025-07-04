@@ -30,6 +30,15 @@ abstract class AuthService {
     Map<String, String> params,
   });
 
+  /// Checks if a user exists by email
+  ///
+  /// - `email`: The email address to check
+  ///
+  /// Returns true if user exists (has account), false if new user
+  Future<FlowyResult<bool, FlowyError>> checkUserExists({
+    required String email,
+  });
+
   /// Registers a new user with their name, email, and password.
   ///
   /// - `name`: The name of the user.

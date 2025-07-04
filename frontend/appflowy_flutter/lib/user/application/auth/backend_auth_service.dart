@@ -9,6 +9,10 @@ import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart'
 import 'package:appflowy_backend/protobuf/flowy-user/workspace.pb.dart';
 import 'package:appflowy_result/appflowy_result.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:appflowy/env/cloud_env.dart';
+import 'dart:async';
 
 import '../../../generated/locale_keys.g.dart';
 import 'device_id.dart';
@@ -119,5 +123,120 @@ class BackendAuthService implements AuthService {
     required String passcode,
   }) async {
     return UserBackendService.signInWithPasscode(email, passcode);
+  }
+
+  @override
+  Future<FlowyResult<bool, FlowyError>> checkUserExists({
+    required String email,
+  }) async {
+    try {
+      // 使用AppFlowy Cloud的API检查用户是否存在
+      final client = http.Client();
+
+      // 获取cloud服务的基础URL
+      final baseUrl = await getAppFlowyCloudUrl();
+
+      // 向 /api/user/auth-info 发送请求检查用户状态
+      final uri = Uri.parse('$baseUrl/api/user/auth-info?email=$email');
+
+      final response = await client.get(
+        uri,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      ).timeout(
+        const Duration(seconds: 10),
+        onTimeout: () => throw TimeoutException(
+          'Request timeout while checking user status',
+          const Duration(seconds: 10),
+        ),
+      );
+
+      client.close();
+
+      // 统一处理200状态码，通过响应数据判断用户是否有密码
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        // 直接检查has_password字段
+        final hasPassword = data['has_password'] == true;
+        return FlowyResult.success(hasPassword);
+      }
+
+      // 处理非200状态码（网络错误、服务器错误等）
+      switch (response.statusCode) {
+        case 400:
+          // 请求参数错误
+          try {
+            final data = jsonDecode(response.body) as Map<String, dynamic>;
+            final errorMsg =
+                data['message'] ?? data['error'] ?? 'Invalid request';
+
+            return FlowyResult.failure(
+              FlowyError()..msg = 'Invalid email format or request: $errorMsg',
+            );
+          } catch (_) {
+            return FlowyResult.failure(
+              FlowyError()..msg = 'Invalid email format or request parameters',
+            );
+          }
+
+        case 401:
+        case 403:
+          // 权限问题
+          return FlowyResult.failure(
+            FlowyError()..msg = 'Authentication required or access denied',
+          );
+
+        case 429:
+          // 请求频率限制
+          return FlowyResult.failure(
+            FlowyError()..msg = 'Too many requests. Please try again later.',
+          );
+
+        case 500:
+        case 502:
+        case 503:
+        case 504:
+          // 服务器错误
+          return FlowyResult.failure(
+            FlowyError()..msg = 'Server error. Please try again later.',
+          );
+
+        default:
+          // 其他未知状态码
+          String errorMsg = 'Unknown error occurred';
+          try {
+            final data = jsonDecode(response.body) as Map<String, dynamic>;
+            errorMsg = data['message'] ?? data['error'] ?? errorMsg;
+          } catch (_) {
+            // 忽略JSON解析错误，使用默认错误消息
+          }
+
+          return FlowyResult.failure(
+            FlowyError()
+              ..msg =
+                  'Failed to check user status (${response.statusCode}): $errorMsg',
+          );
+      }
+    } on TimeoutException catch (_) {
+      return FlowyResult.failure(
+        FlowyError()
+          ..msg = 'Request timeout. Please check your network connection.',
+      );
+    } on http.ClientException catch (e) {
+      return FlowyResult.failure(
+        FlowyError()..msg = 'Network connection error: ${e.message}',
+      );
+    } on FormatException catch (e) {
+      return FlowyResult.failure(
+        FlowyError()..msg = 'Invalid server response format: ${e.message}',
+      );
+    } catch (e) {
+      // 捕获所有其他异常
+      return FlowyResult.failure(
+        FlowyError()..msg = 'Unexpected error while checking user: $e',
+      );
+    }
   }
 }

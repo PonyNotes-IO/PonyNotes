@@ -30,12 +30,12 @@ class MobileSignInScreen extends StatelessWidget {
         final successOrFail = state.successOrFail;
         if (successOrFail != null) {
           if (successOrFail.isSuccess) {
-            successOrFail.onSuccess((userProfile) async {
-              // 匿名登录成功，启动应用
-              if (userProfile != null) {
-                await runAppFlowy();
-              }
-            });
+            // 移除这里的 runAppFlowy 调用，让外层的 SignInScreen 处理导航
+            // successOrFail.onSuccess((userProfile) async {
+            //   if (userProfile != null) {
+            //     await runAppFlowy();
+            //   }
+            // });
           } else {
             // 显示错误Toast
             successOrFail.onFailure((error) {

@@ -14,6 +14,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:string_validator/string_validator.dart';
 import 'package:appflowy/util/validator.dart';
+import 'package:appflowy/startup/startup.dart';
+import 'package:appflowy/user/application/auth/auth_service.dart';
+import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 
 class ContinueWithEmailAndPassword extends StatefulWidget {
   const ContinueWithEmailAndPassword({super.key});
@@ -31,6 +34,7 @@ class _ContinueWithEmailAndPasswordState
 
   bool _hasPushedContinueWithMagicLinkOrPasscodePage = false;
   bool _agreed = false;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -47,15 +51,10 @@ class _ContinueWithEmailAndPasswordState
     return BlocListener<SignInBloc, SignInState>(
       listener: (context, state) {
         final successOrFail = state.successOrFail;
-        // only push the continue with magic link or passcode page if the magic link is sent successfully
         if (successOrFail != null) {
           successOrFail.fold(
             (userProfile) async {
               emailKey.currentState?.clearError();
-              // 如果是匿名登录成功，启动应用
-              if (userProfile != null) {
-                await runAppFlowy();
-              }
             },
             (error) => emailKey.currentState?.syncError(
               errorText: error.msg,
@@ -79,132 +78,128 @@ class _ContinueWithEmailAndPasswordState
             ),
           ),
           VSpace(theme.spacing.l),
-          /*
-          ContinueWithEmail(
-            onTap: () => _signInWithEmail(
-              context,
-              controller.text,
-            ),
-          ),
-          */
-          VSpace(theme.spacing.l),
           AFFilledTextButton.primary(
-            text: LocaleKeys.signIn_loginOrRegister.tr(),
+            text: _isLoading
+                ? LocaleKeys.signIn_signingIn.tr()
+                : LocaleKeys.signIn_loginOrRegister.tr(),
             size: AFButtonSize.l,
             alignment: Alignment.center,
-            onTap: () {
-              final emailOrPhone = controller.text.trim();
-              if (!Validator.isValidEmailOrPhone(emailOrPhone)) {
-                emailKey.currentState?.syncError(
-                  errorText: LocaleKeys.signIn_invalidEmailOrPhone.tr(),
-                );
-                return;
-              }
-              if (!_agreed) {
-                final parentContext = context;
-                showDialog(
-                  context: parentContext,
-                  builder: (dialogContext) => AlertDialog(
-                    title: Text(LocaleKeys.signIn_betterUseService.tr()),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(LocaleKeys.signIn_pleaseReadAndAgreeBeforeLogin
-                            .tr()),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(LocaleKeys.appName.tr()),
-                            const SizedBox(width: 4),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(dialogContext).pop();
-                                LegalDocumentNavigator.navigateToUserAgreement(
-                                    parentContext);
-                              },
-                              child: Text(
-                                LocaleKeys.signIn_userAgreement.tr(),
-                                style: TextStyle(
-                                  color: AppFlowyTheme.of(parentContext)
-                                      .textColorScheme
-                                      .action,
-                                  decoration: TextDecoration.underline,
-                                ),
+            onTap: _isLoading
+                ? () {}
+                : () {
+                    final emailOrPhone = controller.text.trim();
+                    if (!Validator.isValidEmailOrPhone(emailOrPhone)) {
+                      emailKey.currentState?.syncError(
+                        errorText: LocaleKeys.signIn_invalidEmailOrPhone.tr(),
+                      );
+                      return;
+                    }
+                    if (!_agreed) {
+                      final parentContext = context;
+                      showDialog(
+                        context: parentContext,
+                        builder: (dialogContext) => AlertDialog(
+                          title: Text(LocaleKeys.signIn_betterUseService.tr()),
+                          content: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(LocaleKeys
+                                  .signIn_pleaseReadAndAgreeBeforeLogin
+                                  .tr()),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(LocaleKeys.appName.tr()),
+                                  const SizedBox(width: 4),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(dialogContext).pop();
+                                      LegalDocumentNavigator
+                                          .navigateToUserAgreement(
+                                              parentContext);
+                                    },
+                                    child: Text(
+                                      LocaleKeys.signIn_userAgreement.tr(),
+                                      style: TextStyle(
+                                        color: AppFlowyTheme.of(parentContext)
+                                            .textColorScheme
+                                            .action,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                  const Text('、'),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(dialogContext).pop();
+                                      LegalDocumentNavigator
+                                          .navigateToPrivacyPolicy(
+                                              parentContext);
+                                    },
+                                    child: Text(
+                                      LocaleKeys.signIn_privacyPolicy.tr(),
+                                      style: TextStyle(
+                                        color: AppFlowyTheme.of(parentContext)
+                                            .textColorScheme
+                                            .action,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                  const Text('、'),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.of(dialogContext).pop();
+                                      LegalDocumentNavigator
+                                          .navigateToPersonalInfoProtection(
+                                              parentContext);
+                                    },
+                                    child: Text(
+                                      LocaleKeys.signIn_personalInfoProtection
+                                          .tr(),
+                                      style: TextStyle(
+                                        color: AppFlowyTheme.of(parentContext)
+                                            .textColorScheme
+                                            .action,
+                                        decoration: TextDecoration.underline,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
+                            ],
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(dialogContext).pop();
+                              },
+                              child: Text(LocaleKeys.signIn_disagree.tr()),
                             ),
-                            const Text('、'),
-                            GestureDetector(
-                              onTap: () {
+                            TextButton(
+                              onPressed: () {
+                                setState(() {
+                                  _agreed = true;
+                                });
                                 Navigator.of(dialogContext).pop();
-                                LegalDocumentNavigator.navigateToPrivacyPolicy(
-                                    parentContext);
                               },
-                              child: Text(
-                                LocaleKeys.signIn_privacyPolicy.tr(),
-                                style: TextStyle(
-                                  color: AppFlowyTheme.of(parentContext)
-                                      .textColorScheme
-                                      .action,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
-                            ),
-                            const Text('、'),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.of(dialogContext).pop();
-                                LegalDocumentNavigator
-                                    .navigateToPersonalInfoProtection(
-                                        parentContext);
-                              },
-                              child: Text(
-                                LocaleKeys.signIn_personalInfoProtection.tr(),
-                                style: TextStyle(
-                                  color: AppFlowyTheme.of(parentContext)
-                                      .textColorScheme
-                                      .action,
-                                  decoration: TextDecoration.underline,
-                                ),
-                              ),
+                              child:
+                                  Text(LocaleKeys.signIn_agreeAndContinue.tr()),
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(dialogContext).pop();
-                        },
-                        child: Text(LocaleKeys.signIn_disagree.tr()),
-                      ),
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _agreed = true;
-                          });
-                          Navigator.of(dialogContext).pop();
-                        },
-                        child: Text(LocaleKeys.signIn_agreeAndContinue.tr()),
-                      ),
-                    ],
-                  ),
-                );
-                return;
-              }
-              // 这里可以添加实际的登录/注册逻辑，当前先打印日志
-              if (isEmail(emailOrPhone)) {
-                debugPrint('用户输入的是邮箱地址: ' + emailOrPhone);
-                //TODO 调用后端接口检查是否是新用户
-                // 如果是新用户，进入验证码接收界面
-                _signInWithEmail(context, emailOrPhone);
-                // 如果不是新用户，进入密码登录界面
-              } else {
-                debugPrint('用户输入的是手机号: ' + emailOrPhone);
-              }
-            },
+                      );
+                      return;
+                    }
+                    if (isEmail(emailOrPhone)) {
+                      debugPrint('用户输入的是邮箱地址: ' + emailOrPhone);
+                      _signInWithEmail(context, emailOrPhone);
+                    } else {
+                      debugPrint('用户输入的是手机号: ' + emailOrPhone);
+                    }
+                  },
           ),
           VSpace(theme.spacing.l),
           Row(
@@ -262,38 +257,124 @@ class _ContinueWithEmailAndPasswordState
               ),
             ],
           ),
-          VSpace(theme.spacing.l),
-          /*
-          ContinueWithPassword(
-            onTap: () {
-              final email = controller.text;
-
-              if (!_isValidEmailOrPhone(email)) {
-                emailKey.currentState?.syncError(
-                  errorText: LocaleKeys.signIn_invalidEmail.tr(),
-                );
-                return;
-              }
-
-              _pushContinueWithPasswordPage(
-                context,
-                email,
-              );
-            },
-          ),
-          */
         ],
       ),
     );
   }
 
-  void _signInWithEmail(BuildContext context, String input) {
-    context
-        .read<SignInBloc>()
-        .add(SignInEvent.signInWithMagicLink(email: input));
-    _pushContinueWithMagicLinkOrPasscodePage(
-      context,
-      input,
+  void _signInWithEmail(BuildContext context, String input) async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final authService = getIt<AuthService>();
+      final checkResult = await authService.checkUserExists(email: input);
+
+      if (!mounted) return;
+
+      checkResult.fold(
+        (userExists) {
+          if (userExists) {
+            _pushContinueWithPasswordPage(context, input);
+          } else {
+            context
+                .read<SignInBloc>()
+                .add(SignInEvent.signInWithMagicLink(email: input));
+            _pushContinueWithMagicLinkOrPasscodePage(context, input);
+          }
+        },
+        (error) {
+          _showUserCheckFailedDialog(context, input, error.msg);
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showUserCheckFailedDialog(
+    BuildContext context,
+    String email,
+    String errorMessage,
+  ) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('用户检查失败'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '无法检查用户状态，请选择继续方式：',
+              style: TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.errorContainer,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                errorMessage,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (Navigator.of(dialogContext).canPop()) {
+                Navigator.of(dialogContext).pop();
+              }
+            },
+            child: Text(LocaleKeys.button_cancel.tr()),
+          ),
+          TextButton(
+            onPressed: () {
+              if (Navigator.of(dialogContext).canPop()) {
+                Navigator.of(dialogContext).pop();
+              }
+              _signInWithEmail(context, email);
+            },
+            child: const Text('重试'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (Navigator.of(dialogContext).canPop()) {
+                Navigator.of(dialogContext).pop();
+              }
+              _pushContinueWithPasswordPage(context, email);
+            },
+            child: const Text('密码登录'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (Navigator.of(dialogContext).canPop()) {
+                Navigator.of(dialogContext).pop();
+              }
+              context
+                  .read<SignInBloc>()
+                  .add(SignInEvent.signInWithMagicLink(email: email));
+              _pushContinueWithMagicLinkOrPasscodePage(context, email);
+            },
+            child: const Text('验证码登录'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -307,7 +388,6 @@ class _ContinueWithEmailAndPasswordState
 
     final signInBloc = context.read<SignInBloc>();
 
-    // push the a continue with magic link or passcode screen
     Navigator.push(
       context,
       MaterialPageRoute(
