@@ -6,6 +6,7 @@ import 'package:appflowy/shared/settings/show_settings.dart';
 import 'package:appflowy/shared/window_title_bar.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
+import 'package:appflowy/user/presentation/screens/qq_qr_login_screen.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
 import 'package:appflowy/user/presentation/widgets/widgets.dart';
@@ -39,6 +40,13 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
         if (successOrFail != null) {
           if (successOrFail.isSuccess) {
             successOrFail.onSuccess((userProfile) async {
+              // 检查是否是QQ登录导航请求
+              if (userProfile?.email == 'qq_login_navigate') {
+                // 导航到QQ二维码登录页面
+                _showQQLoginDialog(context);
+                return;
+              }
+
               // 匿名登录成功，启动应用
               if (userProfile != null) {
                 await runAppFlowy();
@@ -136,6 +144,36 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
     // https://pub.dev/packages/window_manager#windows
     // must call setState once when the window is focused
     setState(() {});
+  }
+
+  void _showQQLoginDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            constraints: const BoxConstraints(
+              maxWidth: 480,
+              maxHeight: 600,
+            ),
+            child: QQQRLoginScreen(
+              onSuccess: () {
+                Navigator.of(context).pop();
+                // 这里应该处理QQ登录成功的逻辑
+                showToastNotification(
+                  message: 'QQ登录成功',
+                  type: ToastificationType.success,
+                );
+              },
+              onCancel: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

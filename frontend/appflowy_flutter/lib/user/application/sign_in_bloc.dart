@@ -217,6 +217,27 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       return;
     }
 
+    // 处理QQ登录
+    if (platform == 'qq') {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: null,
+        ),
+      );
+      // 直接在这里设置一个特殊的成功状态，表示需要导航到QQ登录页面
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: FlowyResult.success(
+            // 创建一个特殊的UserProfilePB来表示QQ登录导航请求
+            UserProfilePB()..email = 'qq_login_navigate',
+          ),
+        ),
+      );
+      return;
+    }
+
     final result = await authService.signUpWithOAuth(
       platform: platform,
     );

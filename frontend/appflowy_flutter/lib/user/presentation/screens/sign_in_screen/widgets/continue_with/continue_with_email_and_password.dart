@@ -194,11 +194,8 @@ class _ContinueWithEmailAndPasswordState
                       return;
                     }
                     if (isEmail(emailOrPhone)) {
-                      debugPrint('用户输入的是邮箱地址: ' + emailOrPhone);
                       _signInWithEmail(context, emailOrPhone);
-                    } else {
-                      debugPrint('用户输入的是手机号: ' + emailOrPhone);
-                    }
+                    } else {}
                   },
           ),
           VSpace(theme.spacing.l),
