@@ -67,11 +67,20 @@ class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
     required PluginContext context,
     required bool shrinkWrap,
     Map<String, dynamic>? data,
-  }) =>
-      StandaloneAiChatPage(
-        key: const ValueKey('StandaloneAiChatPage'),
-        userProfile: context.userProfile,
+  }) {
+    final userProfile = context.userProfile;
+
+    if (userProfile == null) {
+      return const Center(
+        child: Text('用户信息未加载'),
       );
+    }
+
+    return StandaloneAiChatPage(
+      key: const ValueKey('StandaloneAiChatPage'),
+      userProfile: userProfile,
+    );
+  }
 
   @override
   List<NavigationItem> get navigationItems => [this];
