@@ -1,16 +1,11 @@
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
-import 'package:appflowy/plugins/ai_chat/chat.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
-import 'package:appflowy/workspace/application/view/view_service.dart';
-import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/hover.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
-import 'package:appflowy/generated/locale_keys.g.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:appflowy/startup/startup.dart';
 
 class SidebarAiButton extends StatelessWidget {
@@ -53,42 +48,20 @@ class SidebarAiButton extends StatelessWidget {
   void _openAiChatDialog(
       BuildContext context, UserWorkspaceState workspaceState) async {
     try {
-      // 获取当前工作空间
-      final currentWorkspace = workspaceState.currentWorkspace;
-      if (currentWorkspace == null) {
-        _showMessage(context, '无法获取当前工作空间');
-        return;
-      }
-
-      // 创建AI聊天视图
-      final result = await ViewBackendService.createView(
-        parentViewId: currentWorkspace.workspaceId,
-        name: LocaleKeys.chat_newChat.tr(),
-        layoutType: ViewLayoutPB.Chat,
-        openAfterCreate: false,
+      // 创建独立的AI聊天插件，不依赖于工作空间
+      final standaloneAiChatPlugin = makePlugin(
+        pluginType: PluginType.standaloneAiChat,
+        data: null, // 独立插件不需要数据
       );
 
-      result.fold(
-        (view) {
-          // 创建AI聊天插件
-          final aiChatPlugin = makePlugin(
-            pluginType: PluginType.chat,
-            data: view,
-          );
-
-          // 在新标签页中打开AI聊天
-          getIt<TabsBloc>().add(
-            TabsEvent.openPlugin(
-              plugin: aiChatPlugin,
-            ),
-          );
-        },
-        (error) {
-          _showMessage(context, '创建AI聊天失败: ${error.msg}');
-        },
+      // 在新标签页中打开独立AI聊天
+      getIt<TabsBloc>().add(
+        TabsEvent.openPlugin(
+          plugin: standaloneAiChatPlugin,
+        ),
       );
     } catch (e) {
-      _showMessage(context, '创建AI聊天时发生错误: $e');
+      _showMessage(context, '打开AI聊天时发生错误: $e');
     }
   }
 
