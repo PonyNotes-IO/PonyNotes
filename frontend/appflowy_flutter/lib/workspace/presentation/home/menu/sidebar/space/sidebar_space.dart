@@ -8,6 +8,8 @@ import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/hotkeys.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/favorites/favorite_folder.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ai_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/create_space_popup.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/shared_widget.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space_header.dart';
@@ -67,8 +69,16 @@ class SidebarSpace extends StatelessWidget {
               },
             ),
 
+            // AI button
+            const VSpace(8.0),
+            const SidebarAiButton(),
+            // trash
+            const VSpace(4.0),
+            const SidebarTrashItem(),
+
             // shared
             if (FeatureFlag.sharedSection.isOn) ...[
+              const VSpace(16.0),
               SharedSection(
                 key: ValueKey(currentWorkspaceId),
                 workspaceId: currentWorkspaceId,
@@ -78,6 +88,7 @@ class SidebarSpace extends StatelessWidget {
             // spaces
             if (shouldShowSpaces) ...[
               // spaces
+              const VSpace(16.0),
               const _Space(),
             ],
 
