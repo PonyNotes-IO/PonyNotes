@@ -287,6 +287,8 @@ class _ContinueWithEmailAndPasswordState
           _showUserCheckFailedDialog(context, input, error.msg);
         },
       );
+    } catch (e) {
+      // 处理异常
     } finally {
       if (mounted) {
         setState(() {
@@ -432,12 +434,14 @@ class _ContinueWithEmailAndPasswordState
               emailKey.currentState?.clearError();
               Navigator.pop(context);
             },
-            onEnterPassword: (password) => signInBloc.add(
-              SignInEvent.signInWithEmailAndPassword(
-                email: email,
-                password: password,
-              ),
-            ),
+            onEnterPassword: (password) {
+              signInBloc.add(
+                SignInEvent.signInWithEmailAndPassword(
+                  email: email,
+                  password: password,
+                ),
+              );
+            },
             onForgotPassword: () {
               // todo: implement forgot password
             },
