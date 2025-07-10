@@ -47,26 +47,15 @@ class _ContinueWithPasswordPageState extends State<ContinueWithPasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = AppFlowyTheme.of(context);
     return Scaffold(
       body: Center(
         child: SizedBox(
-          width: 320,
+          width: 360,
           child: BlocListener<SignInBloc, SignInState>(
             listener: (context, state) {
-              final successOrFail = state.successOrFail;
-              if (successOrFail != null && successOrFail.isFailure) {
-                successOrFail.onFailure((error) {
-                  inputPasswordKey.currentState?.syncError(
-                    errorText: LocaleKeys.signIn_invalidLoginCredentials.tr(),
-                  );
-                });
-              } else if (state.passwordError != null) {
-                inputPasswordKey.currentState?.syncError(
-                  errorText: LocaleKeys.signIn_invalidLoginCredentials.tr(),
-                );
-              } else {
-                inputPasswordKey.currentState?.clearError();
-              }
+              // 不再展示任何密码输入错误提示
+              inputPasswordKey.currentState?.clearError();
 
               if (isSubmitting != state.isSubmitting) {
                 setState(() {
@@ -76,16 +65,96 @@ class _ContinueWithPasswordPageState extends State<ContinueWithPasswordPage> {
             },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Logo and title
-                _buildLogoAndTitle(),
-
-                // Password input and buttons
-                ..._buildPasswordSection(),
-
-                // Back to login
-                BackToLoginButton(
-                  onTap: widget.backToLogin,
+                const SizedBox(height: 64),
+                // 头像
+                const Icon(Icons.account_box_rounded,
+                    size: 64, color: Colors.orangeAccent),
+                const SizedBox(height: 16),
+                // 邮箱
+                Text(
+                  widget.email,
+                  style: theme.textStyle.body.enhanced(),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                // 输入密码标题
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Padding(
+                    padding: EdgeInsets.only(left: 4, bottom: 6),
+                    child: Text(
+                      LocaleKeys.signIn_inputPasswordTitle.tr(),
+                      style:
+                          TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+                ),
+                // 密码输入框
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade400),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: AFTextField(
+                          key: inputPasswordKey,
+                          controller: passwordController,
+                          hintText: LocaleKeys.signIn_inputPasswordHint.tr(),
+                          autoFocus: true,
+                          obscureText: true,
+                          onSubmitted: widget.onEnterPassword,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // 忘记密码/重置密码
+                Padding(
+                  padding: const EdgeInsets.only(top: 4, right: 2),
+                  child: Row(
+                    children: [
+                      Expanded(child: Container()),
+                      Builder(
+                        builder: (context) {
+                          final theme = AppFlowyTheme.of(context);
+                          return Text(
+                            LocaleKeys.signIn_forgotPasswordText.tr(),
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: theme.textColorScheme.primary),
+                          );
+                        },
+                      ),
+                      GestureDetector(
+                        onTap: () {},
+                        child: Builder(
+                          builder: (context) {
+                            final theme = AppFlowyTheme.of(context);
+                            return Text(
+                              LocaleKeys.signIn_resetPasswordText.tr(),
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: theme.textColorScheme.action,
+                                decoration: TextDecoration.underline,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                // 确认按钮
+                ContinueWithButton(
+                  text: LocaleKeys.signIn_submitButton.tr(),
+                  onTap: isSubmitting
+                      ? () {}
+                      : () => widget.onEnterPassword(passwordController.text),
                 ),
               ],
             ),

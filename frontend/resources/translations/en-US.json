@@ -128,7 +128,12 @@
     "betterUseService": "For better use of the service.",
     "disagree": "Disagree",
     "agreeAndContinue": "Agree and Continue",
-    "quickStart": "Quick Start"
+    "quickStart": "Quick Start",
+    "inputPasswordTitle": "Enter Password",
+    "inputPasswordHint": "Please enter your password",
+    "forgotPasswordText": "Forgot Password?",
+    "resetPasswordText": "Reset Password",
+    "submitButton": "Confirm"
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",
