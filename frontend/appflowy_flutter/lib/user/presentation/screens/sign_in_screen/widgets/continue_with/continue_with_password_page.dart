@@ -130,7 +130,24 @@ class _ContinueWithPasswordPageState extends State<ContinueWithPasswordPage> {
                         },
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: () async {
+                          final signInBloc = context.read<SignInBloc>();
+                          final baseUrl = await getAppFlowyCloudUrl();
+                          if (!mounted) return;
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => BlocProvider.value(
+                                value: signInBloc,
+                                child: ForgotPasswordPage(
+                                  email: widget.email,
+                                  backToLogin: widget.backToLogin,
+                                  baseUrl: baseUrl,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                         child: Builder(
                           builder: (context) {
                             final theme = AppFlowyTheme.of(context);

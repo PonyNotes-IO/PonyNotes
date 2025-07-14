@@ -133,7 +133,11 @@
     "inputPasswordHint": "Please enter your password",
     "forgotPasswordText": "Forgot Password?",
     "resetPasswordText": "Reset Password",
-    "submitButton": "Confirm"
+    "submitButton": "Confirm",
+    "enterVerificationCode": "Please enter verification code",
+    "verificationCodeHint": "Please enter 6-digit verification code",
+    "resendCode": "Resend",
+    "resendCodeIn": "Resend in {} seconds"
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",

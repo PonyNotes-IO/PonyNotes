@@ -1,5 +1,7 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/startup/startup.dart';
+import 'package:appflowy/user/application/auth/auth_service.dart';
+import 'package:appflowy/user/application/password/password_check_service.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_email.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
@@ -14,8 +16,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:string_validator/string_validator.dart';
 import 'package:appflowy/util/validator.dart';
-import 'package:appflowy/startup/startup.dart';
-import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 
 class ContinueWithEmailAndPassword extends StatefulWidget {
@@ -267,16 +267,20 @@ class _ContinueWithEmailAndPasswordState
     });
 
     try {
-      final authService = getIt<AuthService>();
-      final checkResult = await authService.checkUserExists(email: input);
+      // 使用通用的密码检查服务
+      final authInfoResult =
+          await PasswordCheckService.getUserAuthInfo(email: input);
 
       if (!mounted) return;
 
-      checkResult.fold(
-        (userExists) {
-          if (userExists) {
+      authInfoResult.fold(
+        (authInfo) {
+          // 如果用户存在且有自定义密码，跳转到密码登录
+          if (authInfo.exists && authInfo.hasCustomPassword) {
             _pushContinueWithPasswordPage(context, input);
-          } else {
+          }
+          // 如果用户不存在或存在但没有自定义密码，都跳转到验证码登录
+          else {
             context
                 .read<SignInBloc>()
                 .add(SignInEvent.signInWithMagicLink(email: input));
@@ -289,6 +293,9 @@ class _ContinueWithEmailAndPasswordState
       );
     } catch (e) {
       // 处理异常
+      if (mounted) {
+        _showUserCheckFailedDialog(context, input, e.toString());
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -395,11 +402,16 @@ class _ContinueWithEmailAndPasswordState
           child: ContinueWithMagicLinkOrPasscodePage(
             email: email,
             backToLogin: () {
-              Navigator.pop(context);
+              // 先重置状态，避免重复推送
+              _hasPushedContinueWithMagicLinkOrPasscodePage = false;
 
+              // 清理邮箱输入框的错误状态
               emailKey.currentState?.clearError();
 
-              _hasPushedContinueWithMagicLinkOrPasscodePage = false;
+              // 最后执行导航
+              if (Navigator.of(context).canPop()) {
+                Navigator.pop(context);
+              }
             },
             onEnterPasscode: (passcode) {
               signInBloc.add(

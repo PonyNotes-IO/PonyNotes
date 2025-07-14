@@ -130,6 +130,13 @@ class AppFlowyCloudAuthService implements AuthService {
   }
 
   @override
+  Future<FlowyResult<UserAuthInfo, FlowyError>> getUserAuthInfo({
+    required String email,
+  }) async {
+    return _backendAuthService.getUserAuthInfo(email: email);
+  }
+
+  @override
   Future<FlowyResult<UserProfilePB, FlowyError>> getUser() async {
     return UserBackendService.getCurrentUserProfile();
   }

@@ -97,7 +97,11 @@
     "inputPasswordHint": "请输入你的密码",
     "forgotPasswordText": "忘记密码？",
     "resetPasswordText": "重置密码",
-    "submitButton": "确定"
+    "submitButton": "确定",
+    "enterVerificationCode": "请输入验证码",
+    "verificationCodeHint": "请输入6位验证码",
+    "resendCode": "重新发送",
+    "resendCodeIn": "{}秒后重新发送"
   },
   "workspace": {
     "chooseWorkspace": "选择您的工作区",

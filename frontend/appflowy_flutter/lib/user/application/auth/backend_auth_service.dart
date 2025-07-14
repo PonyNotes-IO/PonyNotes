@@ -1,4 +1,6 @@
 import 'package:appflowy/user/application/auth/auth_service.dart';
+import 'package:appflowy/user/application/password/password_check_service.dart'
+    as password_check;
 import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/code.pbenum.dart';
@@ -158,9 +160,9 @@ class BackendAuthService implements AuthService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        // 正确访问嵌套的data字段中的has_password
+        // 正确访问嵌套的data字段中的has_custom_password
         final responseData = data['data'] as Map<String, dynamic>?;
-        final hasPassword = responseData?['has_password'] == true;
+        final hasPassword = responseData?['has_custom_password'] == true;
 
         return FlowyResult.success(hasPassword);
       }
@@ -240,5 +242,24 @@ class BackendAuthService implements AuthService {
         FlowyError()..msg = 'Unexpected error while checking user: $e',
       );
     }
+  }
+
+  @override
+  Future<FlowyResult<UserAuthInfo, FlowyError>> getUserAuthInfo({
+    required String email,
+  }) async {
+    // 使用通用的密码检查服务
+    final result =
+        await password_check.PasswordCheckService.getUserAuthInfo(email: email);
+
+    // 转换类型
+    return result.fold(
+      (passwordAuthInfo) => FlowyResult.success(UserAuthInfo(
+        exists: passwordAuthInfo.exists,
+        email: passwordAuthInfo.email,
+        hasCustomPassword: passwordAuthInfo.hasCustomPassword,
+      )),
+      (error) => FlowyResult.failure(error),
+    );
   }
 }

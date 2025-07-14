@@ -123,4 +123,16 @@ class AppFlowyCloudMockAuthService implements AuthService {
     // Mock implementation - 为了测试目的，我们假设所有邮箱都是新用户
     return FlowyResult.success(false);
   }
+
+  @override
+  Future<FlowyResult<UserAuthInfo, FlowyError>> getUserAuthInfo({
+    required String email,
+  }) async {
+    // Mock implementation - 返回模拟的用户认证信息
+    return FlowyResult.success(UserAuthInfo(
+      exists: false,
+      email: email,
+      hasCustomPassword: false,
+    ));
+  }
 }
