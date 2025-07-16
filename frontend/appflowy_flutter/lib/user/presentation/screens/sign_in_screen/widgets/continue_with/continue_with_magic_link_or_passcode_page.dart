@@ -132,8 +132,7 @@ class _ContinueWithMagicLinkOrPasscodePageState
         final successOrFail = state.successOrFail;
         if (successOrFail != null) {
           if (successOrFail.isSuccess) {
-            // 登录成功，不需要特殊处理，让外层的 SignInScreen 处理导航
-            // 只需要确保状态更新是安全的
+            // autoconfirm或验证码登录成功，原本跳转主界面的逻辑已删除
             if (mounted && !_isDisposed) {
               setState(() {
                 isSubmitting = false;

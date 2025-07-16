@@ -10,6 +10,7 @@ import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/favorites/favorite_folder.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ai_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_calendar_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/create_space_popup.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/shared_widget.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space_header.dart';
@@ -72,6 +73,9 @@ class SidebarSpace extends StatelessWidget {
             // AI button
             const VSpace(8.0),
             const SidebarAiButton(),
+            // calendar button
+            const VSpace(4.0),
+            const SidebarCalendarButton(),
             // trash
             const VSpace(4.0),
             const SidebarTrashItem(),
