@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <application android:label="AppFlowy" android:icon="@mipmap/ic_launcher"
+  <application android:label="PonyNotes" android:icon="@mipmap/ic_launcher"
     android:name="${applicationName}">
     <activity android:name=".MainActivity"
       android:exported="true"

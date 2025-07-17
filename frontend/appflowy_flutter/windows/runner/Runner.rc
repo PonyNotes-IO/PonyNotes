@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "io.appflowy" "\0"
-            VALUE "FileDescription", "AppFlowy" "\0"
+            VALUE "FileDescription", "PonyNotes" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "AppFlowy" "\0"
+            VALUE "InternalName", "PonyNotes" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2024 io.appflowy. All rights reserved." "\0"
-            VALUE "OriginalFilename", "AppFlowy.exe" "\0"
-            VALUE "ProductName", "AppFlowy" "\0"
+            VALUE "OriginalFilename", "PonyNotes.exe" "\0"
+            VALUE "ProductName", "PonyNotes" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
