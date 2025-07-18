@@ -46,19 +46,23 @@ class CalendarMainPlugin extends Plugin {
 
 class CalendarMainWidgetBuilder extends PluginWidgetBuilder {
   @override
-  String? get viewName => '日历';
+  String? get viewName => null; // 去除标题
 
   @override
-  Widget get leftBarItem => Text('日历');
+  Widget get leftBarItem => const SizedBox.shrink(); // 去除左侧标题
 
   @override
   Widget? get rightBarItem => null;
 
   @override
-  Widget tabBarItem(String pluginId, [bool shortForm = false]) => leftBarItem;
+  Widget tabBarItem(String pluginId, [bool shortForm = false]) =>
+      const SizedBox.shrink();
 
   @override
   List<NavigationItem> get navigationItems => [this];
+
+  @override
+  EdgeInsets get contentPadding => EdgeInsets.zero; // 去除所有留白
 
   @override
   Widget buildWidget({
@@ -75,54 +79,60 @@ class CalendarMainPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    return Row(
-      children: [
-        // 左侧日历导航区
-        Container(
-          width: 300,
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: Column(
-            children: [
-              // 复用DatePicker组件
-              SizedBox(
-                height: 320,
-                child: DatePicker(
-                  isRange: false,
-                  focusedDay: today,
-                  selectedDay: today,
-                  onDaySelected: (selected, focused) {},
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: Row(
+        children: [
+          // 左侧日历导航区
+          Container(
+            width: 300,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: Column(
+              children: [
+                // 复用DatePicker组件
+                SizedBox(
+                  height: 320,
+                  child: DatePicker(
+                    isRange: false,
+                    focusedDay: today,
+                    selectedDay: today,
+                    onDaySelected: (selected, focused) {},
+                  ),
                 ),
-              ),
-              // 日记本/日程树
-              Expanded(
-                child: ListView(
-                  children: [
-                    ListTile(
-                        title: Text('小马笔记教程',
-                            style: TextStyle(fontWeight: FontWeight.bold))),
-                    ListTile(title: Text('星月考研笔记汇总')),
-                    ListTile(title: Text('新东方考研日记')),
-                    ListTile(title: Text('每日读书笔记')),
-                    ListTile(title: Text('OP考研笔记本')),
-                    ListTile(
-                        title: Text('添加日记项',
-                            style: TextStyle(color: Colors.blue))),
-                  ],
+                // 日记本/日程树
+                Expanded(
+                  child: ListView(
+                    children: [
+                      ListTile(
+                          title: Text('小马笔记教程',
+                              style: TextStyle(fontWeight: FontWeight.bold))),
+                      ListTile(title: Text('星月考研笔记汇总')),
+                      ListTile(title: Text('新东方考研日记')),
+                      ListTile(title: Text('每日读书笔记')),
+                      ListTile(title: Text('OP考研笔记本')),
+                      ListTile(
+                          title: Text('添加日记项',
+                              style: TextStyle(color: Colors.blue))),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-        ),
-        // 右侧详情区
-        Expanded(
-          child: Container(
-            color: Colors.grey[50],
-            child: Center(
-              child: Text('请选择日记本或日程，右侧显示详情'),
+              ],
             ),
           ),
-        ),
-      ],
+          // 右侧详情区 - 完全铺满剩余空间
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              height: double.infinity,
+              color: Colors.grey[50],
+              child: Center(
+                child: Text('请选择日记本或日程，右侧显示详情'),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

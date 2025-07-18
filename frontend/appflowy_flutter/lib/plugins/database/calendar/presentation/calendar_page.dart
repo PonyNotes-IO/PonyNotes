@@ -120,93 +120,97 @@ class _CalendarPageState extends State<CalendarPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CalendarControllerProvider(
-      controller: _eventController,
-      child: MultiBlocProvider(
-        providers: [
-          BlocProvider<CalendarBloc>.value(
-            value: _calendarBloc,
-          ),
-          BlocProvider(
-            create: (context) => PageAccessLevelBloc(view: widget.view)
-              ..add(
-                PageAccessLevelEvent.initial(),
-              ),
-          ),
-        ],
-        child: MultiBlocListener(
-          listeners: [
-            BlocListener<CalendarBloc, CalendarState>(
-              listenWhen: (p, c) => p.initialEvents != c.initialEvents,
-              listener: (context, state) {
-                _eventController.removeWhere((_) => true);
-                _eventController.addAll(state.initialEvents);
-              },
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      child: CalendarControllerProvider(
+        controller: _eventController,
+        child: MultiBlocProvider(
+          providers: [
+            BlocProvider<CalendarBloc>.value(
+              value: _calendarBloc,
             ),
-            BlocListener<CalendarBloc, CalendarState>(
-              listenWhen: (p, c) => p.deleteEventIds != c.deleteEventIds,
-              listener: (context, state) {
-                _eventController.removeWhere(
-                  (element) =>
-                      state.deleteEventIds.contains(element.event!.eventId),
+            BlocProvider(
+              create: (context) => PageAccessLevelBloc(view: widget.view)
+                ..add(
+                  PageAccessLevelEvent.initial(),
+                ),
+            ),
+          ],
+          child: MultiBlocListener(
+            listeners: [
+              BlocListener<CalendarBloc, CalendarState>(
+                listenWhen: (p, c) => p.initialEvents != c.initialEvents,
+                listener: (context, state) {
+                  _eventController.removeWhere((_) => true);
+                  _eventController.addAll(state.initialEvents);
+                },
+              ),
+              BlocListener<CalendarBloc, CalendarState>(
+                listenWhen: (p, c) => p.deleteEventIds != c.deleteEventIds,
+                listener: (context, state) {
+                  _eventController.removeWhere(
+                    (element) =>
+                        state.deleteEventIds.contains(element.event!.eventId),
+                  );
+                },
+              ),
+              BlocListener<CalendarBloc, CalendarState>(
+                // Event create by click the + button or double click on the
+                // calendar
+                listenWhen: (p, c) => p.newEvent != c.newEvent,
+                listener: (context, state) {
+                  if (state.newEvent != null) {
+                    _eventController.add(state.newEvent!);
+                  }
+                },
+              ),
+              BlocListener<CalendarBloc, CalendarState>(
+                // When an event is rescheduled
+                listenWhen: (p, c) => p.updateEvent != c.updateEvent,
+                listener: (context, state) {
+                  if (state.updateEvent != null) {
+                    _eventController.removeWhere(
+                      (element) =>
+                          element.event!.eventId ==
+                          state.updateEvent!.event!.eventId,
+                    );
+                    _eventController.add(state.updateEvent!);
+                  }
+                },
+              ),
+              BlocListener<CalendarBloc, CalendarState>(
+                listenWhen: (p, c) => p.openRow != c.openRow,
+                listener: (context, state) {
+                  if (state.openRow != null) {
+                    showEventDetails(
+                      context: context,
+                      databaseController: _calendarBloc.databaseController,
+                      rowMeta: state.openRow!,
+                    );
+                  }
+                },
+              ),
+            ],
+            child: BlocBuilder<CalendarBloc, CalendarState>(
+              builder: (context, state) {
+                return ValueListenableBuilder<bool>(
+                  valueListenable: widget.databaseController.isLoading,
+                  builder: (_, value, ___) {
+                    if (value) {
+                      return const Center(
+                        child: CircularProgressIndicator.adaptive(),
+                      );
+                    }
+                    return _buildCalendar(
+                      context,
+                      _eventController,
+                      state.settings?.firstDayOfWeek ?? 0,
+                    );
+                  },
                 );
               },
             ),
-            BlocListener<CalendarBloc, CalendarState>(
-              // Event create by click the + button or double click on the
-              // calendar
-              listenWhen: (p, c) => p.newEvent != c.newEvent,
-              listener: (context, state) {
-                if (state.newEvent != null) {
-                  _eventController.add(state.newEvent!);
-                }
-              },
-            ),
-            BlocListener<CalendarBloc, CalendarState>(
-              // When an event is rescheduled
-              listenWhen: (p, c) => p.updateEvent != c.updateEvent,
-              listener: (context, state) {
-                if (state.updateEvent != null) {
-                  _eventController.removeWhere(
-                    (element) =>
-                        element.event!.eventId ==
-                        state.updateEvent!.event!.eventId,
-                  );
-                  _eventController.add(state.updateEvent!);
-                }
-              },
-            ),
-            BlocListener<CalendarBloc, CalendarState>(
-              listenWhen: (p, c) => p.openRow != c.openRow,
-              listener: (context, state) {
-                if (state.openRow != null) {
-                  showEventDetails(
-                    context: context,
-                    databaseController: _calendarBloc.databaseController,
-                    rowMeta: state.openRow!,
-                  );
-                }
-              },
-            ),
-          ],
-          child: BlocBuilder<CalendarBloc, CalendarState>(
-            builder: (context, state) {
-              return ValueListenableBuilder<bool>(
-                valueListenable: widget.databaseController.isLoading,
-                builder: (_, value, ___) {
-                  if (value) {
-                    return const Center(
-                      child: CircularProgressIndicator.adaptive(),
-                    );
-                  }
-                  return _buildCalendar(
-                    context,
-                    _eventController,
-                    state.settings?.firstDayOfWeek ?? 0,
-                  );
-                },
-              );
-            },
           ),
         ),
       ),
@@ -221,20 +225,10 @@ class _CalendarPageState extends State<CalendarPage> {
     return LayoutBuilder(
       // must specify MonthView width for useAvailableVerticalSpace to work properly
       builder: (context, constraints) {
-        final paddingLeft =
-            context.read<DatabasePluginWidgetBuilderSize>().paddingLeft;
-        EdgeInsets padding = UniversalPlatform.isMobile
-            ? CalendarSize.contentInsetsMobile
-            : CalendarSize.contentInsets +
-                const EdgeInsets.symmetric(horizontal: 40);
-        final double horizontalPadding =
-            context.read<DatabasePluginWidgetBuilderSize>().horizontalPadding;
-        if (horizontalPadding == 0) {
-          padding = padding.copyWith(left: 0, right: 0);
-        }
-        padding = padding.copyWith(left: paddingLeft + padding.left);
-        return Padding(
-          padding: padding,
+        // 去除所有padding，让日历撑满整个界面
+        return Container(
+          width: double.infinity,
+          height: double.infinity,
           child: ScrollConfiguration(
             behavior:
                 ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -262,7 +256,7 @@ class _CalendarPageState extends State<CalendarPage> {
                 isInMonth,
                 position,
               ),
-              useAvailableVerticalSpace: widget.shrinkWrap,
+              useAvailableVerticalSpace: true, // 强制使用可用垂直空间
             ),
           ),
         );
