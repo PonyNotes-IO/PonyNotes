@@ -119,7 +119,7 @@ void main() {
 }
 
 const expectedMarkdown = '''
-# Welcome to AppFlowy!
+# Welcome to PonyNotes!
 ## Here are the basics
 - [ ] Click anywhere and just start typing.
 - [ ] Highlight any text, and use the editing menu to _style_ **your** <u>writing</u> `however` you ~~like.~~

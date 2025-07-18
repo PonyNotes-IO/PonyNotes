@@ -59,7 +59,7 @@ jobs:
       - name: Checkout appflowy cloud code
         uses: actions/checkout@v4
         with:
-          repository: AppFlowy-IO/AppFlowy-Cloud
+          repository: xiaomabiji/AppFlowy-Cloud
           path: AppFlowy-Cloud
 
       - name: Prepare appflowy cloud env
@@ -168,7 +168,7 @@ jobs:
           cargo make appflowy-flutter-deps-tools
         shell: bash
 
-      - name: Build AppFlowy
+      - name: Build PonyNotes
         working-directory: frontend
         run: |
           cargo make --profile development-android appflowy-core-dev-android

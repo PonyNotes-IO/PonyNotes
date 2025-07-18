@@ -77,7 +77,7 @@ runs:
         esac
         cargo make appflowy-flutter-deps-tools
 
-    - name: Build AppFlowy
+    - name: Build PonyNotes
       working-directory: frontend
       run: cargo make --profile ${{ inputs.flutter_profile }} appflowy-core-dev
       shell: bash

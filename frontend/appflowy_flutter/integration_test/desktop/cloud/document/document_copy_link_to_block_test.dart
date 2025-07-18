@@ -91,8 +91,8 @@ void main() {
         find.descendant(
           of: find.byType(AppFlowyEditor),
           matching: find.textContaining(
-            // the pasted block content is 'Welcome to AppFlowy'
-            'Welcome to AppFlowy',
+            // the pasted block content is 'Welcome to PonyNotes'
+            'Welcome to PonyNotes',
             findRichText: true,
           ),
         ),

@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest an idea for AppFlowy
+description: Suggest an idea for PonyNotes
 title: "[FR] "
 body:
   - type: textarea

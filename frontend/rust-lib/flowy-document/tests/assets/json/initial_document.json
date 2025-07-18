@@ -4,7 +4,7 @@
   "children": [
     {
       "type": "heading",
-      "data": { "delta": [{ "insert": "Welcome to AppFlowy!" }], "level": 1 }
+      "data": { "delta": [{ "insert": "Welcome to PonyNotes!" }], "level": 1 }
     },
     {
       "type": "heading",

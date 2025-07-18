@@ -14,7 +14,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   const icon = '😄';
-  const name = 'AppFlowy';
+  const name = 'PonyNotes';
   final email = '${uuid()}@appflowy.io';
 
   testWidgets('change name and icon', (tester) async {

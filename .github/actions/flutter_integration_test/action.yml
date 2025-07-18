@@ -1,5 +1,5 @@
 name: Flutter Integration Test
-description: Run integration tests for AppFlowy
+description: Run integration tests for PonyNotes
 
 inputs:
   test_path:

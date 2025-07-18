@@ -41,14 +41,14 @@ fn test_children() {
       {
         "type": "heading",
         "data": {
-            "delta": [{ "insert": "Welcome to AppFlowy!" }],
+            "delta": [{ "insert": "Welcome to PonyNotes!" }],
             "level": 1
         }
       },
       {
         "type": "todo_list",
         "data": {
-            "delta": [{ "insert": "Welcome to AppFlowy!" }],
+            "delta": [{ "insert": "Welcome to PonyNotes!" }],
             "checked": false
         }
       }

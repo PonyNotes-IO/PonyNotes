@@ -1,4 +1,4 @@
-# Welcome to AppFlowy!
+# Welcome to PonyNotes!
 
 ## Here are the basics
 
