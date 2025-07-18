@@ -75,10 +75,17 @@ class CalendarMainWidgetBuilder extends PluginWidgetBuilder {
 }
 
 // 主日历面板骨架
-class CalendarMainPanel extends StatelessWidget {
+class CalendarMainPanel extends StatefulWidget {
+  @override
+  State<CalendarMainPanel> createState() => _CalendarMainPanelState();
+}
+
+class _CalendarMainPanelState extends State<CalendarMainPanel> {
+  DateTime _focusedDay = DateTime.now();
+  DateTime? _selectedDay;
+
   @override
   Widget build(BuildContext context) {
-    final today = DateTime.now();
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -90,14 +97,24 @@ class CalendarMainPanel extends StatelessWidget {
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Column(
               children: [
-                // 复用DatePicker组件
+                // 使用成熟的DatePicker组件
                 SizedBox(
-                  height: 320,
+                  height: 460, // 增加高度以容纳展开的选项按钮
                   child: DatePicker(
                     isRange: false,
-                    focusedDay: today,
-                    selectedDay: today,
-                    onDaySelected: (selected, focused) {},
+                    focusedDay: _focusedDay,
+                    selectedDay: _selectedDay,
+                    onDaySelected: (selected, focused) {
+                      setState(() {
+                        _selectedDay = selected;
+                        _focusedDay = focused;
+                      });
+                    },
+                    onPageChanged: (focusedDay) {
+                      setState(() {
+                        _focusedDay = focusedDay;
+                      });
+                    },
                   ),
                 ),
                 // 日记本/日程树
@@ -127,7 +144,22 @@ class CalendarMainPanel extends StatelessWidget {
               height: double.infinity,
               color: Colors.grey[50],
               child: Center(
-                child: Text('请选择日记本或日程，右侧显示详情'),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('请选择日记本或日程，右侧显示详情'),
+                    SizedBox(height: 20),
+                    if (_selectedDay != null)
+                      Text(
+                        '选中日期: ${_selectedDay!.year}年${_selectedDay!.month}月${_selectedDay!.day}日',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
