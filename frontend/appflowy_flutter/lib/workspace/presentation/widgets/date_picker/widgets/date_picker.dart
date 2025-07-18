@@ -54,16 +54,20 @@ class DatePicker extends StatefulWidget {
 class _DatePickerState extends State<DatePicker> {
   late CalendarFormat _calendarFormat = widget.calendarFormat;
   late final AFPopoverController _popoverController;
+  late final AFPopoverController _morePopoverController;
+  bool _subscribeSystemCalendar = false;
 
   @override
   void initState() {
     super.initState();
     _popoverController = AFPopoverController();
+    _morePopoverController = AFPopoverController();
   }
 
   @override
   void dispose() {
     _popoverController.dispose();
+    _morePopoverController.dispose();
     super.dispose();
   }
 
@@ -245,18 +249,60 @@ class _DatePickerState extends State<DatePicker> {
               ),
               SizedBox(width: 8),
               // 更多选项按钮
-              IconButton(
-                icon: Icon(
-                  Icons.more_horiz,
-                  size: 20,
-                ),
-                onPressed: () {
-                  // TODO: 添加按钮点击逻辑
-                },
+              AFPopover(
+                controller: _morePopoverController,
                 padding: EdgeInsets.zero,
-                constraints: BoxConstraints(
-                  minWidth: 32,
-                  minHeight: 32,
+                anchor: AFAnchor(
+                  childAlignment: Alignment.topCenter,
+                  overlayAlignment: Alignment.bottomCenter,
+                  offset: const Offset(0, 8),
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                popover: (context) => _buildMoreMenu(context),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.more_horiz,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    onPressed: () {
+                      _morePopoverController.toggle();
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -411,6 +457,84 @@ class _DatePickerState extends State<DatePicker> {
                 ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoreMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Text(
+              '日历显示设置',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.calendar_today,
+                  size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('订阅系统日历', style: theme.textTheme.bodyMedium),
+              ),
+              Switch(
+                value: _subscribeSystemCalendar,
+                onChanged: (v) {
+                  setState(() {
+                    _subscribeSystemCalendar = v;
+                  });
+                },
+                activeColor: theme.colorScheme.primary,
+                activeTrackColor: theme.colorScheme.primary.withOpacity(0.3),
+                inactiveThumbColor: theme.colorScheme.outline,
+                inactiveTrackColor: theme.colorScheme.outline.withOpacity(0.3),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                focusColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                overlayColor: MaterialStateProperty.all(Colors.transparent),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.view_agenda, size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('日记模板', style: theme.textTheme.bodyMedium),
+              ),
+              GestureDetector(
+                onTap: () {
+                  // TODO: 处理默认模板点击
+                },
+                child: Text(
+                  '默认',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
