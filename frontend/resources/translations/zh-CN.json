@@ -869,19 +869,40 @@
         "label": "显示通知图标",
         "hint": "关闭开关以隐藏侧边栏中的通知图标。"
       },
+      "archiveNotifications": {
+        "allSuccess": "成功归档所有通知",
+        "success": "成功归档通知"
+      },
       "markAsReadNotifications": {
         "allSuccess": "成功全部标为已读",
         "success": "成功标为已读"
       },
       "action": {
         "markAsRead": "标为已读",
-        "multipleChoice": "选择更多"
+        "multipleChoice": "选择更多",
+        "archive": "归档"
       },
       "settings": {
-        "settings": "设置"
+        "settings": "设置",
+        "markAllAsRead": "全部标为已读",
+        "archiveAll": "全部归档"
+      },
+      "emptyInbox": {
+        "title": "收件箱清零！",
+        "description": "设置提醒以在此处接收通知。"
+      },
+      "emptyUnread": {
+        "title": "没有未读通知",
+        "description": "您已经全部处理完毕！"
+      },
+      "emptyArchived": {
+        "title": "没有归档",
+        "description": "归档的通知将显示在此处。"
       },
       "tabs": {
-        "unread": "未读"
+        "inbox": "收件箱",
+        "unread": "未读",
+        "archived": "已归档"
       },
       "refreshSuccess": "成功刷新通知",
       "titles": {
@@ -1839,6 +1860,19 @@
   },
   "notificationHub": {
     "title": "通知",
+    "closeNotification": "关闭通知",
+    "viewNotifications": "查看通知",
+    "noNotifications": "暂无通知",
+    "mentionedYou": "提到了您",
+    "archivedTooltip": "归档此通知",
+    "unarchiveTooltip": "取消归档此通知",
+    "markAsReadTooltip": "标记此通知为已读",
+    "markAsArchivedSucceedToast": "归档成功",
+    "markAllAsArchivedSucceedToast": "全部归档成功",
+    "markAsReadSucceedToast": "标记为已读成功",
+    "markAllAsReadSucceedToast": "全部标记为已读成功",
+    "today": "今天",
+    "older": "更早",
     "mobile": {
       "title": "更新"
     },

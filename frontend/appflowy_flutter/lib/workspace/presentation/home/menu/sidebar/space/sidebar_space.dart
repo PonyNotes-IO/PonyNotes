@@ -9,8 +9,15 @@ import 'package:appflowy/workspace/presentation/home/hotkeys.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/favorites/favorite_folder.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ai_button.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_calendar_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_home_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_settings_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_template_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_integration_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/create_space_popup.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/shared_widget.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space_header.dart';
@@ -54,31 +61,48 @@ class SidebarSpace extends StatelessWidget {
         child: Column(
           children: [
             const VSpace(4.0),
+            // home button
+            const SidebarHomeButton(),
+            // AI button
+            const VSpace(4.0),
+            const SidebarAiButton(),
+            // calendar button
+            const VSpace(4.0),
+            const SidebarCalendarButton(),
+            // inbox button
+            const VSpace(4.0),
+            const SidebarInboxButton(),
+            // integration button
+            const VSpace(4.0),
+            const SidebarIntegrationButton(),
             // favorite
+            const VSpace(4.0),
             BlocBuilder<FavoriteBloc, FavoriteState>(
               builder: (context, state) {
                 if (state.views.isEmpty) {
                   return const SizedBox.shrink();
                 }
 
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: FavoriteFolder(
-                    views: state.views.map((e) => e.item).toList(),
-                  ),
+                return FavoriteFolder(
+                  views: state.views.map((e) => e.item).toList(),
                 );
               },
             ),
-
-            // AI button
-            const VSpace(8.0),
-            const SidebarAiButton(),
-            // calendar button
+            // template
             const VSpace(4.0),
-            const SidebarCalendarButton(),
+            const SidebarTemplateButton(),
+            // folder
+            const VSpace(4.0),
+            const SidebarFolderButton(),
+            // file library
+            const VSpace(4.0),
+            const SidebarFileLibraryButton(),
             // trash
             const VSpace(4.0),
             const SidebarTrashItem(),
+            // settings
+            const VSpace(4.0),
+            const SidebarSettingsButton(),
 
             // shared
             if (FeatureFlag.sharedSection.isOn) ...[

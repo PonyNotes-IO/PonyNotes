@@ -8,8 +8,8 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 
-class SidebarAiButton extends StatelessWidget {
-  const SidebarAiButton({
+class SidebarHomeButton extends StatelessWidget {
+  const SidebarHomeButton({
     super.key,
   });
 
@@ -21,19 +21,18 @@ class SidebarAiButton extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8.0),
           child: AFGhostIconTextButton.primary(
-            text: '问AI',
+            text: '主页',
             mainAxisAlignment: MainAxisAlignment.start,
             size: AFButtonSize.l,
-            onTap: () => _openAiChatDialog(context, state),
+            onTap: () => _openHomePage(context, state),
             padding: EdgeInsets.symmetric(
               horizontal: 8,
               vertical: 10,
             ),
             borderRadius: theme.borderRadius.s,
             iconBuilder: (context, isHover, disabled) => FlowySvg(
-              FlowySvgs.icon_ai_s,
+              FlowySvgs.icon_home_s,
               size: const Size.square(16.0),
-              color: Theme.of(context).textTheme.bodyMedium?.color,
             ),
           ),
         );
@@ -41,23 +40,23 @@ class SidebarAiButton extends StatelessWidget {
     );
   }
 
-  void _openAiChatDialog(
+  void _openHomePage(
       BuildContext context, UserWorkspaceState workspaceState) async {
     try {
-      // 创建独立的AI聊天插件，不依赖于工作空间
-      final standaloneAiChatPlugin = makePlugin(
-        pluginType: PluginType.standaloneAiChat,
-        data: null, // 独立插件不需要数据
+      // 创建主页插件
+      final homePlugin = makePlugin(
+        pluginType: PluginType.document,
+        data: null,
       );
 
-      // 在新标签页中打开独立AI聊天
+      // 在新标签页中打开主页
       getIt<TabsBloc>().add(
         TabsEvent.openPlugin(
-          plugin: standaloneAiChatPlugin,
+          plugin: homePlugin,
         ),
       );
     } catch (e) {
-      _showMessage(context, '打开AI聊天时发生错误: $e');
+      _showMessage(context, '打开主页时发生错误: $e');
     }
   }
 

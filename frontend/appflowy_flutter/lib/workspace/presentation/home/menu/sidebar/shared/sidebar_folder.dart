@@ -8,6 +8,14 @@ import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/favorites/favorite_folder.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/folder/_section_folder.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ai_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_calendar_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_home_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_settings_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_template_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_integration_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -34,7 +42,22 @@ class SidebarFolder extends StatelessWidget {
         return Column(
           children: [
             const VSpace(4.0),
+            // home button
+            const SidebarHomeButton(),
+            // AI button
+            const VSpace(4.0),
+            const SidebarAiButton(),
+            // calendar button
+            const VSpace(4.0),
+            const SidebarCalendarButton(),
+            // inbox button
+            const VSpace(4.0),
+            const SidebarInboxButton(),
+            // integration button
+            const VSpace(4.0),
+            const SidebarIntegrationButton(),
             // favorite
+            const VSpace(4.0),
             BlocBuilder<FavoriteBloc, FavoriteState>(
               builder: (context, state) {
                 if (state.views.isEmpty) {
@@ -45,12 +68,21 @@ class SidebarFolder extends StatelessWidget {
                 );
               },
             ),
-            // AI button
-            const VSpace(8.0),
-            const SidebarAiButton(),
+            // template
+            const VSpace(4.0),
+            const SidebarTemplateButton(),
+            // folder
+            const VSpace(4.0),
+            const SidebarFolderButton(),
+            // file library
+            const VSpace(4.0),
+            const SidebarFileLibraryButton(),
             // trash
             const VSpace(4.0),
             const SidebarTrashItem(),
+            // settings
+            const VSpace(4.0),
+            const SidebarSettingsButton(),
             // public or private
             BlocBuilder<SidebarSectionsBloc, SidebarSectionsState>(
               builder: (context, state) {

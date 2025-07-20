@@ -261,8 +261,6 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       return;
     }
 
-    Log.info('Sign in with magic link: $email');
-
     emit(
       state.copyWith(
         isSubmitting: true,
@@ -274,13 +272,13 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
 
     final result = await authService.signInWithMagicLink(email: email);
 
-    emit(
-      result.fold(
-        (userProfile) => state.copyWith(
-          isSubmitting: false,
-        ),
-        (error) => _stateFromCode(error),
-      ),
+    result.fold(
+      (userProfile) {
+        emit(state.copyWith(isSubmitting: false));
+      },
+      (error) {
+        emit(_stateFromCode(error));
+      },
     );
   }
 
