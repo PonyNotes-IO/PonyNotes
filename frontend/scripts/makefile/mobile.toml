@@ -42,9 +42,6 @@ script = [
       echo "🛠️  BINDGEN_EXTRA_CLANG_ARGS: $BINDGEN_EXTRA_CLANG_ARGS"
     fi
     
-    # Set environment variable to fix zstd linking issues on iOS
-    export CARGO_FEATURE_NO_NEON=1
-    
     if [ "${BUILD_FLAG}" = "debug" ]; then
       echo "🚀 🚀 🚀  Building iOS SDK for debug"
       cargo lipo --targets ${RUST_COMPILE_TARGET} --features "${FLUTTER_DESKTOP_FEATURES}" --package=dart-ffi
