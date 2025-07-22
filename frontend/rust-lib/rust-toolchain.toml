@@ -1,10 +1,3 @@
 [toolchain]
-channel = "1.85.0"
-components = ["rustfmt", "clippy"]
-targets = ["aarch64-apple-ios", "aarch64-apple-ios-sim", "aarch64-apple-darwin", "x86_64-apple-darwin"]
-
-[target.aarch64-apple-ios]
-rustflags = ["-C", "link-arg=-miphoneos-version-min=12.0"]
-
-[target.aarch64-apple-ios-sim]
-rustflags = ["-C", "link-arg=-mios-simulator-version-min=12.0"]
+channel = "1.85"
+components = ["clippy", "rustfmt"]
