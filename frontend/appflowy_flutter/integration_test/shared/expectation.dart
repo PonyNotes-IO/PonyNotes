@@ -98,8 +98,10 @@ extension Expectation on WidgetTester {
 
   /// Expect to the markdown file export success dialog.
   void expectToExportSuccess() {
-    final exportSuccess = find.text(
-      LocaleKeys.settings_files_exportFileSuccess.tr(),
+    final exportSuccess = find.byWidgetPredicate(
+      (widget) =>
+          widget is FlowyText &&
+          widget.text == LocaleKeys.settings_files_exportFileSuccess.tr(),
     );
     expect(exportSuccess, findsOneWidget);
   }

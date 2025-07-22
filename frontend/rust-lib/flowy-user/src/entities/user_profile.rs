@@ -43,6 +43,9 @@ pub struct UserProfilePB {
 
   #[pb(index = 7)]
   pub workspace_type: WorkspaceTypePB,
+
+  #[pb(index = 8)]
+  pub phone_number: String,
 }
 
 #[derive(ProtoBuf_Enum, Eq, PartialEq, Debug, Clone)]
@@ -61,12 +64,13 @@ impl From<UserProfile> for UserProfilePB {
   fn from(user_profile: UserProfile) -> Self {
     Self {
       id: user_profile.uid,
-      email: user_profile.email,
+      email: user_profile.email.unwrap_or_default(),
       name: user_profile.name,
       token: user_profile.token,
       icon_url: user_profile.icon_url,
       user_auth_type: user_profile.auth_type.into(),
       workspace_type: user_profile.workspace_type.into(),
+      phone_number: user_profile.phone_number.unwrap_or_default(),
     }
   }
 }
@@ -87,6 +91,9 @@ pub struct UpdateUserProfilePayloadPB {
 
   #[pb(index = 5, one_of)]
   pub icon_url: Option<String>,
+
+  #[pb(index = 6, one_of)]
+  pub phone_number: Option<String>,
 }
 
 impl UpdateUserProfilePayloadPB {
@@ -116,6 +123,11 @@ impl UpdateUserProfilePayloadPB {
     self.icon_url = Some(icon_url.to_owned());
     self
   }
+
+  pub fn phone_number(mut self, phone_number: &str) -> Self {
+    self.phone_number = Some(phone_number.to_owned());
+    self
+  }
 }
 
 impl TryInto<UpdateUserProfileParams> for UpdateUserProfilePayloadPB {
@@ -139,12 +151,15 @@ impl TryInto<UpdateUserProfileParams> for UpdateUserProfilePayloadPB {
       Some(icon_url) => Some(UserIcon::parse(icon_url)?.0),
     };
 
+    let phone_number = self.phone_number;
+
     Ok(UpdateUserProfileParams {
       uid: self.id,
       name,
       email,
       password,
       icon_url,
+      phone_number,
       token: None,
     })
   }

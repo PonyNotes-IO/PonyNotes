@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:appflowy/env/cloud_env.dart';
+import 'package:appflowy/user/application/password/password_check_service.dart';
 import 'package:appflowy/user/application/password/password_http_service.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/errors.pb.dart';
@@ -165,7 +166,20 @@ class PasswordBloc extends Bloc<PasswordEvent, PasswordState> {
 
     _clearState(emit, true);
 
-    final result = await passwordHttpService.checkHasPassword();
+    // 获取用户的认证令牌
+    String? authToken;
+    try {
+      final tokenData = jsonDecode(userProfile.token);
+      authToken = tokenData['access_token'];
+    } catch (e) {
+      Log.error('Failed to get auth token: $e');
+    }
+
+    // 使用通用的密码检查服务
+    final result = await PasswordCheckService.checkUserHasCustomPassword(
+      email: userProfile.email,
+      authToken: authToken,
+    );
 
     emit(
       state.copyWith(

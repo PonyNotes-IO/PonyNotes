@@ -84,7 +84,7 @@ class AppFlowyCloudAuthService implements AuthService {
 
         return completer.future;
       },
-      (r) => FlowyResult.failure(r),
+      (r) => FlowyResult<UserProfilePB, FlowyError>.failure(r),
     );
   }
 
@@ -123,6 +123,20 @@ class AppFlowyCloudAuthService implements AuthService {
   }
 
   @override
+  Future<FlowyResult<bool, FlowyError>> checkUserExists({
+    required String email,
+  }) async {
+    return _backendAuthService.checkUserExists(email: email);
+  }
+
+  @override
+  Future<FlowyResult<UserAuthInfo, FlowyError>> getUserAuthInfo({
+    required String email,
+  }) async {
+    return _backendAuthService.getUserAuthInfo(email: email);
+  }
+
+  @override
   Future<FlowyResult<UserProfilePB, FlowyError>> getUser() async {
     return UserBackendService.getCurrentUserProfile();
   }
@@ -139,6 +153,8 @@ extension ProviderTypePBExtension on ProviderTypePB {
         return ProviderTypePB.Discord;
       case 'apple':
         return ProviderTypePB.Apple;
+      case 'wechat':
+        return ProviderTypePB.Google; // 临时使用Google，待WeChat类型生成
       default:
         throw UnimplementedError();
     }

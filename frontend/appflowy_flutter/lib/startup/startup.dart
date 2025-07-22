@@ -24,6 +24,9 @@ import 'tasks/prelude.dart';
 
 final getIt = GetIt.instance;
 
+// 添加同步锁防止runAppFlowy并发调用
+final _runAppFlowyLock = Lock();
+
 abstract class EntryPoint {
   Widget create(LaunchConfiguration config);
 }
@@ -35,25 +38,28 @@ class FlowyRunnerContext {
 }
 
 Future<void> runAppFlowy({bool isAnon = false}) async {
-  Log.info('restart AppFlowy: isAnon: $isAnon');
+  // 使用同步锁防止并发调用导致重复注册
+  return await _runAppFlowyLock.synchronized(() async {
+    Log.info('restart AppFlowy: isAnon: $isAnon');
 
-  if (kReleaseMode) {
-    await FlowyRunner.run(
-      AppFlowyApplication(),
-      integrationMode(),
-      isAnon: isAnon,
-    );
-  } else {
-    // When running the app in integration test mode, we need to
-    // specify the mode to run the app again.
-    await FlowyRunner.run(
-      AppFlowyApplication(),
-      FlowyRunner.currentMode,
-      didInitGetItCallback: IntegrationTestHelper.didInitGetItCallback,
-      rustEnvsBuilder: IntegrationTestHelper.rustEnvsBuilder,
-      isAnon: isAnon,
-    );
-  }
+    if (kReleaseMode) {
+      await FlowyRunner.run(
+        AppFlowyApplication(),
+        integrationMode(),
+        isAnon: isAnon,
+      );
+    } else {
+      // When running the app in integration test mode, we need to
+      // specify the mode to run the app again.
+      await FlowyRunner.run(
+        AppFlowyApplication(),
+        FlowyRunner.currentMode,
+        didInitGetItCallback: IntegrationTestHelper.didInitGetItCallback,
+        rustEnvsBuilder: IntegrationTestHelper.rustEnvsBuilder,
+        isAnon: isAnon,
+      );
+    }
+  });
 }
 
 class FlowyRunner {

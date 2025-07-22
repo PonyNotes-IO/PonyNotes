@@ -1,7 +1,5 @@
 name: appflowy
-description: Bring projects, wikis, and teams together with AI. AppFlowy is an
-  AI collaborative workspace where you achieve more without losing control of
-  your data. The best open source alternative to Notion.
+description: AppFlowy is an AI-powered secure workspace where you achieve more without losing control of your data
 publish_to: "none"
 
 version: 0.9.4
@@ -76,7 +74,6 @@ dependencies:
     git:
       url: https://github.com/LucasXu0/emoji_mart.git
       ref: "355aa56"
-  flutter_math_fork: ^0.7.3
   flutter_slidable: ^3.0.0
 
   flutter_staggered_grid_view: ^0.7.0
@@ -109,6 +106,7 @@ dependencies:
   mime: ^2.0.0
   nanoid: ^1.0.0
   numerus: ^2.1.2
+
   # Used to open local files on Mobile
   open_filex: ^4.5.0
   package_info_plus: ^8.0.2
@@ -116,8 +114,10 @@ dependencies:
   path_provider: ^2.0.15
   percent_indicator: 4.2.3
   permission_handler: ^11.3.1
+  pin_code_fields: ^8.0.1
   protobuf: ^3.1.0
   provider: ^6.0.5
+  qr_flutter: ^4.1.0
   reorderable_tabbar: ^1.0.6
   reorderables: ^0.6.0
   scaled_app: ^2.3.0
@@ -148,6 +148,7 @@ dependencies:
   saver_gallery: ^4.0.1
   talker_bloc_logger: ^4.8.1
   talker: ^4.7.1
+  # flutter_math_fork: ^0.7.3  # Temporarily disabled due to Flutter 3.27 compatibility issues
 
   analyzer: 6.11.0
 
@@ -245,13 +246,14 @@ dependency_overrides:
       url: https://github.com/LucasXu0/unsplash_client.git
       ref: a8411fc
 
-  # https://github.com/LucasXu0/flutter-permission-handler/commit/faef1c97970de29995642bfae61b884591798684
-  # Prevent the location from being accessed continuously on Windows
-  permission_handler:
-    git:
-      url: https://github.com/LucasXu0/flutter-permission-handler.git
-      path: permission_handler
-      ref: faef1c9
+  # auto_updater:
+  #   path: /Users/lucas.xu/Desktop/auto_updater/packages/auto_updater
+
+  # auto_updater_macos:
+  #   path: /Users/lucas.xu/Desktop/auto_updater/packages/auto_updater_macos
+
+  # auto_updater_platform_interface:
+  #   path: /Users/lucas.xu/Desktop/auto_updater/packages/auto_updater_platform_interface
 
 flutter:
   generate: true

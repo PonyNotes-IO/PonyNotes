@@ -10,6 +10,24 @@ class AuthServiceMapKeys {
   static const String signInURL = 'sign_in_url';
 }
 
+/// 用户认证信息
+class UserAuthInfo {
+  final bool exists;
+  final String email;
+  final bool hasCustomPassword;
+
+  const UserAuthInfo({
+    required this.exists,
+    required this.email,
+    required this.hasCustomPassword,
+  });
+
+  @override
+  String toString() {
+    return 'UserAuthInfo(exists: $exists, email: $email, hasCustomPassword: $hasCustomPassword)';
+  }
+}
+
 /// `AuthService` is an abstract class that defines methods related to user authentication.
 ///
 /// This service provides various methods for user sign-in, sign-up,
@@ -28,6 +46,24 @@ abstract class AuthService {
     required String email,
     required String password,
     Map<String, String> params,
+  });
+
+  /// Checks if a user exists by email
+  ///
+  /// - `email`: The email address to check
+  ///
+  /// Returns true if user exists (has account), false if new user
+  Future<FlowyResult<bool, FlowyError>> checkUserExists({
+    required String email,
+  });
+
+  /// Gets complete user authentication information
+  ///
+  /// - `email`: The email address to check
+  ///
+  /// Returns UserAuthInfo containing exists, email, and hasCustomPassword
+  Future<FlowyResult<UserAuthInfo, FlowyError>> getUserAuthInfo({
+    required String email,
   });
 
   /// Registers a new user with their name, email, and password.

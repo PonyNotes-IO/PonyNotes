@@ -3,6 +3,7 @@ import 'package:flowy_infra/theme_extension.dart';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:universal_platform/universal_platform.dart';
+import 'package:appflowy_ui/appflowy_ui.dart';
 
 final kFirstDay = DateTime.utc(1970);
 final kLastDay = DateTime.utc(2100);
@@ -52,6 +53,23 @@ class DatePicker extends StatefulWidget {
 
 class _DatePickerState extends State<DatePicker> {
   late CalendarFormat _calendarFormat = widget.calendarFormat;
+  late final AFPopoverController _popoverController;
+  late final AFPopoverController _morePopoverController;
+  bool _subscribeSystemCalendar = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _popoverController = AFPopoverController();
+    _morePopoverController = AFPopoverController();
+  }
+
+  @override
+  void dispose() {
+    _popoverController.dispose();
+    _morePopoverController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,79 +93,450 @@ class _DatePickerState extends State<DatePicker> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
-      child: TableCalendar(
-        firstDay: kFirstDay,
-        lastDay: kLastDay,
-        focusedDay: widget.focusedDay,
-        rowHeight: calendarStyle.rowHeight,
-        calendarFormat: _calendarFormat,
-        daysOfWeekHeight: calendarStyle.dowHeight,
-        rangeSelectionMode: widget.isRange
-            ? RangeSelectionMode.enforced
-            : RangeSelectionMode.disabled,
-        rangeStartDay: widget.isRange ? widget.startDay : null,
-        rangeEndDay: widget.isRange ? widget.endDay : null,
-        availableGestures: calendarStyle.availableGestures,
-        availableCalendarFormats: const {CalendarFormat.month: 'Month'},
-        onCalendarCreated: widget.onCalendarCreated,
-        headerVisible: calendarStyle.headerVisible,
-        headerStyle: calendarStyle.headerStyle,
-        calendarStyle: CalendarStyle(
-          cellMargin: const EdgeInsets.all(3.5),
-          defaultDecoration: boxDecoration,
-          selectedDecoration: boxDecoration.copyWith(
-            color: calendarStyle.selectedColor,
-          ),
-          todayDecoration: boxDecoration.copyWith(
-            color: Colors.transparent,
-            border: Border.all(color: calendarStyle.selectedColor),
-          ),
-          weekendDecoration: boxDecoration,
-          outsideDecoration: boxDecoration,
-          rangeStartDecoration: boxDecoration.copyWith(
-            color: calendarStyle.selectedColor,
-          ),
-          rangeEndDecoration: boxDecoration.copyWith(
-            color: calendarStyle.selectedColor,
-          ),
-          defaultTextStyle: textStyle,
-          weekendTextStyle: textStyle,
-          selectedTextStyle: textStyle.copyWith(
-            color: Theme.of(context).colorScheme.surface,
-          ),
-          rangeStartTextStyle: textStyle.copyWith(
-            color: Theme.of(context).colorScheme.surface,
-          ),
-          rangeEndTextStyle: textStyle.copyWith(
-            color: Theme.of(context).colorScheme.surface,
-          ),
-          todayTextStyle: textStyle,
-          outsideTextStyle: textStyle.copyWith(
-            color: Theme.of(context).disabledColor,
-          ),
-          rangeHighlightColor: Theme.of(context).colorScheme.secondaryContainer,
-        ),
-        calendarBuilders: CalendarBuilders(
-          dowBuilder: (context, day) {
-            final locale = context.locale.toLanguageTag();
-            final label = DateFormat.E(locale).format(day);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Center(
-                child: Text(label, style: calendarStyle.dowTextStyle),
+      child: Column(
+        children: [
+          // 自定义头部
+          _buildCustomHeader(context, widget.focusedDay),
+          SizedBox(height: 8),
+          // 日历主体
+          Expanded(
+            child: TableCalendar(
+              firstDay: kFirstDay,
+              lastDay: kLastDay,
+              focusedDay: widget.focusedDay,
+              rowHeight: calendarStyle.rowHeight,
+              calendarFormat: _calendarFormat,
+              daysOfWeekHeight: calendarStyle.dowHeight,
+              rangeSelectionMode: widget.isRange
+                  ? RangeSelectionMode.enforced
+                  : RangeSelectionMode.disabled,
+              rangeStartDay: widget.isRange ? widget.startDay : null,
+              rangeEndDay: widget.isRange ? widget.endDay : null,
+              availableGestures: calendarStyle.availableGestures,
+              availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+              onCalendarCreated: widget.onCalendarCreated,
+              headerVisible: false, // 隐藏默认头部
+              headerStyle: calendarStyle.headerStyle,
+              calendarStyle: CalendarStyle(
+                cellMargin: const EdgeInsets.all(3.5),
+                defaultDecoration: boxDecoration,
+                selectedDecoration: boxDecoration.copyWith(
+                  color: calendarStyle.selectedColor,
+                ),
+                todayDecoration: boxDecoration.copyWith(
+                  color: Colors.transparent,
+                  border: Border.all(color: calendarStyle.selectedColor),
+                ),
+                weekendDecoration: boxDecoration,
+                outsideDecoration: boxDecoration,
+                rangeStartDecoration: boxDecoration.copyWith(
+                  color: calendarStyle.selectedColor,
+                ),
+                rangeEndDecoration: boxDecoration.copyWith(
+                  color: calendarStyle.selectedColor,
+                ),
+                defaultTextStyle: textStyle,
+                weekendTextStyle: textStyle,
+                selectedTextStyle: textStyle.copyWith(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                rangeStartTextStyle: textStyle.copyWith(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                rangeEndTextStyle: textStyle.copyWith(
+                  color: Theme.of(context).colorScheme.surface,
+                ),
+                todayTextStyle: textStyle,
+                outsideTextStyle: textStyle.copyWith(
+                  color: Theme.of(context).disabledColor,
+                ),
+                rangeHighlightColor:
+                    Theme.of(context).colorScheme.secondaryContainer,
               ),
-            );
-          },
+              calendarBuilders: CalendarBuilders(
+                dowBuilder: (context, day) {
+                  final locale = context.locale.toLanguageTag();
+                  final label = DateFormat.E(locale).format(day);
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0),
+                    child: Center(
+                      child: Text(label, style: calendarStyle.dowTextStyle),
+                    ),
+                  );
+                },
+              ),
+              selectedDayPredicate: (day) =>
+                  widget.isRange ? false : isSameDay(widget.selectedDay, day),
+              onFormatChanged: (calendarFormat) =>
+                  setState(() => _calendarFormat = calendarFormat),
+              onPageChanged: (focusedDay) {
+                widget.onPageChanged?.call(focusedDay);
+              },
+              onDaySelected: widget.onDaySelected,
+              onRangeSelected: widget.onRangeSelected,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomHeader(BuildContext context, DateTime focusedDay) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      child: Column(
+        children: [
+          // 顶部按钮行
+          Row(
+            children: [
+              Spacer(), // 将按钮推到右边
+              // 加号按钮
+              AFPopover(
+                controller: _popoverController,
+                padding: EdgeInsets.zero,
+                anchor: AFAnchor(
+                  childAlignment: Alignment.topCenter,
+                  overlayAlignment: Alignment.bottomCenter,
+                  offset: const Offset(0, 8),
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                popover: (context) => _buildDropdownMenu(context),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.add,
+                      color: Theme.of(context).colorScheme.onSurface,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      _popoverController.toggle();
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(width: 8),
+              // 更多选项按钮
+              AFPopover(
+                controller: _morePopoverController,
+                padding: EdgeInsets.zero,
+                anchor: AFAnchor(
+                  childAlignment: Alignment.topCenter,
+                  overlayAlignment: Alignment.bottomCenter,
+                  offset: const Offset(0, 8),
+                ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color:
+                        Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                popover: (context) => _buildMoreMenu(context),
+                child: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .outline
+                          .withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.more_horiz,
+                      size: 20,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    onPressed: () {
+                      _morePopoverController.toggle();
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 8),
+          // 月份导航行
+          Row(
+            children: [
+              // 月份信息在左边
+              Expanded(
+                child: Text(
+                  '${focusedDay.year}年${focusedDay.month}月',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              // 导航按钮在右边
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.chevron_left, size: 20),
+                    onPressed: () {
+                      // 计算上个月
+                      final previousMonth = DateTime(
+                        focusedDay.year,
+                        focusedDay.month - 1,
+                      );
+                      widget.onPageChanged?.call(previousMonth);
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.chevron_right, size: 20),
+                    onPressed: () {
+                      // 计算下个月
+                      final nextMonth = DateTime(
+                        focusedDay.year,
+                        focusedDay.month + 1,
+                      );
+                      widget.onPageChanged?.call(nextMonth);
+                    },
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: 32,
+                      minHeight: 32,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDropdownMenu(BuildContext context) {
+    return Container(
+      width: 120,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          width: 1,
         ),
-        selectedDayPredicate: (day) =>
-            widget.isRange ? false : isSameDay(widget.selectedDay, day),
-        onFormatChanged: (calendarFormat) =>
-            setState(() => _calendarFormat = calendarFormat),
-        onPageChanged: (focusedDay) {
-          widget.onPageChanged?.call(focusedDay);
-        },
-        onDaySelected: widget.onDaySelected,
-        onRangeSelected: widget.onRangeSelected,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 新建日记页按钮
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+              ),
+              onTap: () {
+                _popoverController.hide();
+                // TODO: 处理新建日记页
+              },
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.note_add,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '新建日记页',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // 分割线
+          Container(
+            height: 1,
+            color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+          ),
+          // 新建日程按钮
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              onTap: () {
+                _popoverController.hide();
+                // TODO: 处理新建日程
+              },
+              child: Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.event_note,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                    SizedBox(width: 8),
+                    Text(
+                      '新建日程',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoreMenu(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: 220,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: theme.colorScheme.outline.withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Text(
+              '日历显示设置',
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Icon(Icons.calendar_today,
+                  size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('订阅系统日历', style: theme.textTheme.bodyMedium),
+              ),
+              Switch(
+                value: _subscribeSystemCalendar,
+                onChanged: (v) {
+                  setState(() {
+                    _subscribeSystemCalendar = v;
+                  });
+                },
+                activeColor: theme.colorScheme.primary,
+                activeTrackColor: theme.colorScheme.primary.withOpacity(0.3),
+                inactiveThumbColor: theme.colorScheme.outline,
+                inactiveTrackColor: theme.colorScheme.outline.withOpacity(0.3),
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                focusColor: Colors.transparent,
+                hoverColor: Colors.transparent,
+                overlayColor: MaterialStateProperty.all(Colors.transparent),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(Icons.view_agenda, size: 18, color: theme.iconTheme.color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('日记模板', style: theme.textTheme.bodyMedium),
+              ),
+              GestureDetector(
+                onTap: () {
+                  // TODO: 处理默认模板点击
+                },
+                child: Text(
+                  '默认',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

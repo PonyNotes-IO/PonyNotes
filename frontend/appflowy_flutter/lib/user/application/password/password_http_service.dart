@@ -10,7 +10,6 @@ enum PasswordEndpoint {
   changePassword,
   forgotPassword,
   setupPassword,
-  checkHasPassword,
   verifyResetPasswordToken;
 
   String get path {
@@ -21,8 +20,6 @@ enum PasswordEndpoint {
         return '/gotrue/recover';
       case PasswordEndpoint.setupPassword:
         return '/gotrue/user/change-password';
-      case PasswordEndpoint.checkHasPassword:
-        return '/gotrue/user/auth-info';
       case PasswordEndpoint.verifyResetPasswordToken:
         return '/gotrue/verify';
     }
@@ -35,8 +32,6 @@ enum PasswordEndpoint {
       case PasswordEndpoint.forgotPassword:
       case PasswordEndpoint.verifyResetPasswordToken:
         return 'POST';
-      case PasswordEndpoint.checkHasPassword:
-        return 'GET';
     }
   }
 
@@ -77,10 +72,16 @@ class PasswordHttpService {
       errorMessage: 'Failed to change password',
     );
 
-    return result.fold(
-      (data) => FlowyResult.success(true),
-      (error) => FlowyResult.failure(error),
-    );
+    if (result.isSuccess) {
+      // 标记用户设置了自定义密码
+      await _markUserHasCustomPassword();
+      return FlowyResult.success(true);
+    } else {
+      return result.fold(
+        (data) => FlowyResult.success(true),
+        (error) => FlowyResult.failure(error),
+      );
+    }
   }
 
   /// Sends a password reset email to the user
@@ -113,27 +114,14 @@ class PasswordHttpService {
       errorMessage: 'Failed to setup password',
     );
 
-    return result.fold(
-      (data) => FlowyResult.success(true),
-      (error) => FlowyResult.failure(error),
-    );
-  }
-
-  /// Checks if the user has a password set
-  Future<FlowyResult<bool, FlowyError>> checkHasPassword() async {
-    final result = await _makeRequest(
-      endpoint: PasswordEndpoint.checkHasPassword,
-      errorMessage: 'Failed to check password status',
-    );
-
-    try {
+    if (result.isSuccess) {
+      // 标记用户设置了自定义密码
+      await _markUserHasCustomPassword();
+      return FlowyResult.success(true);
+    } else {
       return result.fold(
-        (data) => FlowyResult.success(data['has_password'] ?? false),
+        (data) => FlowyResult.success(true),
         (error) => FlowyResult.failure(error),
-      );
-    } catch (e) {
-      return FlowyResult.failure(
-        FlowyError(msg: 'Failed to check password status: $e'),
       );
     }
   }
@@ -204,13 +192,6 @@ class PasswordHttpService {
         final errorBody =
             response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
-        // the checkHasPassword endpoint will return 403, which is not an error
-        if (endpoint != PasswordEndpoint.checkHasPassword) {
-          Log.info(
-            '${endpoint.name} request failed: ${response.statusCode}, $errorBody ',
-          );
-        }
-
         ErrorCode errorCode = ErrorCode.Internal;
 
         if (response.statusCode == 422) {
@@ -230,6 +211,26 @@ class PasswordHttpService {
       return FlowyResult.failure(
         FlowyError(msg: 'Network error: ${e.toString()}'),
       );
+    }
+  }
+
+  /// 标记用户设置了自定义密码
+  Future<void> _markUserHasCustomPassword() async {
+    try {
+      final uri = Uri.parse('$baseUrl/api/user/mark-custom-password');
+      final response = await client.post(
+        uri,
+        headers: headers,
+      );
+
+      if (response.statusCode != 200) {
+        // 记录错误但不阻断流程
+        Log.error(
+            'Failed to mark user has custom password: ${response.statusCode}');
+      }
+    } catch (e) {
+      // 记录错误但不阻断流程
+      Log.error('Error marking user has custom password: $e');
     }
   }
 }

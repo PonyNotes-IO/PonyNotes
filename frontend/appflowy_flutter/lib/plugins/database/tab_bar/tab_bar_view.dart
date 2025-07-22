@@ -221,10 +221,11 @@ class _DatabaseTabBarViewState extends State<DatabaseTabBarView> {
                   wrapContent(
                     layout: layout,
                     child: Padding(
-                      padding:
-                          (isCalendar && widget.shrinkWrap || showActionWrapper)
-                              ? EdgeInsets.only(left: 42 - horizontalPadding)
-                              : EdgeInsets.zero,
+                      padding: (isCalendar && widget.shrinkWrap ||
+                                  showActionWrapper) &&
+                              !isCalendar
+                          ? EdgeInsets.only(left: 42 - horizontalPadding)
+                          : EdgeInsets.zero,
                       child: Provider(
                         create: (_) => DatabasePluginWidgetBuilderSize(
                           horizontalPadding: horizontalPadding,
@@ -283,6 +284,11 @@ class _DatabaseTabBarViewState extends State<DatabaseTabBarView> {
   }
 
   Widget wrapContent({required ViewLayoutPB layout, required Widget child}) {
+    // 为日历页面去除额外的包装，让它完全铺满空间
+    if (layout == ViewLayoutPB.Calendar) {
+      return child;
+    }
+
     if (widget.shrinkWrap) {
       if (layout.shrinkWrappable) {
         return child;
@@ -320,10 +326,15 @@ class _DatabaseTabBarViewState extends State<DatabaseTabBarView> {
     final tabBar = state.tabBars[state.selectedIndex];
     final controller =
         state.tabBarControllerByViewId[tabBar.viewId]!.controller;
+
+    // 为日历页面去除额外的padding
+    final horizontalPadding = tabBar.layout == ViewLayoutPB.Calendar
+        ? 0.0
+        : context.read<DatabasePluginWidgetBuilderSize>().horizontalPadding;
+
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal:
-            context.read<DatabasePluginWidgetBuilderSize>().horizontalPadding,
+        horizontal: horizontalPadding,
       ),
       child: tabBar.builder.settingBarExtension(
         context,
@@ -433,6 +444,15 @@ class DatabasePluginWidgetBuilder extends PluginWidgetBuilder {
       ViewTabBarItem(view: notifier.view, shortForm: shortForm);
 
   @override
+  EdgeInsets get contentPadding {
+    // 为日历页面去除所有留白
+    if (notifier.view.layout == ViewLayoutPB.Calendar) {
+      return EdgeInsets.zero;
+    }
+    return super.contentPadding;
+  }
+
+  @override
   Widget buildWidget({
     required PluginContext context,
     required bool shrinkWrap,
@@ -445,9 +465,11 @@ class DatabasePluginWidgetBuilder extends PluginWidgetBuilder {
       }
     });
 
-    final horizontalPadding =
-        data?[kDatabasePluginWidgetBuilderHorizontalPadding] as double? ??
-            GridSize.horizontalHeaderPadding + 40;
+    // 为日历页面设置horizontalPadding为0，让内容完全铺满
+    final horizontalPadding = notifier.view.layout == ViewLayoutPB.Calendar
+        ? 0.0
+        : (data?[kDatabasePluginWidgetBuilderHorizontalPadding] as double? ??
+            GridSize.horizontalHeaderPadding + 40);
     final BlockComponentActionBuilder? actionBuilder =
         data?[kDatabasePluginWidgetBuilderActionBuilder];
     final bool showActions =
@@ -496,7 +518,4 @@ class DatabasePluginWidgetBuilder extends PluginWidgetBuilder {
       ),
     );
   }
-
-  @override
-  EdgeInsets get contentPadding => const EdgeInsets.only(top: 28);
 }

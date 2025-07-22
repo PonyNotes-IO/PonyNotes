@@ -31,7 +31,7 @@ import 'package:appflowy/workspace/presentation/home/menu/sidebar/footer/sidebar
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/header/sidebar_top_menu.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/header/sidebar_user.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_new_page_button.dart';
+
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/space_migration.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/sidebar_workspace.dart';
@@ -368,17 +368,6 @@ class _SidebarState extends State<_Sidebar> {
                 height: HomeSizes.searchSectionHeight,
                 child: const _SidebarSearchButton(),
               ),
-            ],
-
-            if (context
-                    .read<UserWorkspaceBloc>()
-                    .state
-                    .currentWorkspace
-                    ?.role !=
-                AFRolePB.Guest) ...[
-              const VSpace(6.0),
-              // new page button
-              const SidebarNewPageButton(),
             ],
 
             // scrollable document list

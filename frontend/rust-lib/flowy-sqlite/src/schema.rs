@@ -106,9 +106,10 @@ diesel::table! {
         name -> Text,
         icon_url -> Text,
         token -> Text,
-        email -> Text,
+        email -> Nullable<Text>,
         auth_type -> Integer,
         updated_at -> BigInt,
+        phone_number -> Nullable<Text>,
     }
 }
 

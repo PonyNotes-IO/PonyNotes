@@ -42,3 +42,9 @@ frontend/*.deb
 **/Cargo.toml.bak
 
 **/.cargo/**
+
+# ignore external dependencies submodules
+external_deps/*/
+frontend/external_deps/*/
+flutter_cache_manager/
+frontend/appflowy_flutter/appflowy-editor/
