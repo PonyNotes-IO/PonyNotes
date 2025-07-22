@@ -16,6 +16,7 @@ async fn sign_up_with_invalid_email() {
       password: login_password(),
       auth_type: AuthTypePB::Local,
       device_id: "".to_string(),
+      phone_number: "".to_string(),
     };
 
     assert_eq!(

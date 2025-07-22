@@ -65,6 +65,21 @@ class _DesktopThirdPartySignInState extends State<_DesktopThirdPartySignIn> {
     return Column(
       children: [
         DesktopThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.wechat,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.wechat),
+        ),
+        VSpace(theme.spacing.l),
+        DesktopThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.tikTok,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.tikTok),
+        ),
+        VSpace(theme.spacing.l),
+        DesktopThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.qq,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.qq),
+        ),
+        /*
+        DesktopThirdPartySignInButton(
           key: signInWithGoogleButtonKey,
           type: ThirdPartySignInButtonType.google,
           onTap: () => widget.onSignIn(ThirdPartySignInButtonType.google),
@@ -74,7 +89,8 @@ class _DesktopThirdPartySignInState extends State<_DesktopThirdPartySignIn> {
           type: ThirdPartySignInButtonType.apple,
           onTap: () => widget.onSignIn(ThirdPartySignInButtonType.apple),
         ),
-        ...isExpanded ? _buildExpandedButtons() : _buildCollapsedButtons(),
+        */
+        //...isExpanded ? _buildExpandedButtons() : _buildCollapsedButtons(),
       ],
     );
   }
@@ -148,6 +164,21 @@ class _MobileThirdPartySignInState extends State<_MobileThirdPartySignIn> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        MobileThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.wechat,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.wechat),
+        ),
+        const VSpace(padding),
+        MobileThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.tikTok,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.tikTok),
+        ),
+        const VSpace(padding),
+        MobileThirdPartySignInButton(
+          type: ThirdPartySignInButtonType.qq,
+          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.qq),
+        ),
+        /*
         // only display apple sign in button on iOS
         if (Platform.isIOS) ...[
           MobileThirdPartySignInButton(
@@ -162,6 +193,7 @@ class _MobileThirdPartySignInState extends State<_MobileThirdPartySignIn> {
           onTap: () => widget.onSignIn(ThirdPartySignInButtonType.google),
         ),
         ...isExpanded ? _buildExpandedButtons() : _buildCollapsedButtons(),
+        */
       ],
     );
   }

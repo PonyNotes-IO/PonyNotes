@@ -9,6 +9,9 @@ enum ThirdPartySignInButtonType {
   google,
   github,
   discord,
+  wechat,
+  tikTok,
+  qq,
   anonymous;
 
   String get provider {
@@ -21,6 +24,12 @@ enum ThirdPartySignInButtonType {
         return 'github';
       case ThirdPartySignInButtonType.discord:
         return 'discord';
+      case ThirdPartySignInButtonType.wechat:
+        return 'wechat';
+      case ThirdPartySignInButtonType.qq:
+        return 'qq';
+      case ThirdPartySignInButtonType.tikTok:
+        return 'tikTok';
       case ThirdPartySignInButtonType.anonymous:
         throw UnsupportedError('Anonymous session does not have a provider');
     }
@@ -36,6 +45,12 @@ enum ThirdPartySignInButtonType {
         return FlowySvgs.m_github_icon_xl;
       case ThirdPartySignInButtonType.discord:
         return FlowySvgs.m_discord_icon_xl;
+      case ThirdPartySignInButtonType.wechat:
+        return FlowySvgs.m_wechat_icon_xl;
+      case ThirdPartySignInButtonType.qq:
+        return FlowySvgs.m_qq_icon_xl;
+      case ThirdPartySignInButtonType.tikTok:
+        return FlowySvgs.m_tiktok_icon_xl;
       case ThirdPartySignInButtonType.anonymous:
         return FlowySvgs.m_discord_icon_xl;
     }
@@ -51,6 +66,12 @@ enum ThirdPartySignInButtonType {
         return LocaleKeys.signIn_signInWithGithub.tr();
       case ThirdPartySignInButtonType.discord:
         return LocaleKeys.signIn_signInWithDiscord.tr();
+      case ThirdPartySignInButtonType.wechat:
+        return LocaleKeys.signIn_signInWithWechat.tr();
+      case ThirdPartySignInButtonType.qq:
+        return LocaleKeys.signIn_signInWithQQ.tr();
+      case ThirdPartySignInButtonType.tikTok:
+        return LocaleKeys.signIn_signInWithTiktok.tr();
       case ThirdPartySignInButtonType.anonymous:
         return 'Anonymous session';
     }
@@ -62,10 +83,14 @@ enum ThirdPartySignInButtonType {
     switch (this) {
       case ThirdPartySignInButtonType.apple:
         return isDarkMode ? Colors.white : Colors.black;
+      case ThirdPartySignInButtonType.wechat:
+        return const Color(0xFF07C160);
       case ThirdPartySignInButtonType.google:
       case ThirdPartySignInButtonType.github:
       case ThirdPartySignInButtonType.discord:
       case ThirdPartySignInButtonType.anonymous:
+      case ThirdPartySignInButtonType.tikTok:
+      case ThirdPartySignInButtonType.qq:
         return isDarkMode ? Colors.black : Colors.grey.shade100;
     }
   }
@@ -75,10 +100,14 @@ enum ThirdPartySignInButtonType {
     switch (this) {
       case ThirdPartySignInButtonType.apple:
         return isDarkMode ? Colors.black : Colors.white;
+      case ThirdPartySignInButtonType.wechat:
+        return Colors.white;
       case ThirdPartySignInButtonType.google:
       case ThirdPartySignInButtonType.github:
       case ThirdPartySignInButtonType.discord:
       case ThirdPartySignInButtonType.anonymous:
+      case ThirdPartySignInButtonType.tikTok:
+      case ThirdPartySignInButtonType.qq:
         return isDarkMode ? Colors.white : Colors.black;
     }
   }
@@ -88,6 +117,8 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.apple:
       case ThirdPartySignInButtonType.github:
         return BlendMode.srcIn;
+      case ThirdPartySignInButtonType.wechat:
+        return null;
       default:
         return null;
     }

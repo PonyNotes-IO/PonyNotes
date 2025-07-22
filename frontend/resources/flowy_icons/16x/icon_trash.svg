@@ -1,0 +1,7 @@
+<!-- 回收站按钮左侧图标 -->
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<polyline points="2,4 3.33333,4 14,4" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M12.6667,4v9.33333a1.33333,1.33333 0 0,1 -1.33333,1.33333H4.66667a1.33333,1.33333 0 0,1 -1.33333,-1.33333V4m2,0V2.66667a1.33333,1.33333 0 0,1 1.33333,-1.33333h2.66667a1.33333,1.33333 0 0,1 1.33333,1.33333V4" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="6.66667" y1="7.33333" x2="6.66667" y2="11.3333" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="9.33333" y1="7.33333" x2="9.33333" y2="11.3333" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg> 

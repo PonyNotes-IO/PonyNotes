@@ -694,6 +694,11 @@ class PageManager {
   }
 
   Widget stackTopBar({required HomeLayout layout}) {
+    // 为日历页面隐藏顶部标题栏
+    if (notifier.plugin.pluginType == PluginType.calendar) {
+      return const SizedBox.shrink();
+    }
+
     return ChangeNotifierProvider.value(
       value: _notifier,
       child: Selector<PageNotifier, Widget>(

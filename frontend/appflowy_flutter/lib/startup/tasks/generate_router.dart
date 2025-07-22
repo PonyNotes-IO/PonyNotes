@@ -29,6 +29,7 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/startup/tasks/app_widget.dart';
 import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy/user/presentation/presentation.dart';
+import 'package:appflowy/user/presentation/screens/legal_document_screen.dart';
 import 'package:appflowy/workspace/presentation/home/desktop_home_screen.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/feature_flags/mobile_feature_flag_screen.dart';
 import 'package:appflowy_backend/log.dart';
@@ -54,6 +55,7 @@ GoRouter generateRouter(Widget child) {
       _rootRoute(child),
       // Routes in both desktop and mobile
       _signInScreenRoute(),
+      _legalDocumentScreenRoute(),
       _skipLogInScreenRoute(),
       _workspaceErrorScreenRoute(),
       // Desktop only
@@ -560,6 +562,26 @@ GoRoute _signInScreenRoute() {
     pageBuilder: (context, state) {
       return CustomTransitionPage(
         child: const SignInScreen(),
+        transitionsBuilder: _buildFadeTransition,
+        transitionDuration: _slowDuration,
+      );
+    },
+  );
+}
+
+GoRoute _legalDocumentScreenRoute() {
+  return GoRoute(
+    path: LegalDocumentScreen.routeName,
+    pageBuilder: (context, state) {
+      final args = state.extra as Map<String, dynamic>?;
+      final title = args?['title'] ?? '';
+      final content = args?['content'] ?? '';
+
+      return CustomTransitionPage(
+        child: LegalDocumentScreen(
+          title: title,
+          content: content,
+        ),
         transitionsBuilder: _buildFadeTransition,
         transitionDuration: _slowDuration,
       );

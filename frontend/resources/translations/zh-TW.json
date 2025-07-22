@@ -49,6 +49,9 @@
     "or": "或",
     "signInWithGoogle": "使用Google 登入",
     "signInWithGithub": "使用Github 登入",
+    "signInWithWechat": "使用微信登入",
+    "signInWithQQ": "使用QQ登入",
+    "signInWithTiktok": "使用抖音登入",
     "signInWithDiscord": "使用Discord 登入",
     "signInWithApple": "使用 Apple 帳號登入",
     "continueAnotherWay": "使用其他方式登入",
@@ -72,7 +75,8 @@
     "LogInWithGoogle": "使用 Google 登入",
     "LogInWithGithub": "使用 Github 登入",
     "LogInWithDiscord": "使用 Discord 登入",
-    "loginAsGuestButtonText": "以訪客身分登入"
+    "loginAsGuestButtonText": "以訪客身分登入",
+    "quickStart": "快速開始"
   },
   "workspace": {
     "chooseWorkspace": "選擇你的工作區",

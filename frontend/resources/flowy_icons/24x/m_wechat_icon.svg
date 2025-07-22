@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 微信图标背景圆形 -->
+  <circle cx="12" cy="12" r="12" fill="#07C160"/>
+  
+  <!-- 微信Logo - 两个对话气泡 -->
+  <!-- 左侧大气泡 -->
+  <ellipse cx="9" cy="10.2" rx="4.8" ry="3.6" fill="white"/>
+  
+  <!-- 右侧小气泡 -->
+  <ellipse cx="15" cy="12.6" rx="3.6" ry="2.7" fill="white"/>
+  
+  <!-- 左侧气泡的眼睛 -->
+  <circle cx="7.2" cy="9.6" r="0.72" fill="#07C160"/>
+  <circle cx="10.8" cy="9.6" r="0.72" fill="#07C160"/>
+  
+  <!-- 右侧气泡的眼睛 -->
+  <circle cx="13.8" cy="12" r="0.48" fill="#07C160"/>
+  <circle cx="16.2" cy="12" r="0.48" fill="#07C160"/>
+  
+  <!-- 左侧气泡的嘴巴 -->
+  <path d="M 7.2 11.1 Q 9 12.6 10.8 11.1" stroke="#07C160" stroke-width="0.48" fill="none" stroke-linecap="round"/>
+  
+  <!-- 右侧气泡的嘴巴 -->
+  <path d="M 13.8 13.32 Q 15 14.28 16.2 13.32" stroke="#07C160" stroke-width="0.36" fill="none" stroke-linecap="round"/>
+</svg> 

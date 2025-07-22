@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 微信绿色背景 -->
+  <circle cx="12" cy="12" r="12" fill="#07C160"/>
+  
+  <!-- 微信Logo - 简化版对话气泡 -->
+  <path d="M8.5 9.5C8.5 8.12 9.62 7 11 7H13C14.38 7 15.5 8.12 15.5 9.5C15.5 10.88 14.38 12 13 12H11C9.62 12 8.5 10.88 8.5 9.5Z" fill="white"/>
+  <path d="M9.5 13C9.5 11.9 10.4 11 11.5 11H15C16.1 11 17 11.9 17 13C17 14.1 16.1 15 15 15H11.5C10.4 15 9.5 14.1 9.5 13Z" fill="white"/>
+  
+  <!-- 眼睛 -->
+  <circle cx="10.5" cy="9.5" r="0.7" fill="#07C160"/>
+  <circle cx="13.5" cy="9.5" r="0.7" fill="#07C160"/>
+  <circle cx="12" cy="13" r="0.5" fill="#07C160"/>
+  <circle cx="14.5" cy="13" r="0.5" fill="#07C160"/>
+</svg> 

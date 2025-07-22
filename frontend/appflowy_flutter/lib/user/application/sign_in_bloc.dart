@@ -203,14 +203,51 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       ),
     );
 
-    final result = await authService.signUpWithOAuth(platform: platform);
+    // 处理微信登录
+    if (platform == 'wechat') {
+      // 微信登录暂时返回失败，需要实现具体的微信登录逻辑
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: FlowyResult.failure(
+            FlowyError()..msg = '微信登录功能正在开发中',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 处理QQ登录
+    if (platform == 'qq') {
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: null,
+        ),
+      );
+      // 直接在这里设置一个特殊的成功状态，表示需要导航到QQ登录页面
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: FlowyResult.success(
+            // 创建一个特殊的UserProfilePB来表示QQ登录导航请求
+            UserProfilePB()..email = 'qq_login_navigate',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final result = await authService.signUpWithOAuth(
+      platform: platform,
+    );
     emit(
       result.fold(
-        (userProfile) => state.copyWith(
+        (s) => state.copyWith(
           isSubmitting: false,
-          successOrFail: FlowyResult.success(userProfile),
+          successOrFail: FlowyResult.success(s),
         ),
-        (error) => _stateFromCode(error),
+        (f) => _stateFromCode(f),
       ),
     );
   }
@@ -224,8 +261,6 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       return;
     }
 
-    Log.info('Sign in with magic link: $email');
-
     emit(
       state.copyWith(
         isSubmitting: true,
@@ -237,13 +272,13 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
 
     final result = await authService.signInWithMagicLink(email: email);
 
-    emit(
-      result.fold(
-        (userProfile) => state.copyWith(
-          isSubmitting: false,
-        ),
-        (error) => _stateFromCode(error),
-      ),
+    result.fold(
+      (userProfile) {
+        emit(state.copyWith(isSubmitting: false));
+      },
+      (error) {
+        emit(_stateFromCode(error));
+      },
     );
   }
 

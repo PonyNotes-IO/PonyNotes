@@ -257,7 +257,7 @@ impl UserCloudService for LocalServerUserServiceImpl {
           let profile = select_user_profile(uid, &workspace_id.to_string(), &mut conn)
             .context("Can't find user profile when create workspace member")?;
           let row = WorkspaceMemberTable {
-            email: profile.email.to_string(),
+            email: profile.email.unwrap_or_default(),
             role: Role::Owner as i32,
             name: profile.name.to_string(),
             avatar_url: Some(profile.icon_url),

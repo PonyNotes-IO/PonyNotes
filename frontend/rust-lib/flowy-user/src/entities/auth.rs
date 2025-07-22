@@ -24,6 +24,9 @@ pub struct SignInPayloadPB {
 
   #[pb(index = 5)]
   pub device_id: String,
+
+  #[pb(index = 6)]
+  pub phone_number: String,
 }
 
 impl TryInto<SignInParams> for SignInPayloadPB {
@@ -57,6 +60,9 @@ pub struct SignUpPayloadPB {
 
   #[pb(index = 5)]
   pub device_id: String,
+
+  #[pb(index = 6)]
+  pub phone_number: String,
 }
 
 impl TryInto<SignUpParams> for SignUpPayloadPB {
@@ -84,6 +90,9 @@ pub struct MagicLinkSignInPB {
 
   #[pb(index = 2)]
   pub redirect_to: String,
+
+  #[pb(index = 3)]
+  pub phone_number: String,
 }
 
 #[derive(ProtoBuf, Default)]
@@ -192,6 +201,7 @@ pub enum ProviderTypePB {
   Email = 18,
   Phone = 19,
   Zoom = 20,
+  WeChat = 21,
 }
 
 impl ProviderTypePB {
@@ -218,6 +228,7 @@ impl ProviderTypePB {
       ProviderTypePB::Email => "email",
       ProviderTypePB::Phone => "phone",
       ProviderTypePB::Zoom => "zoom",
+      ProviderTypePB::WeChat => "wechat",
     }
   }
 }

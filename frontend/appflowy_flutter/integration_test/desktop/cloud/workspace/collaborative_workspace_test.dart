@@ -36,20 +36,23 @@ void main() {
       final loading = find.byType(Loading);
       await tester.pumpUntilNotFound(loading);
 
+      Finder success;
+
+      final Finder items = find.byType(WorkspaceMenuItem);
+
       // delete the newly created workspace
       await tester.openCollaborativeWorkspaceMenu();
+      await tester.pumpUntilFound(items);
 
-      final items = find.byType(WorkspaceMenuItem);
       expect(items, findsNWidgets(2));
-
-      final lastWorkspace = items.last;
       expect(
-        tester.widget<WorkspaceMenuItem>(lastWorkspace).workspace.name,
+        tester.widget<WorkspaceMenuItem>(items.last).workspace.name,
         name,
       );
 
+      final secondWorkspace = find.byType(WorkspaceMenuItem).last;
       await tester.hoverOnWidget(
-        lastWorkspace,
+        secondWorkspace,
         onHover: () async {
           // click the more button
           final moreButton = find.byType(WorkspaceMoreActionList);
@@ -65,8 +68,10 @@ void main() {
           expect(confirm, findsOneWidget);
           await tester.tapButton(find.text(LocaleKeys.button_ok.tr()));
           // delete success
-          final success = find.text(LocaleKeys.workspace_createSuccess.tr());
+          success = find.text(LocaleKeys.workspace_createSuccess.tr());
           await tester.pumpUntilFound(success);
+          expect(success, findsOneWidget);
+          await tester.pumpUntilNotFound(success);
         },
       );
     });

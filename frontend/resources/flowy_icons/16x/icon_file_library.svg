@@ -1,0 +1,5 @@
+<!-- 文件库按钮左侧图标 -->
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M2 4.5C2 3.67157 2.67157 3 3.5 3H6.5L8 4.5H13.5C14.3284 4.5 15 5.17157 15 6V12.5C15 13.3284 14.3284 14 13.5 14H3.5C2.67157 14 2 13.3284 2 12.5V4.5Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M6.5 3V4.5H8" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
+</svg> 

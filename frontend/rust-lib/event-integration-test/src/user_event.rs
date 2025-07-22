@@ -66,6 +66,7 @@ impl EventIntegrationTest {
       password: password.clone(),
       auth_type: AuthTypePB::Local,
       device_id: uuid::Uuid::new_v4().to_string(),
+      phone_number: "".to_string(),
     }
     .into_bytes()
     .unwrap();

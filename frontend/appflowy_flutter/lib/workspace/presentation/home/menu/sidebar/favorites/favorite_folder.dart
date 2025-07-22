@@ -165,20 +165,22 @@ class FavoriteHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = AppFlowyTheme.of(context);
-    return AFGhostIconTextButton.primary(
-      text: LocaleKeys.sideBar_favorites.tr(),
-      mainAxisAlignment: MainAxisAlignment.start,
-      size: AFButtonSize.l,
-      onTap: onPressed,
-      // todo: ask the designer to provide the token.
-      padding: EdgeInsets.symmetric(
-        horizontal: 4,
-        vertical: 6,
-      ),
-      borderRadius: theme.borderRadius.s,
-      iconBuilder: (context, isHover, disabled) => const FlowySvg(
-        FlowySvgs.favorite_header_m,
-        blendMode: null,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: AFGhostIconTextButton.primary(
+        text: LocaleKeys.sideBar_favorites.tr(),
+        mainAxisAlignment: MainAxisAlignment.start,
+        size: AFButtonSize.l,
+        onTap: onPressed,
+        padding: EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 10,
+        ),
+        borderRadius: theme.borderRadius.s,
+        iconBuilder: (context, isHover, disabled) => FlowySvg(
+          FlowySvgs.icon_favorite_s,
+          size: const Size.square(16.0),
+        ),
       ),
     );
   }

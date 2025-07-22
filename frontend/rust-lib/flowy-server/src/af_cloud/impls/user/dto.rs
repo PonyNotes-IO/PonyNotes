@@ -38,7 +38,7 @@ pub fn user_profile_from_af_profile(
   };
   let workspace_type = WorkspaceType::from(&auth_type);
   Ok(UserProfile {
-    email: profile.email.unwrap_or("".to_string()),
+    email: profile.email,
     name: profile.name.unwrap_or("".to_string()),
     token,
     icon_url: icon_url.unwrap_or_default(),
@@ -46,6 +46,7 @@ pub fn user_profile_from_af_profile(
     uid: profile.uid,
     updated_at: profile.updated_at,
     workspace_type,
+    phone_number: None,
   })
 }
 

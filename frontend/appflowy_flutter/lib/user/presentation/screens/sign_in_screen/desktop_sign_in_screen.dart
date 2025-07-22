@@ -4,10 +4,13 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/shared/settings/show_settings.dart';
 import 'package:appflowy/shared/window_title_bar.dart';
+import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
+import 'package:appflowy/user/presentation/screens/qq_qr_login_screen.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
 import 'package:appflowy/user/presentation/widgets/widgets.dart';
+import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
@@ -31,21 +34,67 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
   Widget build(BuildContext context) {
     final theme = AppFlowyTheme.of(context);
 
-    return BlocBuilder<SignInBloc, SignInState>(
-      builder: (context, state) {
-        final bottomPadding = UniversalPlatform.isDesktop ? 20.0 : 24.0;
-        return Scaffold(
-          appBar: _buildAppBar(),
-          body: Center(
-            child: AuthFormContainer(
-              children: [
-                const Spacer(),
+    return BlocListener<SignInBloc, SignInState>(
+      listener: (context, state) async {
+        final successOrFail = state.successOrFail;
+        if (successOrFail != null) {
+          if (successOrFail.isSuccess) {
+            successOrFail.onSuccess((userProfile) async {
+              // 检查是否是QQ登录导航请求
+              if (userProfile?.email == 'qq_login_navigate') {
+                // 导航到QQ二维码登录页面
+                _showQQLoginDialog(context);
+                return;
+              }
 
+              // 匿名登录成功，启动应用
+              if (userProfile != null) {
+                await runAppFlowy();
+              }
+            });
+          } else {
+            // 显示错误Toast
+            successOrFail.onFailure((error) {
+              showToastNotification(
+                message: error.msg,
+                type: ToastificationType.error,
+              );
+            });
+          }
+        }
+      },
+      child: BlocBuilder<SignInBloc, SignInState>(
+        builder: (context, state) {
+          final bottomPadding = UniversalPlatform.isDesktop ? 20.0 : 24.0;
+          return Scaffold(
+            appBar: _buildAppBar(),
+            body: CenteredAuthContainer(
+              children: [
                 // logo and title
                 FlowyLogoTitle(
                   title: LocaleKeys.welcomeText.tr(),
                   logoSize: Size.square(36),
                 ),
+                VSpace(theme.spacing.xxl),
+
+                // 快速开始按钮
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 320),
+                  child: AFOutlinedTextButton.normal(
+                    text: LocaleKeys.signIn_quickStart.tr(),
+                    size: AFButtonSize.l,
+                    onTap: () {
+                      // 直接调用匿名登录
+                      context
+                          .read<SignInBloc>()
+                          .add(const SignInEvent.signInAsGuest());
+                    },
+                  ),
+                ),
+                VSpace(theme.spacing.xxl),
+
+                const _OrDivider(),
                 VSpace(theme.spacing.xxl),
 
                 // continue with email and password
@@ -63,11 +112,6 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
                   VSpace(theme.spacing.xxl),
                 ],
 
-                // sign in agreement
-                const SignInAgreement(),
-
-                const Spacer(),
-
                 // anonymous sign in and settings
                 const Row(
                   mainAxisSize: MainAxisSize.min,
@@ -80,9 +124,9 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
                 VSpace(bottomPadding),
               ],
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -100,6 +144,36 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
     // https://pub.dev/packages/window_manager#windows
     // must call setState once when the window is focused
     setState(() {});
+  }
+
+  void _showQQLoginDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            constraints: const BoxConstraints(
+              maxWidth: 480,
+              maxHeight: 600,
+            ),
+            child: QQQRLoginScreen(
+              onSuccess: () {
+                Navigator.of(context).pop();
+                // 这里应该处理QQ登录成功的逻辑
+                showToastNotification(
+                  message: 'QQ登录成功',
+                  type: ToastificationType.success,
+                );
+              },
+              onCancel: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

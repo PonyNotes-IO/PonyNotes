@@ -24,10 +24,6 @@ class SignInAgreement extends StatelessWidget {
       text: TextSpan(
         children: [
           TextSpan(
-            text: LocaleKeys.web_signInAgreement.tr(),
-            style: textStyle,
-          ),
-          TextSpan(
             text: '${LocaleKeys.web_termOfUse.tr()} ',
             style: underlinedTextStyle,
             mouseCursor: SystemMouseCursors.click,

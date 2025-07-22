@@ -113,7 +113,7 @@ pub async fn get_user_profile_handler(
   // When the user is logged in with a local account, the email field is a placeholder and should
   // not be exposed to the client. So we set the email field to an empty string.
   if user_profile.auth_type == AuthType::Local {
-    user_profile.email = "".to_string();
+    user_profile.email = Some("".to_string());
   }
 
   data_result_ok(user_profile.into())

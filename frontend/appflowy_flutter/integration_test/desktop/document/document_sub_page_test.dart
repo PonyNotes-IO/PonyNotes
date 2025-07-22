@@ -7,7 +7,6 @@ import 'package:appflowy/shared/icon_emoji_picker/recent_icons.dart';
 import 'package:appflowy/workspace/presentation/home/menu/view/view_action_type.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
-import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -522,8 +521,8 @@ extension _SubPageTestHelper on WidgetTester {
     await hoverOnPageName(currentName, onHover: () async => pumpAndSettle());
     await rightClickOnPageName(currentName);
     await tapButtonWithName(ViewMoreActionType.rename.name);
-    await enterText(find.byType(AFTextField), newName);
-    await tapButton(find.text(LocaleKeys.button_confirm.tr()));
+    await enterText(find.byType(TextFormField), newName);
+    await tapOKButton();
     await pumpAndSettle();
   }
 }

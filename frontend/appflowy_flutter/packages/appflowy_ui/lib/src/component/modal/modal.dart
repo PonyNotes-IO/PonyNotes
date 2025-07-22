@@ -61,17 +61,12 @@ class AFModalHeader extends StatelessWidget {
         left: theme.spacing.xxl,
         right: theme.spacing.xxl,
       ),
-      child: DefaultTextStyle(
-        style: theme.textStyle.heading4.prominent(
-          color: theme.textColorScheme.primary,
-        ),
-        child: Row(
-          spacing: theme.spacing.s,
-          children: [
-            Expanded(child: leading),
-            ...trailing,
-          ],
-        ),
+      child: Row(
+        spacing: theme.spacing.s,
+        children: [
+          Expanded(child: leading),
+          ...trailing,
+        ],
       ),
     );
   }

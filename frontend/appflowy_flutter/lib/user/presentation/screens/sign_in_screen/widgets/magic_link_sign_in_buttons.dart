@@ -29,6 +29,18 @@ class _SignInWithMagicLinkButtonsState
     super.dispose();
   }
 
+  // 验证手机号格式
+  bool _isValidPhone(String phone) {
+    // 中国手机号格式：1开头的11位数字
+    final phoneRegex = RegExp(r'^1[3-9]\d{9}$');
+    return phoneRegex.hasMatch(phone);
+  }
+
+  // 验证邮箱或手机号
+  bool _isValidEmailOrPhone(String input) {
+    return isEmail(input) || _isValidPhone(input);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -63,7 +75,7 @@ class _SignInWithMagicLinkButtonsState
   }
 
   void _sendMagicLink(BuildContext context, String email) {
-    if (!isEmail(email)) {
+    if (!_isValidEmailOrPhone(email)) {
       showToastNotification(
         message: LocaleKeys.signIn_invalidEmail.tr(),
         type: ToastificationType.error,

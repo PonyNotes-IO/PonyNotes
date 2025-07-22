@@ -21,7 +21,6 @@ import 'package:appflowy/workspace/presentation/home/menu/view/draggable_view_it
 import 'package:appflowy/workspace/presentation/home/menu/view/view_action_type.dart';
 import 'package:appflowy/workspace/presentation/home/menu/view/view_add_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/view/view_more_action_button.dart';
-import 'package:appflowy/workspace/presentation/widgets/dialog_v2.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy/workspace/presentation/widgets/more_view_actions/widgets/lock_page_action.dart';
 import 'package:appflowy/workspace/presentation/widgets/rename_view_popover.dart';
@@ -767,15 +766,15 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
               break;
             case ViewMoreActionType.rename:
               unawaited(
-                showAFTextFieldDialog(
-                  context: context,
+                NavigatorTextFieldDialog(
                   title: LocaleKeys.disclosureAction_rename.tr(),
-                  initialValue: widget.view.nameOrDefault,
-                  onConfirm: (newValue) {
+                  autoSelectAllText: true,
+                  value: widget.view.nameOrDefault,
+                  maxLength: 256,
+                  onConfirm: (newValue, _) {
                     context.read<ViewBloc>().add(ViewEvent.rename(newValue));
                   },
-                  maxLength: 256,
-                ),
+                ).show(context),
               );
               break;
             case ViewMoreActionType.delete:
