@@ -16,9 +16,9 @@ class SignInAgreement extends StatelessWidget {
     final textStyle = theme.textStyle.caption.standard(
       color: theme.textColorScheme.secondary,
     );
-    final underlinedTextStyle = theme.textStyle.caption.underline(
-      color: theme.textColorScheme.secondary,
-    );
+    // final underlinedTextStyle = theme.textStyle.caption.underline(
+    //   color: theme.textColorScheme.secondary,
+    // );
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
@@ -29,10 +29,10 @@ class SignInAgreement extends StatelessWidget {
           ),
           TextSpan(
             text: '${LocaleKeys.web_termOfUse.tr()} ',
-            style: underlinedTextStyle,
-            mouseCursor: SystemMouseCursors.click,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => afLaunchUrlString('https://appflowy.com/terms'),
+            style: textStyle,
+            // mouseCursor: SystemMouseCursors.click,
+            // recognizer: TapGestureRecognizer()
+            //   ..onTap = () => afLaunchUrlString('https://appflowy.com/terms'),
           ),
           TextSpan(
             text: '${LocaleKeys.web_and.tr()} ',
@@ -40,10 +40,10 @@ class SignInAgreement extends StatelessWidget {
           ),
           TextSpan(
             text: LocaleKeys.web_privacyPolicy.tr(),
-            style: underlinedTextStyle,
-            mouseCursor: SystemMouseCursors.click,
-            recognizer: TapGestureRecognizer()
-              ..onTap = () => afLaunchUrlString('https://appflowy.com/privacy'),
+            style: textStyle,
+            // mouseCursor: SystemMouseCursors.click,
+            // recognizer: TapGestureRecognizer()
+            //   ..onTap = () => afLaunchUrlString('https://appflowy.com/privacy'),
           ),
         ],
       ),

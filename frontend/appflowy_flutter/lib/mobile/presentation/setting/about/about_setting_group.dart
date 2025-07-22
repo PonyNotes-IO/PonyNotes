@@ -20,20 +20,20 @@ class AboutSettingGroup extends StatelessWidget {
     return MobileSettingGroup(
       groupTitle: LocaleKeys.settings_mobile_about.tr(),
       settingItemList: [
-        MobileSettingItem(
-          name: LocaleKeys.settings_mobile_privacyPolicy.tr(),
-          trailing: MobileSettingTrailing(
-            text: '',
-          ),
-          onTap: () => afLaunchUrlString('https://appflowy.com/privacy'),
-        ),
-        MobileSettingItem(
-          name: LocaleKeys.settings_mobile_termsAndConditions.tr(),
-          trailing: MobileSettingTrailing(
-            text: '',
-          ),
-          onTap: () => afLaunchUrlString('https://appflowy.com/terms'),
-        ),
+        // MobileSettingItem(
+        //   name: LocaleKeys.settings_mobile_privacyPolicy.tr(),
+        //   trailing: MobileSettingTrailing(
+        //     text: '',
+        //   ),
+        //   onTap: () => afLaunchUrlString('https://appflowy.com/privacy'),
+        // ),
+        // MobileSettingItem(
+        //   name: LocaleKeys.settings_mobile_termsAndConditions.tr(),
+        //   trailing: MobileSettingTrailing(
+        //     text: '',
+        //   ),
+        //   onTap: () => afLaunchUrlString('https://appflowy.com/terms'),
+        // ),
         if (kDebugMode)
           MobileSettingItem(
             name: 'Feature Flags',
