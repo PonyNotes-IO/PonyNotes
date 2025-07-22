@@ -59,6 +59,7 @@ class _MobileWorkspaceStartScreenState
               const FlowySvg(
                 FlowySvgs.app_logo_xl,
                 size: Size.square(64),
+                color: Colors.transparent,
                 blendMode: null,
               ),
               const VSpace(spacing * 2),

@@ -48,6 +48,7 @@ class ChatWelcomePage extends StatelessWidget {
         const FlowySvg(
           FlowySvgs.app_logo_xl,
           size: Size.square(32),
+          color: Colors.transparent,
           blendMode: null,
         ),
         const VSpace(16),

@@ -5,7 +5,7 @@ import 'package:local_notifier/local_notifier.dart';
 ///
 /// DO NOT Use i18n here, because the i18n plugin is not ready
 ///   before the local notification is initialized.
-const _localNotifierAppName = 'AppFlowy';
+const _localNotifierAppName = 'PonyNotes';
 
 /// Manages Local Notifications
 ///
