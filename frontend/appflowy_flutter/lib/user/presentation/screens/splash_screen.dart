@@ -97,7 +97,7 @@ class Body extends StatelessWidget {
     return Container(
       alignment: Alignment.center,
       child: UniversalPlatform.isMobile
-          ? const FlowySvg(FlowySvgs.app_logo_xl, color: Colors.transparent, blendMode: null)
+          ? const FlowySvg(FlowySvgs.app_logo_xl, blendMode: null)
           : const _DesktopSplashBody(),
     );
   }
