@@ -83,7 +83,7 @@ class SettingsWorkspaceView extends StatelessWidget {
         },
         builder: (context, state) {
           return SettingsBody(
-            title: LocaleKeys.settings_workspacePage_title.tr(),
+            title: "通用设置",
             description: LocaleKeys.settings_workspacePage_description.tr(),
             autoSeparate: false,
             children: [

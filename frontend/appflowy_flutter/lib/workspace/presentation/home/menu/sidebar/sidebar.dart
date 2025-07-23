@@ -386,24 +386,7 @@ class _SidebarState extends State<_Sidebar> {
 
             _renderFolderOrSpace(menuHorizontalInset),
 
-            // trash
-            Padding(
-              padding: menuHorizontalInset +
-                  const EdgeInsets.symmetric(horizontal: 4.0),
-              child: const FlowyDivider(),
-            ),
-            const VSpace(8),
-
-            _renderUpgradeSpaceButton(menuHorizontalInset),
-            _buildUpgradeApplicationButton(menuHorizontalInset),
-
-            const VSpace(8),
-            Padding(
-              padding: menuHorizontalInset +
-                  const EdgeInsets.symmetric(horizontal: 4.0),
-              child: const SidebarFooter(),
-            ),
-            const VSpace(14),
+            // 移除了分割线及其下面的所有内容
           ],
         ),
       ),

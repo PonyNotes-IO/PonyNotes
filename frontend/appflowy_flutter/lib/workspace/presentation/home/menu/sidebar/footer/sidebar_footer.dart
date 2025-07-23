@@ -22,17 +22,13 @@ class SidebarFooter extends StatelessWidget {
               return const SidebarToast();
             },
           ),
-        Row(
-          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(child: SidebarTemplateButton()),
-          ],
-        ),
+        // 移除了模板按钮的Row
       ],
     );
   }
 }
 
+// 保留SidebarTemplateButton类定义，以防其他地方还需要使用
 class SidebarTemplateButton extends StatelessWidget {
   const SidebarTemplateButton({super.key});
 

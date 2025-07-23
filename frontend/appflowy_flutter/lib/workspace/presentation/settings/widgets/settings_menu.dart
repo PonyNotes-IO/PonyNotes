@@ -57,7 +57,7 @@ class SettingsMenu extends StatelessWidget {
             SettingsMenuElement(
               page: SettingsPage.workspace,
               selectedPage: currentPage,
-              label: LocaleKeys.settings_workspacePage_menuLabel.tr(),
+              label: "通用设置",
               icon: const FlowySvg(FlowySvgs.settings_page_workspace_m),
               changeSelectedPage: changeSelectedPage,
             ),
