@@ -16,7 +16,7 @@ enum _MobileSettingsPopupMenuItem {
   members,
   trash,
   help,
-  helpAndDocumentation,
+  // helpAndDocumentation,
 }
 
 class HomePageSettingsPopupMenu extends StatelessWidget {
@@ -89,9 +89,9 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
           case _MobileSettingsPopupMenuItem.help:
             _openHelpPage(context);
             break;
-          case _MobileSettingsPopupMenuItem.helpAndDocumentation:
-            _openHelpAndDocumentationPage(context);
-            break;
+          // case _MobileSettingsPopupMenuItem.helpAndDocumentation:
+          //   _openHelpAndDocumentationPage(context);
+          //   break;
         }
       },
       child: const Padding(
@@ -134,9 +134,9 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
     context.push(MobileHomeSettingPage.routeName);
   }
 
-  void _openHelpAndDocumentationPage(BuildContext context) {
-    afLaunchUrlString('https://appflowy.com/guide');
-  }
+  // void _openHelpAndDocumentationPage(BuildContext context) {
+  //   afLaunchUrlString('https://appflowy.com/guide');
+  // }
 }
 
 class _PopupButton extends StatelessWidget {
