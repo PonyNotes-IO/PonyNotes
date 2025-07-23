@@ -57,7 +57,7 @@ class SettingsMenu extends StatelessWidget {
             SettingsMenuElement(
               page: SettingsPage.workspace,
               selectedPage: currentPage,
-              label: LocaleKeys.settings_workspacePage_menuLabel.tr(),
+              label: "通用设置",
               icon: const FlowySvg(FlowySvgs.settings_page_workspace_m),
               changeSelectedPage: changeSelectedPage,
             ),
@@ -147,6 +147,17 @@ class SettingsMenu extends StatelessWidget {
                 ),
                 changeSelectedPage: changeSelectedPage,
               ),
+            // 关于小马按钮
+            SettingsMenuElement(
+              page: SettingsPage.aboutXiaoma,
+              selectedPage: currentPage,
+              label: LocaleKeys.legal_aboutXiaoma.tr(),
+              icon: const Icon(
+                Icons.info_outline,
+                size: 20,
+              ),
+              changeSelectedPage: changeSelectedPage,
+            ),
           ],
         ),
       ),

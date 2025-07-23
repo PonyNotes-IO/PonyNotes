@@ -121,7 +121,7 @@ class _ContinueWithEmailAndPasswordState
                                               parentContext);
                                     },
                                     child: Text(
-                                      LocaleKeys.signIn_userAgreement.tr(),
+                                      LocaleKeys.legal_userAgreement.tr(),
                                       style: TextStyle(
                                         color: AppFlowyTheme.of(parentContext)
                                             .textColorScheme
@@ -139,7 +139,7 @@ class _ContinueWithEmailAndPasswordState
                                               parentContext);
                                     },
                                     child: Text(
-                                      LocaleKeys.signIn_privacyPolicy.tr(),
+                                      LocaleKeys.legal_privacyPolicy.tr(),
                                       style: TextStyle(
                                         color: AppFlowyTheme.of(parentContext)
                                             .textColorScheme
@@ -157,7 +157,7 @@ class _ContinueWithEmailAndPasswordState
                                               parentContext);
                                     },
                                     child: Text(
-                                      LocaleKeys.signIn_personalInfoProtection
+                                      LocaleKeys.legal_personalInfoProtection
                                           .tr(),
                                       style: TextStyle(
                                         color: AppFlowyTheme.of(parentContext)
@@ -229,7 +229,7 @@ class _ContinueWithEmailAndPasswordState
                               context);
                         },
                         child: Text(
-                          LocaleKeys.signIn_userAgreement.tr(),
+                          LocaleKeys.legal_userAgreement.tr(),
                           style: TextStyle(
                               color: theme.textColorScheme.action,
                               decoration: TextDecoration.underline),
@@ -242,7 +242,7 @@ class _ContinueWithEmailAndPasswordState
                               context);
                         },
                         child: Text(
-                          LocaleKeys.signIn_privacyPolicy.tr(),
+                          LocaleKeys.legal_privacyPolicy.tr(),
                           style: TextStyle(
                               color: theme.textColorScheme.action,
                               decoration: TextDecoration.underline),

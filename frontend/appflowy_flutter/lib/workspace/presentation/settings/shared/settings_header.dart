@@ -20,7 +20,7 @@ class SettingsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppFlowyTheme.of(context);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Text(
           title,
@@ -28,19 +28,7 @@ class SettingsHeader extends StatelessWidget {
             color: theme.textColorScheme.primary,
           ),
         ),
-        if (descriptionBuilder != null) ...[
-          VSpace(theme.spacing.xs),
-          descriptionBuilder!(context),
-        ] else if (description?.isNotEmpty == true) ...[
-          VSpace(theme.spacing.xs),
-          Text(
-            description!,
-            maxLines: 4,
-            style: theme.textStyle.caption.standard(
-              color: theme.textColorScheme.secondary,
-            ),
-          ),
-        ],
+        // 移除了所有描述相关的代码，只保留标题
       ],
     );
   }
