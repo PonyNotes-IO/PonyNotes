@@ -27,9 +27,6 @@ script = [
   """
     cd rust-lib/
     
-    # Set environment variables for iOS builds to fix zstd NEON optimization issues
-    export CARGO_FEATURE_NO_NEON=1
-    
     # Set environment variables for iOS simulator builds to fix bindgen issues
     # This prevents the "stdbool.h file not found" error when building for iOS simulator
     # Fix the issue:
