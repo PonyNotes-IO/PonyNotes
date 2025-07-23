@@ -3,6 +3,7 @@ import 'package:appflowy/workspace/application/edit_panel/edit_context.dart';
 import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/workspace.pb.dart'
     show WorkspaceLatestPB;
+import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:flowy_infra/size.dart';
 import 'package:flowy_infra/time/duration.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
