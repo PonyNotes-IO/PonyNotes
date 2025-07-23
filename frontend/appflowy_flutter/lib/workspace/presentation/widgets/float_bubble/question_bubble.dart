@@ -144,11 +144,6 @@ class _BubbleActionListState extends State<BubbleActionList> {
                 'https://github.com/AppFlowy-IO/AppFlowy/issues/new/choose',
               );
               break;
-            // case BubbleAction.helpAndDocumentation:
-            //   afLaunchUrlString(
-            //     'https://appflowy.com/guide',
-            //   );
-            //   break;
           }
         }
 
@@ -186,7 +181,6 @@ class _DebugToast {
 
 enum BubbleAction {
   whatsNews,
-  // helpAndDocumentation,
   getSupport,
   debug,
   shortcuts,
@@ -210,8 +204,6 @@ extension QuestionBubbleExtension on BubbleAction {
     switch (this) {
       case BubbleAction.whatsNews:
         return LocaleKeys.questionBubble_whatsNew.tr();
-      // case BubbleAction.helpAndDocumentation:
-      //   return LocaleKeys.questionBubble_helpAndDocumentation.tr();
       case BubbleAction.getSupport:
         return LocaleKeys.questionBubble_getSupport.tr();
       case BubbleAction.debug:
@@ -229,11 +221,6 @@ extension QuestionBubbleExtension on BubbleAction {
     switch (this) {
       case BubbleAction.whatsNews:
         return const FlowySvg(FlowySvgs.star_s);
-      // case BubbleAction.helpAndDocumentation:
-      //   return const FlowySvg(
-      //     FlowySvgs.help_and_documentation_s,
-      //     size: Size.square(16.0),
-      //   );
       case BubbleAction.getSupport:
         return const FlowySvg(FlowySvgs.message_support_s);
       case BubbleAction.debug:

@@ -16,7 +16,6 @@ enum _MobileSettingsPopupMenuItem {
   members,
   trash,
   help,
-  // helpAndDocumentation,
 }
 
 class HomePageSettingsPopupMenu extends StatelessWidget {
@@ -89,9 +88,6 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
           case _MobileSettingsPopupMenuItem.help:
             _openHelpPage(context);
             break;
-          // case _MobileSettingsPopupMenuItem.helpAndDocumentation:
-          //   _openHelpAndDocumentationPage(context);
-          //   break;
         }
       },
       child: const Padding(
