@@ -144,11 +144,11 @@ class _BubbleActionListState extends State<BubbleActionList> {
                 'https://github.com/AppFlowy-IO/AppFlowy/issues/new/choose',
               );
               break;
-            case BubbleAction.helpAndDocumentation:
-              afLaunchUrlString(
-                'https://appflowy.com/guide',
-              );
-              break;
+            // case BubbleAction.helpAndDocumentation:
+            //   afLaunchUrlString(
+            //     'https://appflowy.com/guide',
+            //   );
+            //   break;
           }
         }
 

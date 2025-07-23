@@ -4,5 +4,5 @@ export 'font/font_setting.dart';
 export 'language_setting_group.dart';
 export 'notifications_setting_group.dart';
 export 'personal_info/personal_info.dart';
-export 'support_setting_group.dart';
+// export 'support_setting_group.dart';
 export 'widgets/widgets.dart';

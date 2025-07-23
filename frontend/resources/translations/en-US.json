@@ -107,7 +107,7 @@
     "verifying": "Verifying...",
     "continueWithPassword": "Continue with password",
     "youAreInLocalMode": "You're in local mode.",
-    "loginToAppFlowyCloud": "Login to AppFlowy Cloud"
+    "loginToAppFlowyCloud": "Login to PonyNotes Cloud"
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",
@@ -2943,8 +2943,8 @@
     "continueWithApple": "Continue with Apple ",
     "moreOptions": "More options",
     "collapse": "Collapse",
-    "signInAgreement": "By clicking \"Continue\" above, you agreed to \nAppFlowy's ",
-    "signInLocalAgreement": "By clicking \"Get Started\" above, you agreed to \nAppFlowy's ",
+    "signInAgreement": "By clicking \"Continue\" above, you agreed to \nPonyNotes's ",
+    "signInLocalAgreement": "By clicking \"Get Started\" above, you agreed to \nPonyNotes's ",
     "and": "and",
     "termOfUse": "Terms",
     "privacyPolicy": "Privacy Policy",
