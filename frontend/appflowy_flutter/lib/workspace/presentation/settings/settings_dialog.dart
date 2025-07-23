@@ -9,6 +9,7 @@ import 'package:appflowy/workspace/application/settings/appearance/appearance_cu
 import 'package:appflowy/workspace/application/settings/appflowy_cloud_urls_bloc.dart';
 import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/setting_ai_view/settings_ai_view.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/settings_about_xiaoma_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_account_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_billing_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_manage_data_view.dart';
@@ -184,6 +185,8 @@ class SettingsDialog extends StatelessWidget {
         );
       case SettingsPage.featureFlags:
         return const FeatureFlagsPage();
+      case SettingsPage.aboutXiaoma:
+        return const SettingsAboutXiaomaView();
     }
   }
 }

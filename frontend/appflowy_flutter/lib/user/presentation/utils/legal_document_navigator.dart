@@ -10,8 +10,8 @@ class LegalDocumentNavigator {
     context.push(
       LegalDocumentScreen.routeName,
       extra: {
-        'title': LocaleKeys.signIn_userAgreement.tr(),
-        'content': LocaleKeys.signIn_userAgreementContent.tr(),
+        'title': LocaleKeys.legal_userAgreement.tr(),
+        'content': LocaleKeys.legal_userAgreementContent.tr(),
       },
     );
   }
@@ -21,8 +21,8 @@ class LegalDocumentNavigator {
     context.push(
       LegalDocumentScreen.routeName,
       extra: {
-        'title': LocaleKeys.signIn_privacyPolicy.tr(),
-        'content': LocaleKeys.signIn_privacyPolicyContent.tr(),
+        'title': LocaleKeys.legal_privacyPolicy.tr(),
+        'content': LocaleKeys.legal_privacyPolicyContent.tr(),
       },
     );
   }
@@ -32,8 +32,30 @@ class LegalDocumentNavigator {
     context.push(
       LegalDocumentScreen.routeName,
       extra: {
-        'title': LocaleKeys.signIn_personalInfoProtection.tr(),
-        'content': LocaleKeys.signIn_personalInfoProtectionContent.tr(),
+        'title': LocaleKeys.legal_personalInfoProtection.tr(),
+        'content': LocaleKeys.legal_personalInfoProtectionContent.tr(),
+      },
+    );
+  }
+
+  /// 导航到版权声明页面
+  static void navigateToCopyrightStatement(BuildContext context) {
+    context.push(
+      LegalDocumentScreen.routeName,
+      extra: {
+        'title': LocaleKeys.legal_copyrightStatement.tr(),
+        'content': LocaleKeys.legal_copyrightStatementContent.tr(),
+      },
+    );
+  }
+
+  /// 导航到服务条款页面
+  static void navigateToTermsOfService(BuildContext context) {
+    context.push(
+      LegalDocumentScreen.routeName,
+      extra: {
+        'title': LocaleKeys.legal_serviceTerms.tr(),
+        'content': LocaleKeys.legal_serviceTermsContent.tr(),
       },
     );
   }

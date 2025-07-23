@@ -147,6 +147,17 @@ class SettingsMenu extends StatelessWidget {
                 ),
                 changeSelectedPage: changeSelectedPage,
               ),
+            // 关于小马按钮
+            SettingsMenuElement(
+              page: SettingsPage.aboutXiaoma,
+              selectedPage: currentPage,
+              label: LocaleKeys.legal_aboutXiaoma.tr(),
+              icon: const Icon(
+                Icons.info_outline,
+                size: 20,
+              ),
+              changeSelectedPage: changeSelectedPage,
+            ),
           ],
         ),
       ),
