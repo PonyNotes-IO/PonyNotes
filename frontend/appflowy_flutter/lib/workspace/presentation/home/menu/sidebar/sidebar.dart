@@ -111,10 +111,12 @@ class HomeSideBar extends StatelessWidget {
           // Re-initialize workspace-specific services
           getIt<CachedRecentService>().reset();
         },
-        // Rebuild the whole sidebar when the current workspace changes
+        // Rebuild the whole sidebar when the current workspace changes or becomes available
         buildWhen: (previous, current) =>
             previous.currentWorkspace?.workspaceId !=
-            current.currentWorkspace?.workspaceId,
+                current.currentWorkspace?.workspaceId ||
+            (previous.currentWorkspace == null &&
+                current.currentWorkspace != null),
         builder: (context, state) {
           if (state.currentWorkspace == null) {
             return const SizedBox.shrink();
@@ -394,57 +396,73 @@ class _SidebarState extends State<_Sidebar> {
   }
 
   Widget _renderFolderOrSpace(EdgeInsets menuHorizontalInset) {
-    final spaceState = context.read<SpaceBloc>().state;
-    final workspaceState = context.read<UserWorkspaceBloc>().state;
+    return BlocBuilder<SpaceBloc, SpaceState>(
+      builder: (context, spaceState) {
+        final workspaceState = context.read<UserWorkspaceBloc>().state;
 
-    if (!spaceState.isInitialized) {
-      return const SizedBox.shrink();
-    }
-
-    // there's no space or the workspace is not collaborative,
-    // show the folder section (Workspace, Private, Personal)
-    // otherwise, show the space
-    final sidebarSectionBloc = context.watch<SidebarSectionsBloc>();
-    final containsSpace = sidebarSectionBloc.state.containsSpace;
-
-    if (containsSpace && spaceState.spaces.isEmpty) {
-      context.read<SpaceBloc>().add(const SpaceEvent.didReceiveSpaceUpdate());
-    }
-
-    return !containsSpace ||
-            spaceState.spaces.isEmpty ||
-            !workspaceState.isCollabWorkspaceOn
-        ? Expanded(
-            child: Padding(
-              padding: menuHorizontalInset - const EdgeInsets.only(right: 6),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(right: 6),
-                controller: _scrollController,
-                physics: const ClampingScrollPhysics(),
-                child: SidebarFolder(
-                  userProfile: widget.userProfile,
-                  isHoverEnabled: !_isScrolling,
-                ),
-              ),
-            ),
-          )
-        : Expanded(
-            child: Padding(
-              padding: menuHorizontalInset - const EdgeInsets.only(right: 6),
-              child: FlowyScrollbar(
-                controller: _scrollController,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(right: 6),
-                  controller: _scrollController,
-                  physics: const ClampingScrollPhysics(),
-                  child: SidebarSpace(
-                    userProfile: widget.userProfile,
-                    isHoverEnabled: !_isScrolling,
-                  ),
-                ),
+        if (!spaceState.isInitialized) {
+          // Show loading state instead of empty space during initialization
+          return const Expanded(
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
             ),
           );
+        }
+
+        // there's no space or the workspace is not collaborative,
+        // show the folder section (Workspace, Private, Personal)
+        // otherwise, show the space
+        final sidebarSectionBloc = context.watch<SidebarSectionsBloc>();
+        final containsSpace = sidebarSectionBloc.state.containsSpace;
+
+        if (containsSpace && spaceState.spaces.isEmpty) {
+          context
+              .read<SpaceBloc>()
+              .add(const SpaceEvent.didReceiveSpaceUpdate());
+        }
+
+        return !containsSpace ||
+                spaceState.spaces.isEmpty ||
+                !workspaceState.isCollabWorkspaceOn
+            ? Expanded(
+                child: Padding(
+                  padding:
+                      menuHorizontalInset - const EdgeInsets.only(right: 6),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(right: 6),
+                    controller: _scrollController,
+                    physics: const ClampingScrollPhysics(),
+                    child: SidebarFolder(
+                      userProfile: widget.userProfile,
+                      isHoverEnabled: !_isScrolling,
+                    ),
+                  ),
+                ),
+              )
+            : Expanded(
+                child: Padding(
+                  padding:
+                      menuHorizontalInset - const EdgeInsets.only(right: 6),
+                  child: FlowyScrollbar(
+                    controller: _scrollController,
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(right: 6),
+                      controller: _scrollController,
+                      physics: const ClampingScrollPhysics(),
+                      child: SidebarSpace(
+                        userProfile: widget.userProfile,
+                        isHoverEnabled: !_isScrolling,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+      },
+    );
   }
 
   Widget _renderUpgradeSpaceButton(EdgeInsets menuHorizontalInset) {
