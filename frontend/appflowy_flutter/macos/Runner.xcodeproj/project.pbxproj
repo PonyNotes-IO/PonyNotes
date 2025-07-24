@@ -446,7 +446,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.appflowy.appflowy.flutter;
-				PRODUCT_NAME = AppFlowy;
+				PRODUCT_NAME = PonyNotes;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_STYLE = "non-global";
 				SWIFT_VERSION = 5.0;
@@ -575,14 +575,14 @@
 				ENABLE_HARDENED_RUNTIME = NO;
 				EXCLUDED_ARCHS = "";
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AppFlowy;
+				INFOPLIST_KEY_CFBundleDisplayName = PonyNotes;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				PRODUCT_BUNDLE_IDENTIFIER = com.appflowy.appflowy.flutter;
-				PRODUCT_NAME = AppFlowy;
+				PRODUCT_NAME = PonyNotes;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_STYLE = "non-global";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -603,7 +603,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				EXCLUDED_ARCHS = "";
 				INFOPLIST_FILE = Runner/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = AppFlowy;
+				INFOPLIST_KEY_CFBundleDisplayName = PonyNotes;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -611,7 +611,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.appflowy.appflowy.flutter;
-				PRODUCT_NAME = AppFlowy;
+				PRODUCT_NAME = PonyNotes;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				STRIP_STYLE = "non-global";
 				SWIFT_VERSION = 5.0;
