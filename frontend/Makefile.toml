@@ -28,7 +28,7 @@ CARGO_MAKE_CRATE_NAME = "dart-ffi"
 LIB_NAME = "dart_ffi"
 APPFLOWY_VERSION = "0.9.4"
 FLUTTER_DESKTOP_FEATURES = "dart"
-PRODUCT_NAME = "AppFlowy"
+PRODUCT_NAME = "PonyNotes"
 MACOSX_DEPLOYMENT_TARGET = "11.0"
 # CRATE_TYPE: https://doc.rust-lang.org/reference/linkage.html
 # If you update the macOS's CRATE_TYPE, don't forget to update the
