@@ -1,8 +1,8 @@
-display_name: AppFlowy
+display_name: PonyNotes
 icon: linux/packaging/assets/logo.png
 group: Applications/Office
-vendor: AppFlowy
-packager: AppFlowy
+vendor: PonyNotes
+packager: PonyNotes
 packagerEmail: support@appflowy.io
 license: APGL-3.0
 url: https://github.com/AppFlowy-IO/appflowy
@@ -10,7 +10,7 @@ url: https://github.com/AppFlowy-IO/appflowy
 build_arch: x86_64
 
 keywords:
-  - AppFlowy
+  - PonyNotes
   - Office
   - Document
   - Database
@@ -18,7 +18,7 @@ keywords:
   - Kanban
   - Note
 
-generic_name: AppFlowy
+generic_name: PonyNotes
 
 categories:
   - Office
