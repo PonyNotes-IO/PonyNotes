@@ -7,7 +7,12 @@
 	<key>teamID</key>
 	<string>5MC7J2V78W</string>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.ioi.ponynotes</key>
+		<string>$(PROVISIONING_PROFILE_NAME)</string>
+	</dict>
 	<key>stripSwiftSymbols</key>
 	<true/>
 	<key>uploadBitcode</key>
