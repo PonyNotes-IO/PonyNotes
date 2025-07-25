@@ -1,12 +1,12 @@
-display_name: AppFlowy
+display_name: PonyNotes
 package_name: appflowy
 
 maintainer:
-  name: AppFlowy
+  name: PonyNotes
   email: support@appflowy.io
 
 keywords:
-  - AppFlowy
+  - PonyNotes
   - Office
   - Document
   - Database
@@ -17,7 +17,7 @@ keywords:
 installed_size: 100000
 icon: linux/packaging/assets/logo.png
 
-generic_name: AppFlowy
+generic_name: PonyNotes
 
 categories:
   - Office

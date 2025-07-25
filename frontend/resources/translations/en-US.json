@@ -132,6 +132,8 @@
     "verificationCodeHint": "Please enter 6-digit verification code",
     "resendCode": "Resend",
     "resendCodeIn": "Resend in {} seconds"
+    "loginToAppFlowyCloud": "Login to PonyNotes Cloud"
+
   },
   "workspace": {
     "chooseWorkspace": "Choose your workspace",
@@ -2971,8 +2973,8 @@
     "continueWithWechat": "Continue with WeChat",
     "moreOptions": "More options",
     "collapse": "Collapse",
-    "signInAgreement": "By clicking \"Continue\" above, you agreed to \nAppFlowy's ",
-    "signInLocalAgreement": "By clicking \"Get Started\" above, you agreed to \nAppFlowy's ",
+    "signInAgreement": "By clicking \"Continue\" above, you agreed to \nPonyNotes's ",
+    "signInLocalAgreement": "By clicking \"Get Started\" above, you agreed to \nPonyNotes's ",
     "and": "and",
     "termOfUse": "Terms",
     "privacyPolicy": "Privacy Policy",

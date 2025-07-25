@@ -47,13 +47,13 @@
 			<true />
 		</dict>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>AppFlowy needs access to your photos to let you add images to your documents</string>
+		<string>PonyNotes needs access to your photos to let you add images to your documents</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
-		<string>AppFlowy needs access to your photos to let you add images to your photo library</string>
+		<string>PonyNotes needs access to your photos to let you add images to your photo library</string>
 		<key>UIApplicationSupportsIndirectInputEvents</key>
 		<true />
 		<key>NSCameraUsageDescription</key>
-		<string>AppFlowy needs access to your camera to let you add images to your documents from
+		<string>PonyNotes needs access to your camera to let you add images to your documents from
 			camera</string>
 		<key>UILaunchStoryboardName</key>
 		<string>LaunchScreen</string>

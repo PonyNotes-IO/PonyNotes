@@ -16,7 +16,6 @@ enum _MobileSettingsPopupMenuItem {
   members,
   trash,
   help,
-  helpAndDocumentation,
 }
 
 class HomePageSettingsPopupMenu extends StatelessWidget {
@@ -62,18 +61,18 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
           svg: FlowySvgs.trash_s,
           text: LocaleKeys.settings_popupMenuItem_trash.tr(),
         ),
-        const PopupMenuDivider(height: 0.5),
-        _buildItem(
-          value: _MobileSettingsPopupMenuItem.helpAndDocumentation,
-          svg: FlowySvgs.help_and_documentation_s,
-          text: LocaleKeys.settings_popupMenuItem_helpAndDocumentation.tr(),
-        ),
-        const PopupMenuDivider(height: 0.5),
-        _buildItem(
-          value: _MobileSettingsPopupMenuItem.help,
-          svg: FlowySvgs.message_support_s,
-          text: LocaleKeys.settings_popupMenuItem_getSupport.tr(),
-        ),
+        // const PopupMenuDivider(height: 0.5),
+        // _buildItem(
+        //   value: _MobileSettingsPopupMenuItem.helpAndDocumentation,
+        //   svg: FlowySvgs.help_and_documentation_s,
+        //   text: LocaleKeys.settings_popupMenuItem_helpAndDocumentation.tr(),
+        // ),
+        // const PopupMenuDivider(height: 0.5),
+        // _buildItem(
+        //   value: _MobileSettingsPopupMenuItem.help,
+        //   svg: FlowySvgs.message_support_s,
+        //   text: LocaleKeys.settings_popupMenuItem_getSupport.tr(),
+        // ),
       ],
       onSelected: (_MobileSettingsPopupMenuItem value) {
         switch (value) {
@@ -88,9 +87,6 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
             break;
           case _MobileSettingsPopupMenuItem.help:
             _openHelpPage(context);
-            break;
-          case _MobileSettingsPopupMenuItem.helpAndDocumentation:
-            _openHelpAndDocumentationPage(context);
             break;
         }
       },
@@ -134,9 +130,9 @@ class HomePageSettingsPopupMenu extends StatelessWidget {
     context.push(MobileHomeSettingPage.routeName);
   }
 
-  void _openHelpAndDocumentationPage(BuildContext context) {
-    afLaunchUrlString('https://appflowy.com/guide');
-  }
+  // void _openHelpAndDocumentationPage(BuildContext context) {
+  //   afLaunchUrlString('https://appflowy.com/guide');
+  // }
 }
 
 class _PopupButton extends StatelessWidget {

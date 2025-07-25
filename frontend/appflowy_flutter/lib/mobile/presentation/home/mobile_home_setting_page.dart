@@ -103,7 +103,7 @@ class _MobileHomeSettingPageState extends State<MobileHomeSettingPage> {
                       userProfile: userProfile,
                       workspaceId: currentWorkspaceId,
                     ),
-                  const SupportSettingGroup(),
+                  // const SupportSettingGroup(),
                   const AboutSettingGroup(),
                   UserSessionSettingGroup(
                     userProfile: userProfile,

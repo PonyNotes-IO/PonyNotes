@@ -13,7 +13,6 @@ class AFLogo extends StatelessWidget {
   Widget build(BuildContext context) {
     return FlowySvg(
       FlowySvgs.app_logo_xl,
-      color: null,  // 禁用主题颜色，保持 SVG 原始颜色
       blendMode: null,
       size: size,
     );
