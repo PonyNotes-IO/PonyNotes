@@ -380,7 +380,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ioi.ponynotes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "dev-ios-profile";
+				PROVISIONING_PROFILE_SPECIFIER = "pony-ios-profile";
 				STRIP_STYLE = "non-global";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -522,7 +522,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ioi.ponynotes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "dev-ios-profile";
+				PROVISIONING_PROFILE_SPECIFIER = "pony-ios-profile";
 				STRIP_STYLE = "non-global";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -559,7 +559,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ioi.ponynotes;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = "dev-ios-profile";
+				PROVISIONING_PROFILE_SPECIFIER = "pony-ios-profile";
 				STRIP_STYLE = "non-global";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
