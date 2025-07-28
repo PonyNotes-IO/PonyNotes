@@ -42,3 +42,12 @@ frontend/*.deb
 **/Cargo.toml.bak
 
 **/.cargo/**
+# PonyNotes server configuration files (generated)
+QUICK_START.md
+SERVER_CONFIG.md
+test_domain_endpoints.sh
+test_server_connection.sh
+
+# iOS build artifacts
+frontend/appflowy_flutter/ios/Runner/Runner*/
+

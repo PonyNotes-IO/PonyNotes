@@ -38,7 +38,8 @@ Future<void> _setAuthenticatorType(AuthenticatorType ty) async {
   }
 }
 
-const String kAppflowyCloudUrl = "https://cloud.xiaomabiji.com";
+// PonyNotes 云服务的默认API URL（使用域名访问）
+const String kAppflowyCloudUrl = "https://api.xiaomabiji.com";
 
 /// Retrieves the currently set cloud type.
 ///
