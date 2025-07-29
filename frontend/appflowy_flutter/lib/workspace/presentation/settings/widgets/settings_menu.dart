@@ -80,6 +80,13 @@ class SettingsMenu extends StatelessWidget {
               changeSelectedPage: changeSelectedPage,
             ),
             SettingsMenuElement(
+              page: SettingsPage.storage,
+              selectedPage: currentPage,
+              label: "存储设置",
+              icon: const Icon(Icons.storage_outlined, size: 20),
+              changeSelectedPage: changeSelectedPage,
+            ),
+            SettingsMenuElement(
               page: SettingsPage.notifications,
               selectedPage: currentPage,
               label: LocaleKeys.settings_menu_notifications.tr(),

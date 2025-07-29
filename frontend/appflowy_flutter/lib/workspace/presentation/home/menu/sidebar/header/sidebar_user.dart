@@ -47,7 +47,6 @@ class SidebarUser extends StatelessWidget {
             ),
             const HSpace(8),
             Expanded(child: _buildUserName(context, state)),
-            UserSettingButton(),
             const HSpace(8.0),
             NotificationButton(key: ValueKey(userProfile.id)),
             const HSpace(10.0),
