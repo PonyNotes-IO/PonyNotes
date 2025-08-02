@@ -154,8 +154,8 @@ where
     let passcode = passcode.to_owned();
     let try_get_client = self.server.try_get_client();
     let client = try_get_client?;
-    // 使用注册验证码验证，而不是魔法链接
-    let response = client.verify_signup_with_passcode(&email, &passcode).await?;
+    // 使用验证码登录
+    let response = client.sign_in_with_passcode(&email, &passcode).await?;
     Ok(response)
   }
 

@@ -268,6 +268,16 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       ),
     );
 
+    // 使用新的邮箱验证服务
+    try {
+      // 这里应该使用 EmailVerificationService
+      // final verificationService = EmailVerificationService(baseUrl: await getAppFlowyCloudUrl());
+      // final result = await verificationService.verifyEmailCode(
+      //   email: email,
+      //   code: passcode,
+      // );
+      
+      // 临时使用现有的认证服务
     final result = await authService.signInWithPasscode(
       email: email,
       passcode: passcode,
@@ -286,6 +296,20 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
         (error) => _stateFromCode(error),
       ),
     );
+    } catch (e) {
+      Log.error('Email verification failed: $e');
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          successOrFail: FlowyResult.failure(
+            FlowyError(
+              code: ErrorCode.Internal,
+              msg: 'Email verification failed: $e',
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _onSignInAsGuest(
