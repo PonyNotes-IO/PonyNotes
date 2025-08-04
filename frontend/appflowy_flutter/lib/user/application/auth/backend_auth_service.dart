@@ -135,11 +135,13 @@ class BackendAuthService implements AuthService {
       // 使用AppFlowy Cloud的API检查用户是否存在
       final client = http.Client();
 
-      // 获取cloud服务的基础URL
-      final baseUrl = await getAppFlowyCloudUrl();
+      // 通过配置系统获取正确的API URL
+      final authType = await getAuthenticatorType();
+      final config = await getAppFlowyCloudConfig(authType);
+      final apiUrl = config.base_url;
 
       // 向 /api/user/auth-info 发送请求检查用户状态
-      final uri = Uri.parse('$baseUrl/api/user/auth-info?email=$email');
+      final uri = Uri.parse('$apiUrl/api/user/auth-info?email=$email');
 
       final response = await client.get(
         uri,
