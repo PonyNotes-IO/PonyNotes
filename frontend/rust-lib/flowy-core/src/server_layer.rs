@@ -43,6 +43,8 @@ pub fn current_server_type() -> AuthType {
   match AuthenticatorType::from_env() {
     AuthenticatorType::Local => AuthType::Local,
     AuthenticatorType::AppFlowyCloud => AuthType::AppFlowyCloud,
+    AuthenticatorType::AppFlowyCloudSelfHost => AuthType::AppFlowyCloud,
+    AuthenticatorType::AppFlowyCloudDevelop => AuthType::AppFlowyCloud,
   }
 }
 
