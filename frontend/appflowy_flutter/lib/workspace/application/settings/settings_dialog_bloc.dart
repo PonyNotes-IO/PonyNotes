@@ -16,6 +16,7 @@ enum SettingsPage {
   account,
   workspace,
   manageData,
+  storage,
   shortcuts,
   ai,
   plan,

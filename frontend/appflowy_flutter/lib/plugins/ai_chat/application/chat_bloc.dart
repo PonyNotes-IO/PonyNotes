@@ -88,6 +88,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   void _dispatch() {
     on<ChatEvent>((event, emit) async {
+      print("ChatBloc received event: ${event.runtimeType}"); // Debug logging
       await event.when(
         // Chat settings
         didReceiveChatSettings: (settings) async =>
@@ -106,8 +107,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         receiveMessage: (message) async => _handleReceiveMessage(message),
 
         // Sending messages
-        sendMessage: (message, format, metadata, promptId) async =>
-            _handleSendMessage(message, format, metadata, promptId, emit),
+        sendMessage: (message, format, metadata, promptId) async {
+          print(
+              "Processing sendMessage event with message: '$message'"); // Debug logging
+          _handleSendMessage(message, format, metadata, promptId, emit);
+        },
         finishSending: () async => emit(
           state.copyWith(
             promptResponseState: PromptResponseState.streamingAnswer,
@@ -195,13 +199,29 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   // Message handling
   void _handleReceiveMessage(Message message) {
+    print("=== _handleReceiveMessage called ==="); // Debug logging
+    print("Message ID: ${message.id}"); // Debug logging
+    print(
+        "Message text: '${message is TextMessage ? message.text : 'N/A'}'"); // Debug logging
+    print("Message author: ${message.author.id}"); // Debug logging
+    print("Current userId: $userId"); // Debug logging
+    print(
+        "Author matches userId: ${message.author.id == userId}"); // Debug logging
+    print(
+        "Current messages count: ${chatController.messages.length}"); // Debug logging
+
     final oldMessage =
         chatController.messages.firstWhereOrNull((m) => m.id == message.id);
     if (oldMessage == null) {
+      print("Adding new message to chat controller"); // Debug logging
       chatController.insert(message);
     } else {
+      print("Updating existing message in chat controller"); // Debug logging
       chatController.update(oldMessage, message);
     }
+
+    print(
+        "Messages count after operation: ${chatController.messages.length}"); // Debug logging
   }
 
   // Message sending handlers
@@ -212,10 +232,14 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     String? promptId,
     Emitter<ChatState> emit,
   ) {
+    print(
+        "=== _handleSendMessage called with message: '$message' ==="); // Debug logging
+
     _messageHandler.clearErrorMessages();
     emit(state.copyWith(clearErrorMessages: !state.clearErrorMessages));
 
     _messageHandler.clearRelatedQuestions();
+    print("About to call _startStreamingMessage"); // Debug logging
     _startStreamingMessage(message, format, metadata, promptId);
     lastSentMessage = null;
 
@@ -227,6 +251,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         promptResponseState: PromptResponseState.sendingQuestion,
       ),
     );
+    print("_handleSendMessage completed"); // Debug logging
   }
 
   // Stream control handlers
@@ -453,19 +478,27 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     Map<String, dynamic>? metadata,
     String? promptId,
   ) async {
+    print("Starting streaming message: $message"); // Debug logging
+
     // Prepare streams
     await _streamManager.prepareStreams();
+    print("Streams prepared"); // Debug logging
 
     // Create and add question message
     final questionStreamMessage = _messageHandler.createQuestionStreamMessage(
       _streamManager.questionStream!,
       metadata,
+      message, // Pass the user's message text
     );
+    print(
+        "Created question stream message with ID: ${questionStreamMessage.id}"); // Debug logging
     add(ChatEvent.receiveMessage(questionStreamMessage));
 
     // Send stream request
     await _streamManager.sendStreamRequest(message, format, promptId).fold(
       (question) {
+        print(
+            "Stream request successful, question ID: ${question.messageId}"); // Debug logging
         if (!isClosed) {
           // Create and add answer stream message
           final streamAnswer = _messageHandler.createAnswerStreamMessage(
@@ -473,6 +506,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
             questionMessageId: question.messageId,
             fakeQuestionMessageId: questionStreamMessage.id,
           );
+          print(
+              "Created answer stream message with ID: ${streamAnswer.id}"); // Debug logging
 
           lastSentMessage = question;
           add(const ChatEvent.finishSending());
@@ -480,6 +515,7 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
         }
       },
       (err) {
+        print("Stream request failed: ${err.msg}"); // Debug logging
         if (!isClosed) {
           Log.error("Failed to send message: ${err.msg}");
 

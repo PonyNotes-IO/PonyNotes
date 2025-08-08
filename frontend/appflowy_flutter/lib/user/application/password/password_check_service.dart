@@ -22,8 +22,11 @@ class PasswordCheckService {
     String? authToken,
   }) async {
     try {
-      final baseUrl = await getAppFlowyCloudUrl();
-      final uri = Uri.parse('$baseUrl/api/user/auth-info?email=$email');
+      final authType = await getAuthenticatorType();
+      final config = await getAppFlowyCloudConfig(authType);
+      final apiUrl = config.base_url; // 通过配置系统获取正确的API URL
+
+      final uri = Uri.parse('$apiUrl/api/user/auth-info?email=$email');
 
       final headers = <String, String>{
         'Content-Type': 'application/json',
@@ -80,8 +83,11 @@ class PasswordCheckService {
     String? authToken,
   }) async {
     try {
-      final baseUrl = await getAppFlowyCloudUrl();
-      final uri = Uri.parse('$baseUrl/api/user/auth-info?email=$email');
+      final authType = await getAuthenticatorType();
+      final config = await getAppFlowyCloudConfig(authType);
+      final apiUrl = config.base_url; // 通过配置系统获取正确的API URL
+
+      final uri = Uri.parse('$apiUrl/api/user/auth-info?email=$email');
 
       final headers = <String, String>{
         'Content-Type': 'application/json',

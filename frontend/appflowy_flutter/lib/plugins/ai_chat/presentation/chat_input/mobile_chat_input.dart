@@ -174,14 +174,18 @@ class _MobileChatInputState extends State<MobileChatInput> {
   }
 
   void handleSendPressed() {
+    print("=== handleSendPressed called ==="); // Debug logging
     if (widget.isStreaming) {
+      print("Already streaming, ignoring send"); // Debug logging
       return;
     }
     final trimmedText = inputControlCubit.formatIntputText(
       textController.text.trim(),
     );
+    print("Trimmed text: '$trimmedText'"); // Debug logging
     textController.clear();
     if (trimmedText.isEmpty) {
+      print("Text is empty, not sending"); // Debug logging
       return;
     }
 
@@ -189,6 +193,7 @@ class _MobileChatInputState extends State<MobileChatInput> {
   }
 
   void onSubmitText(String text) {
+    print("=== onSubmitText called with: '$text' ==="); // Debug logging
     // get the attached files and mentioned pages
     final metadata = context.read<AIPromptInputBloc>().consumeMetadata();
 
@@ -196,11 +201,13 @@ class _MobileChatInputState extends State<MobileChatInput> {
     final showPredefinedFormats = bloc.state.showPredefinedFormats;
     final predefinedFormat = bloc.state.predefinedFormat;
 
+    print("About to call widget.onSubmitted"); // Debug logging
     widget.onSubmitted(
       text,
       showPredefinedFormats ? predefinedFormat : null,
       metadata,
     );
+    print("widget.onSubmitted call completed"); // Debug logging
   }
 
   void checkForAskingAI() {

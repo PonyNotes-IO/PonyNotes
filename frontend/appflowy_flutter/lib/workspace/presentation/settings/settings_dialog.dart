@@ -15,6 +15,7 @@ import 'package:appflowy/workspace/presentation/settings/pages/settings_billing_
 import 'package:appflowy/workspace/presentation/settings/pages/settings_manage_data_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_plan_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_shortcuts_view.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/settings_storage_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_workspace_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/sites/settings_sites_view.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/af_dropdown_menu_entry.dart';
@@ -141,6 +142,10 @@ class SettingsDialog extends StatelessWidget {
         return SettingsManageDataView(
           userProfile: user,
           workspace: workspace,
+        );
+      case SettingsPage.storage:
+        return SettingsStorageView(
+          userProfile: user,
         );
       case SettingsPage.notifications:
         return const SettingsNotificationsView();
@@ -350,7 +355,7 @@ class _SelfHostSettingsState extends State<_SelfHostSettings> {
     );
   }
 
-  void _onSelected(AuthenticatorType type) {
+  void _onSelected(AuthenticatorType type) async {
     if (type == this.type) {
       return;
     }
@@ -367,6 +372,19 @@ class _SelfHostSettingsState extends State<_SelfHostSettings> {
       _saveUrl(
         cloudUrl: kAppflowyCloudUrl,
         webUrl: ShareConstants.defaultBaseWebDomain,
+        type: type,
+      );
+    } else if (type == AuthenticatorType.appflowyCloudDevelop) {
+      // 为开发模式添加保存逻辑，使用本地开发服务器地址
+      const developmentUrl = "http://localhost";
+      const developmentWebUrl = "https://test.xiaomabiji.com";
+      cloudUrlTextController.text = developmentUrl;
+      webUrlTextController.text = developmentWebUrl;
+
+      // 直接保存开发模式配置
+      _saveUrl(
+        cloudUrl: developmentUrl,
+        webUrl: developmentWebUrl,
         type: type,
       );
     }
@@ -421,6 +439,9 @@ class _SelfHostSettingsState extends State<_SelfHostSettings> {
   }
 
   Future<void> _fetchUrls() async {
+    // 首先获取当前的认证类型
+    final currentAuthType = await getAuthenticatorType();
+
     await Future.wait([
       getAppFlowyCloudUrl(),
       getAppFlowyShareDomain(),
@@ -432,11 +453,10 @@ class _SelfHostSettingsState extends State<_SelfHostSettings> {
       cloudUrlTextController.text = values[0];
       webUrlTextController.text = values[1];
 
-      if (kAppflowyCloudUrl != values[0]) {
-        setState(() {
-          type = AuthenticatorType.appflowyCloudSelfHost;
-        });
-      }
+      // 根据存储的认证类型来设置UI状态
+      setState(() {
+        type = currentAuthType;
+      });
     });
   }
 }
@@ -449,6 +469,8 @@ extension SettingsServerDropdownMenuExtension on AuthenticatorType {
         return LocaleKeys.settings_menu_cloudAppFlowy.tr();
       case AuthenticatorType.appflowyCloudSelfHost:
         return LocaleKeys.settings_menu_cloudAppFlowySelfHost.tr();
+      case AuthenticatorType.appflowyCloudDevelop:
+        return "小马笔记 Cloud (Development)";
       default:
         throw Exception('Unsupported server type: $this');
     }
@@ -466,10 +488,11 @@ class SettingsServerDropdownMenu extends StatelessWidget {
   final AuthenticatorType selectedServer;
   final void Function(AuthenticatorType type) onSelected;
 
-  // in the settings page from sign in page, we only support appflowy cloud and self-hosted
+  // in the settings page from sign in page, we support appflowy cloud, self-hosted and development
   static final supportedServers = [
     AuthenticatorType.appflowyCloud,
     AuthenticatorType.appflowyCloudSelfHost,
+    AuthenticatorType.appflowyCloudDevelop,
   ];
 
   @override
