@@ -124,7 +124,9 @@ pub extern "C" fn init_sdk(_port: i64, data: *mut c_char) -> i64 {
   let configuration = AppFlowyDartConfiguration::from_str(serde_str);
   configuration.write_env();
 
-  if configuration.authenticator_type == AuthenticatorType::AppFlowyCloud {
+  if configuration.authenticator_type == AuthenticatorType::AppFlowyCloud
+    || configuration.authenticator_type == AuthenticatorType::AppFlowyCloudSelfHost
+    || configuration.authenticator_type == AuthenticatorType::AppFlowyCloudDevelop {
     let _ = save_appflowy_cloud_config(&configuration.root, &configuration.appflowy_cloud_config);
   }
 
