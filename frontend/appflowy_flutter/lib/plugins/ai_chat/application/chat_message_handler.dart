@@ -88,6 +88,7 @@ class ChatMessageHandler {
   Message createQuestionStreamMessage(
     QuestionStream stream,
     Map<String, dynamic>? sentMetadata,
+    String? userMessage, // Add parameter for user message
   ) {
     final now = DateTime.now();
     questionStreamMessageId = timestamp().toString();
@@ -102,7 +103,7 @@ class ChatMessageHandler {
       },
       id: questionStreamMessageId,
       createdAt: now,
-      text: '',
+      text: userMessage ?? '', // Use the provided user message or empty string
     );
   }
 

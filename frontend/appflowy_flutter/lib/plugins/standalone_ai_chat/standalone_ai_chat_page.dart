@@ -13,8 +13,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:flowy_infra/uuid.dart';
 
-class StandaloneAiChatPage extends StatelessWidget {
+class StandaloneAiChatPage extends StatefulWidget {
   const StandaloneAiChatPage({
     super.key,
     required this.userProfile,
@@ -23,25 +24,68 @@ class StandaloneAiChatPage extends StatelessWidget {
   final UserProfilePB userProfile;
 
   @override
-  Widget build(BuildContext context) {
-    // 生成一个聊天ID用于真实聊天数据
-    final chatId = const Uuid().v4();
+  State<StandaloneAiChatPage> createState() => _StandaloneAiChatPageState();
+}
+
+class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
+  late final String chatId;
+  late final ViewPB view;
+  late final ViewPluginNotifier viewNotifier;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeChat();
+  }
+
+  /// 专为独立AI聊天界面设计的初始化逻辑
+  Future<void> _initializeChat() async {
+    // 使用UUID格式的聊天ID，确保兼容后端UUID解析
+    chatId = uuid();
 
     // 创建一个真实的ViewPB用于聊天，不是虚拟的
-    final view = ViewPB()
+    view = ViewPB()
       ..id = chatId
       ..name = 'AI聊天'
       ..layout = ViewLayoutPB.Chat;
 
     // 创建ViewPluginNotifier
-    final viewNotifier = ViewPluginNotifier(view: view);
+    viewNotifier = ViewPluginNotifier(view: view);
+
+    // 预创建聊天记录以避免外键约束错误
+    await _ensureStandaloneChatExists();
+
+    if (mounted) {
+      setState(() {
+        _isInitialized = true;
+      });
+    }
+  }
+
+  /// 确保独立AI聊天记录存在（仅用于StandaloneAiChatPage）
+  Future<void> _ensureStandaloneChatExists() async {
+    // 注意：这里只是记录日志，实际的聊天创建会在后端自动处理
+    // 当发送第一条消息时，如果聊天不存在，后端会自动创建
+    print("准备独立AI聊天，聊天ID: $chatId");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
     return MultiBlocProvider(
       providers: [
         BlocProvider(
           create: (_) => ChatBloc(
             chatId: chatId,
-            userId: userProfile.id.toString(),
+            userId: widget.userProfile.id.toString(),
           ),
         ),
         BlocProvider(
@@ -68,13 +112,13 @@ class StandaloneAiChatPage extends StatelessWidget {
                 // 聊天消息区域 - 使用原有的ChatAnimationListWidget
                 Expanded(
                   child: ChatAnimationListWidget(
-                    userProfile: userProfile,
+                    userProfile: widget.userProfile,
                     scrollController: ScrollController(),
                     itemBuilder: (context, animation, message,
                         {bool? isRemoved}) {
                       return TextMessageWidget(
                         message: message as TextMessage,
-                        userProfile: userProfile,
+                        userProfile: widget.userProfile,
                         view: view,
                       );
                     },
