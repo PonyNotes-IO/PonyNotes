@@ -112,7 +112,6 @@
     "verifying": "Verifying...",
     "continueWithPassword": "Continue with password",
     "youAreInLocalMode": "You're in local mode.",
-    "loginToAppFlowyCloud": "Login to AppFlowy Cloud",
     "loginOrRegister": "Login/Register",
     "logInWithMagicLink": "Sign in with magic link",
     "agreePrefix": "I have read and agree to",
@@ -131,7 +130,7 @@
     "enterVerificationCode": "Please enter verification code",
     "verificationCodeHint": "Please enter 6-digit verification code",
     "resendCode": "Resend",
-    "resendCodeIn": "Resend in {} seconds"
+    "resendCodeIn": "Resend in {} seconds",
     "loginToAppFlowyCloud": "Login to PonyNotes Cloud"
 
   },
