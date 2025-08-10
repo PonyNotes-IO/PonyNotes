@@ -70,7 +70,7 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
                 // logo and title
                 FlowyLogoTitle(
                   title: "欢迎使用小马笔记",
-                  logoSize: Size.square(100),
+                  logoSize: Size.square(80),
                 ),
                 VSpace(40),
 
@@ -91,7 +91,8 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
                     ),
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     child: Text(
-                      LocaleKeys.signIn_quickStart.tr(),
+                      //"LocaleKeys.signIn_quickStart.tr()",
+                      "快速开始",
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: const Color(0xFFF89575),
