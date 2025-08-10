@@ -48,3 +48,6 @@ external_deps/*/
 frontend/external_deps/*/
 flutter_cache_manager/
 frontend/appflowy_flutter/appflowy-editor/
+
+# ignore PonyNotes-Cloud independent project
+frontend/PonyNotes-Cloud/

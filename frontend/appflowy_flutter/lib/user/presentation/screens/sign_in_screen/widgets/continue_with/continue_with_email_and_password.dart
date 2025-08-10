@@ -1,11 +1,7 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
-import 'package:appflowy/startup/startup.dart';
-import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy/user/application/password/password_check_service.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
-import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_email.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
-import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password_page.dart';
 import 'package:appflowy/user/presentation/utils/legal_document_navigator.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
@@ -13,10 +9,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 import 'package:string_validator/string_validator.dart';
 import 'package:appflowy/util/validator.dart';
-import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 
 class ContinueWithEmailAndPassword extends StatefulWidget {
   const ContinueWithEmailAndPassword({super.key});
@@ -46,7 +40,6 @@ class _ContinueWithEmailAndPasswordState
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppFlowyTheme.of(context);
 
     return BlocListener<SignInBloc, SignInState>(
       listener: (context, state) {
@@ -68,22 +61,34 @@ class _ContinueWithEmailAndPasswordState
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          AFTextField(
-            key: emailKey,
-            controller: controller,
-            hintText: LocaleKeys.signIn_pleaseInputYourEmailOrMobile.tr(),
-            onSubmitted: (value) => _signInWithEmail(
-              context,
-              value,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: const Color(0xFFDBDBDB)),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: TextField(
+              key: ValueKey(emailKey),
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: "输入邮箱或者手机号",
+                hintStyle: TextStyle(
+                  color: const Color(0xFF999999),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                ),
+                border: InputBorder.none,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 19, vertical: 13),
+              ),
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w500,
+              ),
+              onSubmitted: (value) => _signInWithEmail(context, value),
             ),
           ),
-          VSpace(theme.spacing.l),
-          AFFilledTextButton.primary(
-            text: _isLoading
-                ? LocaleKeys.signIn_signingIn.tr()
-                : LocaleKeys.signIn_loginOrRegister.tr(),
-            size: AFButtonSize.l,
-            alignment: Alignment.center,
+          VSpace(20),
+          GestureDetector(
             onTap: _isLoading
                 ? () {}
                 : () {
@@ -197,21 +202,55 @@ class _ContinueWithEmailAndPasswordState
                       _signInWithEmail(context, emailOrPhone);
                     } else {}
                   },
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF89575),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              child: Text(
+                _isLoading
+                    ? LocaleKeys.signIn_signingIn.tr()
+                    : "登录/注册",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
           ),
-          VSpace(theme.spacing.l),
+          VSpace(20),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              SizedBox(
-                height: 20.0,
-                child: Checkbox(
-                  value: _agreed,
-                  onChanged: (value) {
-                    setState(() {
-                      _agreed = value ?? false;
-                    });
-                  },
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _agreed = !_agreed;
+                  });
+                },
+                child: Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: _agreed ? const Color(0xFFF89575) : const Color(0xFF979797),
+                      width: 2,
+                    ),
+                    color: _agreed ? const Color(0xFFF89575) : Colors.transparent,
+                  ),
+                  child: _agreed
+                      ? Icon(
+                          Icons.check,
+                          size: 12,
+                          color: Colors.white,
+                        )
+                      : null,
                 ),
               ),
               const HSpace(4.0),
@@ -222,30 +261,50 @@ class _ContinueWithEmailAndPasswordState
                     crossAxisAlignment: WrapCrossAlignment.center,
                     alignment: WrapAlignment.start,
                     children: [
-                      Text(LocaleKeys.signIn_agreePrefix.tr()),
+                      Text(
+                        "我已阅读并同意",
+                        style: TextStyle(
+                          color: const Color(0xFF333333),
+                          fontSize: 16,
+                          fontFamily: 'PingFangSC-Regular',
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () {
                           LegalDocumentNavigator.navigateToUserAgreement(
                               context);
                         },
                         child: Text(
-                          LocaleKeys.legal_userAgreement.tr(),
+                          "《用户协议》",
                           style: TextStyle(
-                              color: theme.textColorScheme.action,
-                              decoration: TextDecoration.underline),
+                            color: const Color(0xFFF89575),
+                            fontSize: 16,
+                            fontFamily: 'PingFangSC-Regular',
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
-                      Text(LocaleKeys.signIn_and.tr()),
+                      Text(
+                        "与",
+                        style: TextStyle(
+                          color: const Color(0xFF333333),
+                          fontSize: 16,
+                          fontFamily: 'PingFangSC-Regular',
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () {
                           LegalDocumentNavigator.navigateToPrivacyPolicy(
                               context);
                         },
                         child: Text(
-                          LocaleKeys.legal_privacyPolicy.tr(),
+                          "《隐私政策》",
                           style: TextStyle(
-                              color: theme.textColorScheme.action,
-                              decoration: TextDecoration.underline),
+                            color: const Color(0xFFF89575),
+                            fontSize: 16,
+                            fontFamily: 'PingFangSC-Regular',
+                            decoration: TextDecoration.underline,
+                          ),
                         ),
                       ),
                     ],

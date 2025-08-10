@@ -32,8 +32,6 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
     with WindowListener {
   @override
   Widget build(BuildContext context) {
-    final theme = AppFlowyTheme.of(context);
-
     return BlocListener<SignInBloc, SignInState>(
       listener: (context, state) async {
         final successOrFail = state.successOrFail;
@@ -41,16 +39,14 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
           if (successOrFail.isSuccess) {
             successOrFail.onSuccess((userProfile) async {
               // 检查是否是QQ登录导航请求
-              if (userProfile?.email == 'qq_login_navigate') {
+              if (userProfile.email == 'qq_login_navigate') {
                 // 导航到QQ二维码登录页面
                 _showQQLoginDialog(context);
                 return;
               }
 
               // 匿名登录成功，启动应用
-              if (userProfile != null) {
-                await runAppFlowy();
-              }
+              await runAppFlowy();
             });
           } else {
             // 显示错误Toast
@@ -69,58 +65,71 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
           return Scaffold(
             appBar: _buildAppBar(),
             body: CenteredAuthContainer(
+              maxWidth: 380,
               children: [
                 // logo and title
                 FlowyLogoTitle(
-                  title: LocaleKeys.welcomeText.tr(),
-                  logoSize: Size.square(36),
+                  title: "欢迎使用小马笔记",
+                  logoSize: Size.square(100),
                 ),
-                VSpace(theme.spacing.xxl),
+                VSpace(40),
 
                 // 快速开始按钮
-                Container(
-                  width: double.infinity,
-                  constraints: const BoxConstraints(maxWidth: 320),
-                  child: AFOutlinedTextButton.normal(
-                    text: LocaleKeys.signIn_quickStart.tr(),
-                    size: AFButtonSize.l,
-                    onTap: () {
-                      // 直接调用匿名登录
-                      context
-                          .read<SignInBloc>()
-                          .add(const SignInEvent.signInAsGuest());
-                    },
+                GestureDetector(
+                  onTap: () {
+                    // 直接调用匿名登录
+                    context
+                        .read<SignInBloc>()
+                        .add(const SignInEvent.signInAsGuest());
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF4F0),
+                      border: Border.all(color: const Color(0xFFF89575)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    child: Text(
+                      LocaleKeys.signIn_quickStart.tr(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: const Color(0xFFF89575),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
-                VSpace(theme.spacing.xxl),
+                VSpace(10),
 
                 const _OrDivider(),
-                VSpace(theme.spacing.xxl),
+                VSpace(10),
 
                 // continue with email and password
                 isLocalAuthEnabled
                     ? const SignInAnonymousButtonV3()
                     : const ContinueWithEmailAndPassword(),
 
-                VSpace(theme.spacing.xxl),
+                VSpace(20),
 
                 // third-party sign in.
                 if (isAuthEnabled) ...[
-                  const _OrDivider(),
-                  VSpace(theme.spacing.xxl),
+                  const _CustomOrDivider(text: "其他登录方式"),
+                  VSpace(40),
                   const ThirdPartySignInButtons(),
-                  VSpace(theme.spacing.xxl),
+                  VSpace(40),
                 ],
 
-                // anonymous sign in and settings
-                const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DesktopSignInSettingsButton(),
-                    HSpace(20),
-                    SignInAnonymousButtonV2(),
-                  ],
-                ),
+                // 隐藏设置和匿名登录按钮以符合设计稿
+                // const Row(
+                //   mainAxisSize: MainAxisSize.min,
+                //   children: [
+                //     DesktopSignInSettingsButton(),
+                //     HSpace(20),
+                //     SignInAnonymousButtonV2(),
+                //   ],
+                // ),
                 VSpace(bottomPadding),
               ],
             ),
@@ -212,7 +221,6 @@ class _OrDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppFlowyTheme.of(context);
     return Row(
       children: [
         Flexible(
@@ -222,13 +230,52 @@ class _OrDivider extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Text(
             LocaleKeys.signIn_or.tr(),
-            style: theme.textStyle.body.standard(
-              color: theme.textColorScheme.secondary,
+            style: TextStyle(
+              color: const Color(0xFF999999),
+              fontSize: 18,
+              fontFamily: 'PingFangSC-Regular',
             ),
           ),
         ),
         Flexible(
           child: AFDivider(),
+        ),
+      ],
+    );
+  }
+}
+
+class _CustomOrDivider extends StatelessWidget {
+  const _CustomOrDivider({required this.text});
+  
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Flexible(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 17),
+          child: Text(
+            text,
+            style: TextStyle(
+              color: const Color(0xFF333333),
+              fontSize: 18,
+              fontFamily: 'PingFangSC-Regular',
+            ),
+          ),
+        ),
+        Flexible(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
         ),
       ],
     );

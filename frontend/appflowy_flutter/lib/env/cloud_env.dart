@@ -206,10 +206,13 @@ class AppFlowyCloudSharedEnv {
     if (Env.enableCustomCloud) {
       // Use the custom cloud configuration.
       var authenticatorType = await getAuthenticatorType();
+      Log.info('🔧 Using custom cloud config - AuthenticatorType: $authenticatorType');
 
       final appflowyCloudConfig = authenticatorType.isAppFlowyCloudEnabled
           ? await getAppFlowyCloudConfig(authenticatorType)
           : AppFlowyCloudConfiguration.defaultConfig();
+      
+      Log.info('🌐 Cloud Config: ${appflowyCloudConfig.toJson()}');
 
       // In the backend, the value '2' represents the use of AppFlowy Cloud. However, in the frontend,
       // we distinguish between [AuthenticatorType.appflowyCloudSelfHost] and [AuthenticatorType.appflowyCloud].
@@ -225,6 +228,8 @@ class AppFlowyCloudSharedEnv {
       );
     } else {
       // Using the cloud settings from the .env file.
+      Log.info('🔧 Using .env file config - AuthenticatorType: ${Env.authenticatorType}, CloudURL: ${Env.afCloudUrl}');
+      
       final appflowyCloudConfig = AppFlowyCloudConfiguration(
         base_url: Env.afCloudUrl,
         ws_base_url: await _getAppFlowyCloudWSUrl(Env.afCloudUrl),
@@ -232,6 +237,8 @@ class AppFlowyCloudSharedEnv {
         enable_sync_trace: false,
         base_web_domain: Env.baseWebDomain,
       );
+      
+      Log.info('🌐 Cloud Config from .env: ${appflowyCloudConfig.toJson()}');
 
       return AppFlowyCloudSharedEnv(
         authenticatorType: AuthenticatorType.fromValue(Env.authenticatorType),

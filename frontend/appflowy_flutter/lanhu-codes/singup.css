@@ -1,0 +1,320 @@
+.page {
+    background-color: rgba(255, 255, 255, 1);
+    position: relative;
+    width: 900px;
+    height: 1440px;
+    overflow: hidden;
+  }
+  
+  .block_1 {
+    background: url(https://lanhu-oss-proxy.lanhuapp.com/SketchPngfb5dd8113f8acf8c2ba76b9ef6c61263d10d4e8c34063860c181c822e6288415)
+      100% no-repeat;
+    background-size: 100% 100%;
+    padding: 5px 21px 140px 21px;
+  }
+  
+  .group_1 {
+  }
+  
+  .text_1 {
+    height: 14px;
+    overflow-wrap: break-word;
+    color: rgba(0, 0, 0, 1);
+    font-size: 12px;
+    font-family: Helvetica, "Microsoft YaHei", Arial, sans-serif;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 15px;
+  }
+  
+  .text_2 {
+    height: 14px;
+    overflow-wrap: break-word;
+    color: rgba(0, 0, 0, 1);
+    font-size: 12px;
+    font-family: Helvetica, "Microsoft YaHei", Arial, sans-serif;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 15px;
+    margin-left: 8px;
+  }
+  
+  .image_1 {
+    width: 35px;
+    height: 10px;
+    margin: 2px 0 2px 655px;
+  }
+  
+  .text_3 {
+    overflow-wrap: break-word;
+    color: rgba(0, 0, 0, 1);
+    font-size: 12px;
+    font-family: Helvetica, "Microsoft YaHei", Arial, sans-serif;
+    font-weight: normal;
+    text-align: right;
+    white-space: nowrap;
+    line-height: 14px;
+    margin-left: 4px;
+  }
+  
+  .image_2 {
+    width: 27px;
+    height: 12px;
+    margin: 1px 0 1px 3px;
+  }
+  
+  .image-wrapper_1 {
+    margin: 191px 374px 0 384px;
+  }
+  
+  .image_3 {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .text-wrapper_1 {
+    margin: 30px 304px 0 314px;
+  }
+  
+  .text_4 {
+    overflow-wrap: break-word;
+    color: rgba(51, 51, 51, 1);
+    font-size: 30px;
+    font-family: DingTalk-JinBuTi;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 36px;
+  }
+  
+  .group_2 {
+    width: 380px;
+    align-self: center;
+    margin-top: 40px;
+  }
+  
+  .text-wrapper_2 {
+    background-color: rgba(255, 244, 240, 1);
+    border-radius: 8px;
+    border: 1px solid rgba(248, 149, 117, 1);
+    padding: 13px 149px 13px 149px;
+  }
+  
+  .text_5 {
+    overflow-wrap: break-word;
+    color: rgba(248, 149, 117, 1);
+    font-size: 20px;
+    font-family: PingFangSC-Medium;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 28px;
+  }
+  
+  .group_3 {
+    width: 379px;
+    align-self: center;
+    margin-top: 10px;
+  }
+  
+  .image_4 {
+    width: 165px;
+    height: 2px;
+    margin: 12px 0 11px 0;
+  }
+  
+  .text_6 {
+    overflow-wrap: break-word;
+    color: rgba(153, 153, 153, 1);
+    font-size: 18px;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 25px;
+  }
+  
+  .image_5 {
+    width: 164px;
+    height: 1px;
+    margin: 12px 0 12px 0;
+  }
+  
+  .group_4 {
+    width: 380px;
+    align-self: center;
+    margin-top: 10px;
+  }
+  
+  .text-wrapper_3 {
+    background-color: rgba(255, 255, 255, 1);
+    border-radius: 8px;
+    border: 1px solid rgba(219, 219, 219, 1);
+    padding: 13px 179px 13px 19px;
+  }
+  
+  .text_7 {
+    overflow-wrap: break-word;
+    color: rgba(153, 153, 153, 1);
+    font-size: 20px;
+    font-family: PingFangSC-Medium;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 28px;
+  }
+  
+  .group_5 {
+    width: 380px;
+    align-self: center;
+    margin-top: 20px;
+  }
+  
+  .text-wrapper_4 {
+    background-color: rgba(248, 149, 117, 1);
+    border-radius: 8px;
+    padding: 14px 140px 14px 150px;
+  }
+  
+  .text_8 {
+    overflow-wrap: break-word;
+    color: rgba(255, 255, 255, 1);
+    font-size: 20px;
+    font-family: PingFangSC-Medium;
+    font-weight: 500;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 28px;
+  }
+  
+  .group_6 {
+    margin: 20px 271px 0 239px;
+  }
+  
+  .image-text_1 {
+    width: 348px;
+  }
+  
+  .block_2 {
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(151, 151, 151, 1);
+    margin: 1px 0 1px 0;
+  }
+  
+  .text-group_1 {
+    width: 320px;
+    height: 22px;
+    overflow-wrap: break-word;
+    font-size: 0;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 22px;
+  }
+  
+  .text_9 {
+    overflow-wrap: break-word;
+    color: rgba(51, 51, 51, 1);
+    font-size: 16px;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 22px;
+  }
+  
+  .text_10 {
+    overflow-wrap: break-word;
+    color: rgba(248, 149, 117, 1);
+    font-size: 16px;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 22px;
+  }
+  
+  .text_11 {
+    overflow-wrap: break-word;
+    color: rgba(51, 51, 51, 1);
+    font-size: 16px;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 22px;
+  }
+  
+  .text_12 {
+    overflow-wrap: break-word;
+    color: rgba(248, 149, 117, 1);
+    font-size: 16px;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 22px;
+  }
+  
+  .block_3 {
+    padding: 0 260px 475px 260px;
+  }
+  
+  .group_7 {
+  }
+  
+  .image_6 {
+    width: 120px;
+    height: 1px;
+    margin: 13px 0 11px 0;
+  }
+  
+  .text_13 {
+    overflow-wrap: break-word;
+    color: rgba(51, 51, 51, 1);
+    font-size: 18px;
+    font-family: PingFangSC-Regular;
+    font-weight: normal;
+    text-align: left;
+    white-space: nowrap;
+    line-height: 25px;
+    margin-left: 17px;
+  }
+  
+  .image_7 {
+    width: 120px;
+    height: 1px;
+    margin: 13px 0 11px 15px;
+  }
+  
+  .image-wrapper_2 {
+    width: 360px;
+    height: 70px;
+    align-self: center;
+    margin-top: 40px;
+    justify-content: space-between;
+  }
+  
+  .image_8-0 {
+    width: 70px;
+    height: 70px;
+    margin-right: 75px;
+  }
+  
+  .image_8-1 {
+    width: 70px;
+    height: 70px;
+    margin-right: 75px;
+  }
+  
+  .image_8-2 {
+    width: 70px;
+    height: 70px;
+    margin-right: 75px;
+  }
+  
