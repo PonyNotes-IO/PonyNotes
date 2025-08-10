@@ -262,16 +262,24 @@ class AppearanceSettingsCubit extends Cubit<AppearanceSettingsState> {
   }
 
   /// Called when the application launches.
-  /// Uses the device locale when the application is opened for the first time.
+  /// Uses Chinese Simplified as default locale for first time launch.
   void readLocaleWhenAppLaunch(BuildContext context) {
     if (_appearanceSettings.resetToDefault) {
       _appearanceSettings.resetToDefault = false;
       _saveAppearanceSettings();
-      setLocale(context, context.deviceLocale);
+      // 使用中文简体作为默认语言，而不是设备语言
+      setLocale(context, const Locale('zh', 'CN'));
       return;
     }
 
-    setLocale(context, state.locale);
+    // 如果当前语言设置为空或无效，也使用中文简体
+    final currentLocale = state.locale;
+    if (!context.supportedLocales.contains(currentLocale)) {
+      setLocale(context, const Locale('zh', 'CN'));
+      return;
+    }
+
+    setLocale(context, currentLocale);
   }
 
   void setDateFormat(UserDateFormatPB format) {
