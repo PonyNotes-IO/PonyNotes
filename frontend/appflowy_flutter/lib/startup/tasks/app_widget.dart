@@ -73,6 +73,8 @@ class InitAppWidgetTask extends LaunchTask {
     runApp(
       EasyLocalization(
         supportedLocales: const [
+          // 中文简体作为首选语言
+          Locale('zh', 'CN'),
           // In alphabetical order
           Locale('am', 'ET'),
           Locale('ar', 'SA'),
@@ -102,14 +104,13 @@ class InitAppWidgetTask extends LaunchTask {
           Locale('uk', 'UA'),
           Locale('ur'),
           Locale('vi', 'VN'),
-          Locale('zh', 'CN'),
           Locale('zh', 'TW'),
           Locale('fa'),
           Locale('hin'),
           Locale('mr', 'IN'),
         ],
         path: 'assets/translations',
-        fallbackLocale: const Locale('en', 'US'),
+        fallbackLocale: const Locale('zh', 'CN'),
         useFallbackTranslations: true,
         child: Builder(
           builder: (context) {
