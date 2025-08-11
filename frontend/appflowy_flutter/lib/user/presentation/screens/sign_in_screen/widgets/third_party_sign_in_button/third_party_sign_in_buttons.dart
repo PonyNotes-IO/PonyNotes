@@ -1,7 +1,5 @@
-import 'dart:io';
-
 import 'package:appflowy/user/application/sign_in_bloc.dart';
-import 'package:appflowy_ui/appflowy_ui.dart';
+import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -61,76 +59,66 @@ class _DesktopThirdPartySignInState extends State<_DesktopThirdPartySignIn> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = AppFlowyTheme.of(context);
-    return Column(
-      children: [
-        DesktopThirdPartySignInButton(
-          type: ThirdPartySignInButtonType.wechat,
-          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.wechat),
-        ),
-        VSpace(theme.spacing.l),
-        DesktopThirdPartySignInButton(
-          type: ThirdPartySignInButtonType.tikTok,
-          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.tikTok),
-        ),
-        VSpace(theme.spacing.l),
-        DesktopThirdPartySignInButton(
-          type: ThirdPartySignInButtonType.qq,
-          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.qq),
-        ),
-        /*
-        DesktopThirdPartySignInButton(
-          key: signInWithGoogleButtonKey,
-          type: ThirdPartySignInButtonType.google,
-          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.google),
-        ),
-        VSpace(theme.spacing.l),
-        DesktopThirdPartySignInButton(
-          type: ThirdPartySignInButtonType.apple,
-          onTap: () => widget.onSignIn(ThirdPartySignInButtonType.apple),
-        ),
-        */
-        //...isExpanded ? _buildExpandedButtons() : _buildCollapsedButtons(),
-      ],
+    return Container(
+      width: 360,
+      height: 70,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _CircleIconButton(
+            type: ThirdPartySignInButtonType.wechat,
+            onTap: () => widget.onSignIn(ThirdPartySignInButtonType.wechat),
+          ),
+          _CircleIconButton(
+            type: ThirdPartySignInButtonType.tikTok,
+            onTap: () => widget.onSignIn(ThirdPartySignInButtonType.tikTok),
+          ),
+          _CircleIconButton(
+            type: ThirdPartySignInButtonType.qq,
+            onTap: () => widget.onSignIn(ThirdPartySignInButtonType.qq),
+          ),
+        ],
+      ),
     );
   }
+}
 
-  List<Widget> _buildExpandedButtons() {
-    final theme = AppFlowyTheme.of(context);
-    return [
-      VSpace(theme.spacing.l),
-      DesktopThirdPartySignInButton(
-        type: ThirdPartySignInButtonType.github,
-        onTap: () => widget.onSignIn(ThirdPartySignInButtonType.github),
-      ),
-      VSpace(theme.spacing.l),
-      DesktopThirdPartySignInButton(
-        type: ThirdPartySignInButtonType.discord,
-        onTap: () => widget.onSignIn(ThirdPartySignInButtonType.discord),
-      ),
-    ];
-  }
+class _CircleIconButton extends StatelessWidget {
+  const _CircleIconButton({
+    required this.type,
+    required this.onTap,
+  });
 
-  List<Widget> _buildCollapsedButtons() {
-    final theme = AppFlowyTheme.of(context);
-    return [
-      VSpace(theme.spacing.l),
-      AFGhostTextButton(
-        text: 'More options',
-        padding: EdgeInsets.zero,
-        textColor: (context, isHovering, disabled) {
-          if (isHovering) {
-            return theme.textColorScheme.actionHover;
-          }
-          return theme.textColorScheme.action;
-        },
-        onTap: () {
-          setState(() {
-            isExpanded = !isExpanded;
-          });
-        },
+  final ThirdPartySignInButtonType type;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 70,
+        height: 70,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: FlowySvg(
+            type.icon,
+            size: Size.square(32),
+            blendMode: type.blendMode,
+          ),
+        ),
       ),
-    ];
+    );
   }
 }
 
@@ -198,39 +186,5 @@ class _MobileThirdPartySignInState extends State<_MobileThirdPartySignIn> {
     );
   }
 
-  List<Widget> _buildExpandedButtons() {
-    return [
-      const VSpace(padding),
-      MobileThirdPartySignInButton(
-        type: ThirdPartySignInButtonType.github,
-        onTap: () => widget.onSignIn(ThirdPartySignInButtonType.github),
-      ),
-      const VSpace(padding),
-      MobileThirdPartySignInButton(
-        type: ThirdPartySignInButtonType.discord,
-        onTap: () => widget.onSignIn(ThirdPartySignInButtonType.discord),
-      ),
-    ];
-  }
 
-  List<Widget> _buildCollapsedButtons() {
-    final theme = AppFlowyTheme.of(context);
-    return [
-      const VSpace(padding * 2),
-      AFGhostTextButton(
-        text: 'More options',
-        textColor: (context, isHovering, disabled) {
-          if (isHovering) {
-            return theme.textColorScheme.actionHover;
-          }
-          return theme.textColorScheme.action;
-        },
-        onTap: () {
-          setState(() {
-            isExpanded = !isExpanded;
-          });
-        },
-      ),
-    ];
-  }
 }

@@ -150,7 +150,6 @@ dependencies:
   saver_gallery: ^4.0.1
   talker_bloc_logger: ^4.8.1
   talker: ^4.7.1
-  # flutter_math_fork: ^0.7.3  # Temporarily disabled due to Flutter 3.27 compatibility issues
 
   analyzer: 6.11.0
 
@@ -248,14 +247,13 @@ dependency_overrides:
       url: https://github.com/LucasXu0/unsplash_client.git
       ref: a8411fc
 
-  # auto_updater:
-  #   path: /Users/lucas.xu/Desktop/auto_updater/packages/auto_updater
-
-  # auto_updater_macos:
-  #   path: /Users/lucas.xu/Desktop/auto_updater/packages/auto_updater_macos
-
-  # auto_updater_platform_interface:
-  #   path: /Users/lucas.xu/Desktop/auto_updater/packages/auto_updater_platform_interface
+  # https://github.com/LucasXu0/flutter-permission-handler/commit/faef1c97970de29995642bfae61b884591798684
+  # Prevent the location from being accessed continuously on Windows
+  permission_handler:
+    git:
+      url: https://github.com/LucasXu0/flutter-permission-handler.git
+      path: permission_handler
+      ref: faef1c9
 
 flutter:
   generate: true

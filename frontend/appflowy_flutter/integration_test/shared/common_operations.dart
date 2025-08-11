@@ -20,8 +20,9 @@ import 'package:appflowy/user/presentation/screens/screens.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/favorites/favorite_folder.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/footer/sidebar_footer.dart';
+
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_new_page_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/shared_widget.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space_header.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space_menu.dart';
@@ -269,7 +270,7 @@ extension CommonOperations on WidgetTester {
   }
 
   Future<void> tapTrashButton() async {
-    await tap(find.byType(SidebarTrashButton));
+    await tap(find.byType(SidebarTrashItem));
   }
 
   Future<void> tapOKButton() async {

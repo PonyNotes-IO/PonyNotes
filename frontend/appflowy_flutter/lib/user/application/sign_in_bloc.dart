@@ -261,6 +261,8 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       return;
     }
 
+    Log.info('🚀 Starting Magic Link sign in for email: $email');
+    
     emit(
       state.copyWith(
         isSubmitting: true,
@@ -270,7 +272,9 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       ),
     );
 
+    Log.info('📧 Calling authService.signInWithMagicLink...');
     final result = await authService.signInWithMagicLink(email: email);
+    Log.info('📧 Magic Link result: ${result.fold((l) => "Success", (r) => "Failed: ${r.msg}")}');
 
     result.fold(
       (userProfile) {

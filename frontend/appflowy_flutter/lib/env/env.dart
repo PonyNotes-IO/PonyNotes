@@ -5,7 +5,7 @@ import 'package:envied/envied.dart';
 
 part 'env.g.dart';
 
-@Envied(path: '.env')
+@Envied(path: 'dev.env')
 abstract class Env {
   // This flag is used to decide if users can dynamically configure cloud settings. It turns true when a .env file exists containing the APPFLOWY_CLOUD_URL variable. By default, this is set to false.
   static bool get enableCustomCloud {
