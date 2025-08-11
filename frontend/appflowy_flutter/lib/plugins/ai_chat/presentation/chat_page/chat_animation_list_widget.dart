@@ -8,6 +8,7 @@ import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
+import 'package:provider/provider.dart';
 
 @visibleForTesting
 bool skipAIChatWelcomePage = false;
@@ -35,6 +36,9 @@ class _ChatAnimationListWidgetState extends State<ChatAnimationListWidget> {
   @override
   Widget build(BuildContext context) {
     final bloc = context.read<ChatBloc>();
+
+    // 检查是否有Provider<ChatController>
+    final chatController = Provider.of<ChatController?>(context, listen: false);
 
     // this logic is quite weird, why don't we just get the message from the state?
     if (bloc.chatController.messages.isEmpty && !skipAIChatWelcomePage) {

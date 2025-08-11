@@ -9,6 +9,7 @@ import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart' hide ChatMessage;
+import 'package:provider/provider.dart';
 import 'package:universal_platform/universal_platform.dart';
 
 class LoadChatMessageStatusReady extends StatelessWidget {
@@ -55,54 +56,57 @@ class LoadChatMessageStatusReady extends StatelessWidget {
               behavior: ScrollConfiguration.of(context).copyWith(
                 scrollbars: false,
               ),
-              child: Chat(
-                chatController: chatController,
-                user: User(id: userProfile.id.toString()),
-                darkTheme: ChatTheme.fromThemeData(Theme.of(context)),
-                theme: ChatTheme.fromThemeData(Theme.of(context)),
-                builders: Builders(
-                  // we have a custom input builder, so we don't need the default one
-                  inputBuilder: (_) => const SizedBox.shrink(),
-                  textMessageBuilder: (
-                    context,
-                    message,
-                  ) =>
-                      TextMessageWidget(
-                    message: message,
-                    userProfile: userProfile,
-                    view: view,
-                    enableAnimation: enableAnimation,
-                  ),
-                  chatMessageBuilder: (
-                    context,
-                    message,
-                    animation,
-                    child,
-                  ) =>
-                      ChatMessage(
-                    message: message,
-                    padding: const EdgeInsets.symmetric(vertical: 18.0),
-                    child: child,
-                  ),
-                  scrollToBottomBuilder: (
-                    context,
-                    animation,
-                    onPressed,
-                  ) =>
-                      CustomScrollToBottom(
-                    animation: animation,
-                    onPressed: onPressed,
-                  ),
-                  chatAnimatedListBuilder: (
-                    context,
-                    scrollController,
-                    itemBuilder,
-                  ) =>
-                      ChatAnimationListWidget(
-                    userProfile: userProfile,
-                    scrollController: scrollController,
-                    itemBuilder: itemBuilder,
-                    enableReversedList: !enableAnimation,
+              child: Provider<ChatController>.value(
+                value: chatController,
+                child: Chat(
+                  chatController: chatController,
+                  user: User(id: userProfile.id.toString()),
+                  darkTheme: ChatTheme.fromThemeData(Theme.of(context)),
+                  theme: ChatTheme.fromThemeData(Theme.of(context)),
+                  builders: Builders(
+                    // we have a custom input builder, so we don't need the default one
+                    inputBuilder: (_) => const SizedBox.shrink(),
+                    textMessageBuilder: (
+                      context,
+                      message,
+                    ) =>
+                        TextMessageWidget(
+                      message: message,
+                      userProfile: userProfile,
+                      view: view,
+                      enableAnimation: enableAnimation,
+                    ),
+                    chatMessageBuilder: (
+                      context,
+                      message,
+                      animation,
+                      child,
+                    ) =>
+                        ChatMessage(
+                      message: message,
+                      padding: const EdgeInsets.symmetric(vertical: 18.0),
+                      child: child,
+                    ),
+                    scrollToBottomBuilder: (
+                      context,
+                      animation,
+                      onPressed,
+                    ) =>
+                        CustomScrollToBottom(
+                      animation: animation,
+                      onPressed: onPressed,
+                    ),
+                    chatAnimatedListBuilder: (
+                      context,
+                      scrollController,
+                      itemBuilder,
+                    ) =>
+                        ChatAnimationListWidget(
+                      userProfile: userProfile,
+                      scrollController: scrollController,
+                      itemBuilder: itemBuilder,
+                      enableReversedList: !enableAnimation,
+                    ),
                   ),
                 ),
               ),

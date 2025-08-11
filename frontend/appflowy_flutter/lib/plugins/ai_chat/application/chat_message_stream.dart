@@ -63,16 +63,13 @@ class AnswerStream {
 
   /// Handles incoming events from the underlying stream.
   void _handleEvent(String event) {
-    print("AnswerStream received event: $event"); // Debug logging
     if (event.startsWith(AIStreamEventPrefix.data)) {
       _hasStarted = true;
       final newText = event.substring(AIStreamEventPrefix.data.length);
       _text += newText;
-      print("AnswerStream updated text: $_text"); // Debug logging
       _onData?.call(_text);
     } else if (event.startsWith(AIStreamEventPrefix.error)) {
       _error = event.substring(AIStreamEventPrefix.error.length);
-      print("AnswerStream received error: $_error"); // Debug logging
       _onError?.call(_error!);
     } else if (event.startsWith(AIStreamEventPrefix.metadata)) {
       final s = event.substring(AIStreamEventPrefix.metadata.length);
@@ -166,19 +163,15 @@ class QuestionStream {
     _port.handler = _controller.add;
     _subscription = _controller.stream.listen(
       (event) {
-        print("QuestionStream received event: $event"); // Debug logging
         if (event.startsWith("data:")) {
           _hasStarted = true;
           final newText = event.substring(5);
           _text += newText;
-          print("QuestionStream updated text: $_text"); // Debug logging
           if (_onData != null) {
             _onData!(_text);
           }
         } else if (event.startsWith("message_id:")) {
           final messageId = event.substring(11);
-          print(
-              "QuestionStream received message_id: $messageId"); // Debug logging
           _onMessageId?.call(messageId);
         } else if (event.startsWith("start_index_file:")) {
           final indexName = event.substring(17);
@@ -194,18 +187,15 @@ class QuestionStream {
         } else if (event.startsWith("index_end:")) {
           _onIndexEnd?.call();
         } else if (event.startsWith("done:")) {
-          print("QuestionStream received done event"); // Debug logging
           _onDone?.call();
         } else if (event.startsWith("error:")) {
           _error = event.substring(5);
-          print("QuestionStream received error: $_error"); // Debug logging
           if (_onError != null) {
             _onError!(_error!);
           }
         }
       },
       onError: (error) {
-        print("QuestionStream stream error: $error"); // Debug logging
         if (_onError != null) {
           _onError!(error.toString());
         }

@@ -116,8 +116,6 @@ class _ChatFooterState extends State<ChatFooter> {
         chatBloc.add(const ChatEvent.stopStream());
       },
       onSubmitted: (text, format, metadata) {
-        print(
-            "=== MobileChatInput onSubmitted called with: '$text' ==="); // Debug logging
         chatBloc.add(
           ChatEvent.sendMessage(
             message: text,
@@ -125,7 +123,6 @@ class _ChatFooterState extends State<ChatFooter> {
             metadata: metadata,
           ),
         );
-        print("ChatEvent.sendMessage added to bloc"); // Debug logging
       },
       selectedSourcesNotifier: chatBloc.selectedSourcesNotifier,
       onUpdateSelectedSources: (ids) {

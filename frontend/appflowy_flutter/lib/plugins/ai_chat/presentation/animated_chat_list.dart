@@ -45,10 +45,15 @@ class ChatAnimatedList extends StatefulWidget {
 
 class _ChatAnimatedListState extends State<ChatAnimatedList>
     with SingleTickerProviderStateMixin {
-  late final ChatController chatController = Provider.of<ChatController>(
-    context,
-    listen: false,
-  );
+  late final ChatController chatController = (() {
+    final controller = Provider.of<ChatController>(
+      context,
+      listen: false,
+    );
+    print("🔗 Provider gave ChatController: ${controller.runtimeType}");
+    print("🔗 Controller messages: ${controller.messages.length}");
+    return controller;
+  })();
   late List<Message> oldList;
   late StreamSubscription<ChatOperation> operationsSubscription;
 
@@ -83,10 +88,12 @@ class _ChatAnimatedListState extends State<ChatAnimatedList>
   @override
   void initState() {
     super.initState();
+    print("🎬 ChatAnimationListWidget initState");
 
     // TODO: Add assert for messages having same id
     oldList = List.from(chatController.messages);
     operationsSubscription = chatController.operationsStream.listen((event) {
+      print("🔔 ChatOperation received: ${event.type}");
       setState(() {
         messages = chatController.messages;
       });

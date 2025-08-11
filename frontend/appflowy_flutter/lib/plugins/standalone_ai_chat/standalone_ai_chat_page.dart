@@ -5,12 +5,15 @@ import 'package:appflowy/plugins/ai_chat/application/chat_select_message_bloc.da
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_animation_list_widget.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_footer.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/text_message_widget.dart';
+import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_message_widget.dart';
+import 'package:appflowy/plugins/ai_chat/presentation/scroll_to_bottom.dart';
 import 'package:appflowy/plugins/util.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart' hide ChatMessage;
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:flowy_infra/uuid.dart';
@@ -67,7 +70,6 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
   Future<void> _ensureStandaloneChatExists() async {
     // 注意：这里只是记录日志，实际的聊天创建会在后端自动处理
     // 当发送第一条消息时，如果聊天不存在，后端会自动创建
-    print("准备独立AI聊天，聊天ID: $chatId");
   }
 
   @override
