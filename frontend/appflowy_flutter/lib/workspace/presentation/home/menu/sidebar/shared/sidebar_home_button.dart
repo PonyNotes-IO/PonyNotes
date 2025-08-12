@@ -45,7 +45,7 @@ class SidebarHomeButton extends StatelessWidget {
     try {
       // 创建主页插件
       final homePlugin = makePlugin(
-        pluginType: PluginType.document,
+        pluginType: PluginType.homepage,
         data: null,
       );
 

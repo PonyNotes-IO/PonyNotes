@@ -4,6 +4,7 @@ import 'package:appflowy/plugins/database/board/board.dart';
 import 'package:appflowy/plugins/database/grid/grid.dart';
 import 'package:appflowy/plugins/database_document/database_document_plugin.dart';
 import 'package:appflowy/plugins/standalone_ai_chat/standalone_ai_chat_plugin.dart';
+import 'package:appflowy/plugins/homepage/homepage.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/plugins/blank/blank.dart';
@@ -44,6 +45,10 @@ class PluginLoadTask extends LaunchTask {
     registerPlugin(
       builder: StandaloneAiChatPluginBuilder(),
       config: StandaloneAiChatPluginConfig(),
+    );
+    registerPlugin(
+      builder: HomePagePluginBuilder(),
+      config: HomePagePluginConfig(),
     );
   }
 }

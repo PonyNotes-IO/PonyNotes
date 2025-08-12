@@ -3,6 +3,7 @@ import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/home/mobile_home_page_header.dart';
 import 'package:appflowy/mobile/presentation/home/tab/mobile_space_tab.dart';
 import 'package:appflowy/mobile/presentation/home/tab/space_order_bloc.dart';
+import 'package:appflowy/mobile/presentation/home/tab/ai_bubble_button.dart';
 import 'package:appflowy/shared/feature_flags.dart';
 import 'package:appflowy/shared/loading.dart';
 import 'package:appflowy/startup/startup.dart';
@@ -25,6 +26,7 @@ import 'package:appflowy_backend/protobuf/flowy-folder/workspace.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -200,12 +202,21 @@ class _HomePageState extends State<_HomePage> {
             // Header
             Padding(
               padding: const EdgeInsets.only(
-                left: HomeSpaceViewSizes.mHorizontalPadding,
+                left: 16.0,
                 right: 8.0,
               ),
               child: MobileHomePageHeader(
                 userProfile: widget.userProfile,
               ),
+            ),
+
+            // AI功能区域
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 12.0,
+              ),
+              child: _buildAISection(context),
             ),
 
             Expanded(
@@ -336,5 +347,90 @@ class _HomePageState extends State<_HomePage> {
     if (message != null) {
       showToastNotification(message: message, type: toastType);
     }
+  }
+
+  Widget _buildAISection(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.all(0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.psychology,
+                size: 20.0,
+                color: Colors.blue,
+              ),
+              const SizedBox(width: 8.0),
+              Text(
+                "问AI",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12.0),
+          GestureDetector(
+            onTap: () {
+              mobileCreateNewAIChatNotifier.value =
+                  mobileCreateNewAIChatNotifier.value + 1;
+            },
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.psychology,
+                    size: 16.0,
+                    color: Colors.grey,
+                  ),
+                  const SizedBox(width: 8.0),
+                  Text(
+                    "在小马笔记中问您想了解的事情...",
+                    style: TextStyle(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12.0),
+          Row(
+            children: [
+              _buildSuggestionChip(context, "最近访问"),
+              const SizedBox(width: 8.0),
+              _buildSuggestionChip(context, "智能摘要"),
+              const SizedBox(width: 8.0),
+              _buildSuggestionChip(context, "数据分析"),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSuggestionChip(BuildContext context, String text) {
+    return ActionChip(
+      label: Text(text),
+      onPressed: () {
+        mobileCreateNewAIChatNotifier.value =
+            mobileCreateNewAIChatNotifier.value + 1;
+      },
+    );
   }
 }

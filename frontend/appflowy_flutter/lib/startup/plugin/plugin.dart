@@ -20,6 +20,7 @@ enum PluginType {
   databaseDocument,
   chat,
   standaloneAiChat,
+  homepage,
 }
 
 typedef PluginId = String;
