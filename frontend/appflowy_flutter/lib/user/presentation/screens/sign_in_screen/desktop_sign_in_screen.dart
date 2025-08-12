@@ -6,6 +6,7 @@ import 'package:appflowy/shared/settings/show_settings.dart';
 import 'package:appflowy/shared/window_title_bar.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
+import 'package:appflowy/user/presentation/router.dart';
 import 'package:appflowy/user/presentation/screens/qq_qr_login_screen.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
@@ -45,8 +46,8 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
                 return;
               }
 
-              // 匿名登录成功，启动应用
-              await runAppFlowy();
+              // 匿名登录成功，导航到主页
+              getIt<AuthRouter>().goHomeScreen(context, userProfile);
             });
           } else {
             // 显示错误Toast

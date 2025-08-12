@@ -46,71 +46,12 @@ class SidebarTopMenu extends StatelessWidget {
   }
 
   Widget _buildLogoIcon(BuildContext context) {
-    if (Platform.isMacOS) {
-      return const SizedBox.shrink();
-    }
-
-    final svgData = Theme.of(context).brightness == Brightness.dark
-        ? FlowySvgs.app_logo_with_text_dark_xl
-        : FlowySvgs.app_logo_with_text_light_xl;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 12.0, left: 8),
-      child: FlowySvg(
-        svgData,
-        size: const Size(92, 17),
-        blendMode: null,
-      ),
-    );
+    // 隐藏logo
+    return const SizedBox.shrink();
   }
 
   Widget _buildCollapseMenuButton(BuildContext context) {
-    final settingState = context.read<HomeSettingBloc?>()?.state;
-    final isNotificationPanelCollapsed =
-        settingState?.isNotificationPanelCollapsed ?? true;
-
-    final textSpan = TextSpan(
-      children: [
-        TextSpan(
-          text: LocaleKeys.sideBar_closeSidebar.tr(),
-          style: context.tooltipTextStyle(),
-        ),
-        if (isNotificationPanelCollapsed)
-          TextSpan(
-            text: '\n${Platform.isMacOS ? '⌘+.' : 'Ctrl+\\'}',
-            style: context
-                .tooltipTextStyle()
-                ?.copyWith(color: Theme.of(context).hintColor),
-          ),
-      ],
-    );
-    final theme = AppFlowyTheme.of(context);
-
-    return ValueListenableBuilder(
-      valueListenable: isSidebarOnHover,
-      builder: (_, value, ___) => Opacity(
-        opacity: value ? 1 : 0,
-        child: Padding(
-          padding: const EdgeInsets.only(top: 12.0, right: 6.0),
-          child: FlowyTooltip(
-            richMessage: textSpan,
-            child: Listener(
-              behavior: HitTestBehavior.translucent,
-              onPointerDown: (_) =>
-                  context.read<HomeSettingBloc>().collapseMenu(),
-              child: FlowyHover(
-                child: SizedBox(
-                  width: 24,
-                  child: FlowySvg(
-                    FlowySvgs.double_back_arrow_m,
-                    color: theme.iconColorScheme.secondary,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    // 隐藏折叠按钮
+    return const SizedBox.shrink();
   }
 }

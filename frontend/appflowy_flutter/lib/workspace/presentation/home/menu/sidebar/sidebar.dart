@@ -28,9 +28,11 @@ import 'package:appflowy/workspace/presentation/command_palette/command_palette.
 import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/footer/sidebar_footer.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/footer/sidebar_upgrade_application_button.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/header/sidebar_top_menu.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/header/sidebar_user.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder.dart';
+import 'package:appflowy/workspace/presentation/notifications/widgets/notification_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/_sidebar_workspace_menu.dart';
+import 'package:appflowy/workspace/application/workspace/workspace_bloc.dart';
 
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/sidebar_space.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/space_migration.dart';
@@ -345,23 +347,12 @@ class _SidebarState extends State<_Sidebar> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // top menu
-            Padding(
-              padding: menuHorizontalInset,
-              child: SidebarTopMenu(
-                isSidebarOnHover: _isHovered,
-              ),
-            ),
-            // user or workspace, setting
-            BlocBuilder<UserWorkspaceBloc, UserWorkspaceState>(
-              builder: (context, state) => Container(
-                height: HomeSizes.workspaceSectionHeight,
-                padding: menuHorizontalInset - const EdgeInsets.only(right: 6),
-                // if the workspaces are empty, show the user profile instead
-                child: state.isCollabWorkspaceOn && state.workspaces.isNotEmpty
-                    ? SidebarWorkspace(userProfile: widget.userProfile)
-                    : SidebarUser(userProfile: widget.userProfile),
-              ),
+            const VSpace(16),
+            // PonyNotes custom header
+            Container(
+              height: HomeSizes.workspaceSectionHeight,
+              padding: menuHorizontalInset - const EdgeInsets.only(right: 6),
+              child: _PonyNotesHeader(userProfile: widget.userProfile),
             ),
             if (FeatureFlag.search.isOn) ...[
               const VSpace(6),
@@ -570,6 +561,123 @@ class _SidebarSearchButton extends StatelessWidget {
         iconPadding: 12.0,
         margin: const EdgeInsets.only(left: 8.0),
         text: FlowyText.regular(LocaleKeys.search_label.tr()),
+      ),
+    );
+  }
+}
+
+class _PonyNotesHeader extends StatefulWidget {
+  const _PonyNotesHeader({required this.userProfile});
+
+  final UserProfilePB userProfile;
+
+  @override
+  State<_PonyNotesHeader> createState() => _PonyNotesHeaderState();
+}
+
+class _PonyNotesHeaderState extends State<_PonyNotesHeader> {
+  final PopoverController _popoverController = PopoverController();
+
+  @override
+  Widget build(BuildContext context) {
+    return AppFlowyPopover(
+      direction: PopoverDirection.bottomWithCenterAligned,
+      offset: const Offset(0, 5),
+      constraints: const BoxConstraints(maxWidth: 300, maxHeight: 600),
+      margin: EdgeInsets.zero,
+      animationDuration: Durations.short3,
+      beginScaleFactor: 1.0,
+      beginOpacity: 0.8,
+      controller: _popoverController,
+      triggerActions: PopoverTriggerFlags.none,
+      onOpen: () {
+        context
+            .read<UserWorkspaceBloc>()
+            .add(UserWorkspaceEvent.fetchWorkspaces());
+      },
+      popupBuilder: (_) {
+        return BlocProvider<UserWorkspaceBloc>.value(
+          value: context.read<UserWorkspaceBloc>(),
+          child: BlocBuilder<UserWorkspaceBloc, UserWorkspaceState>(
+            builder: (context, state) {
+              final currentWorkspace = state.currentWorkspace;
+              final workspaces = state.workspaces;
+              if (currentWorkspace == null) {
+                return const SizedBox.shrink();
+              }
+              return WorkspacesMenu(
+                userProfile: widget.userProfile,
+                currentWorkspace: currentWorkspace,
+                workspaces: workspaces,
+              );
+            },
+          ),
+        );
+      },
+      child: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () {
+            context.read<UserWorkspaceBloc>().add(
+                  UserWorkspaceEvent.fetchWorkspaces(),
+                );
+            _popoverController.show();
+          },
+          behavior: HitTestBehavior.opaque,
+          child: Container(
+            margin: const EdgeInsets.only(right: 8.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8.0),
+              color: Colors.transparent,
+            ),
+            child: Row(
+              children: [
+                const HSpace(4),
+                // 使用小马emoji作为图标
+                Container(
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8.0),
+                    color: const Color(0xFFFBE8FB),
+                    border: Border.all(
+                      width: 0.5,
+                      color: const Color(0x19171717),
+                    ),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '🐴', // 小马emoji
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+                const HSpace(6),
+                // 小马笔记文字和向下箭头
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FlowyText.medium(
+                      '小马笔记',
+                      color: Theme.of(context).colorScheme.tertiary,
+                      overflow: TextOverflow.ellipsis,
+                      fontSize: 15.0,
+                    ),
+                    const HSpace(2), // 紧贴文字的小间距
+                    FlowySvg(
+                      FlowySvgs.drop_menu_show_s,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ],
+                ),
+                const Spacer(), // 推送消息按钮到右边
+                // 消息按钮
+                NotificationButton(key: ValueKey(widget.userProfile.id)),
+                const HSpace(10.0),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
