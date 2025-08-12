@@ -31,6 +31,8 @@ import 'package:appflowy/workspace/presentation/home/menu/sidebar/footer/sidebar
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/header/sidebar_user.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder.dart';
 import 'package:appflowy/workspace/presentation/notifications/widgets/notification_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/widgets/sidebar_cloud_sync_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/widgets/sidebar_upload_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/_sidebar_workspace_menu.dart';
 import 'package:appflowy/workspace/application/workspace/workspace_bloc.dart';
 
@@ -670,7 +672,13 @@ class _PonyNotesHeaderState extends State<_PonyNotesHeader> {
                     ),
                   ],
                 ),
-                const Spacer(), // 推送消息按钮到右边
+                const Spacer(), // 推送按钮到右边
+                // 云同步按钮
+                const SidebarCloudSyncButton(),
+                const HSpace(8.0),
+                // 上传按钮
+                const SidebarUploadButton(),
+                const HSpace(8.0),
                 // 消息按钮
                 NotificationButton(key: ValueKey(widget.userProfile.id)),
                 const HSpace(10.0),
