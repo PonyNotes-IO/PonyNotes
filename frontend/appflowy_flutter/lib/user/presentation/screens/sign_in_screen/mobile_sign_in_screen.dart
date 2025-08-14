@@ -1,22 +1,13 @@
-import 'dart:io';
-
 import 'package:appflowy/env/cloud_env.dart';
-import 'package:appflowy/generated/flowy_svgs.g.dart';
-import 'package:appflowy/generated/locale_keys.g.dart';
-import 'package:appflowy/mobile/presentation/setting/launch_settings_page.dart';
-import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
-import 'package:appflowy/user/presentation/widgets/flowy_logo_title.dart';
+import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/logo/logo.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
-import 'package:appflowy_ui/src/theme/definition/theme_data.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 class MobileSignInScreen extends StatelessWidget {
   const MobileSignInScreen({
@@ -53,40 +44,120 @@ class MobileSignInScreen extends StatelessWidget {
 
           return Scaffold(
             resizeToAvoidBottomInset: false,
+            backgroundColor: Colors.white,
             body: Container(
               width: double.infinity,
               height: double.infinity,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    theme.surfaceColorScheme.primary,
-                    theme.surfaceColorScheme.primary.withOpacity(0.95),
+                    Color(0xFFFFF8F6), // 与桌面端保持一致的浅色渐变背景
+                    Colors.white,
                   ],
                 ),
               ),
               child: SafeArea(
-                child: Column(
-                  children: [
-                    // 顶部区域 - Logo和标题
-                    Expanded(
-                      flex: 2,
-                      child: _buildTopSection(context, theme),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height - 
+                                 MediaQuery.of(context).padding.top - 
+                                 MediaQuery.of(context).padding.bottom - 80,
                     ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Logo部分 - 恢复小马原始图标
+                        const AFLogo(
+                          size: Size.square(80),
+                        ),
+                        const VSpace(30),
 
-                    // 中间区域 - 登录表单
-                    Expanded(
-                      flex: 3,
-                      child: _buildLoginSection(context, theme),
-                    ),
+                        // 标题 - 减小字体大小
+                        const Text(
+                          "欢迎使用小马笔记",
+                          style: TextStyle(
+                            color: Color(0xFF333333),
+                            fontSize: 24,
+                            fontFamily: 'DingTalk-JinBuTi',
+                            fontWeight: FontWeight.normal,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const VSpace(40),
 
-                    // 底部区域 - 设置和匿名登录
-                    Expanded(
-                      flex: 1,
-                      child: _buildBottomSection(context, theme),
+                        // 快速开始按钮
+                        Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(maxWidth: 380),
+                          child: GestureDetector(
+                            onTap: () {
+                              context
+                                  .read<SignInBloc>()
+                                  .add(const SignInEvent.signInAsGuest());
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF4F0),
+                                border: Border.all(color: const Color(0xFFF89575)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              padding: const EdgeInsets.symmetric(vertical: 13),
+                              child: const Text(
+                                "快速开始",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Color(0xFFF89575),
+                                  fontSize: 20,
+                                  fontFamily: 'PingFangSC-Medium',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const VSpace(20),
+
+                        // 分割线
+                        const _MobileOrDivider(),
+                        const VSpace(20),
+
+                        // 邮箱登录部分
+                        Container(
+                          width: double.infinity,
+                          constraints: const BoxConstraints(maxWidth: 380),
+                          child: isLocalAuthEnabled
+                              ? const SignInAnonymousButtonV3()
+                              : const ContinueWithEmailAndPassword(),
+                        ),
+
+                        // 第三方登录部分
+                        if (isAuthEnabled) ...[
+                          const VSpace(40),
+                          const _MobileCustomOrDivider(text: "其他登录方式"),
+                          const VSpace(40),
+                          Container(
+                            width: double.infinity,
+                            constraints: const BoxConstraints(maxWidth: 380),
+                            child: const ThirdPartySignInButtons(),
+                          ),
+                        ],
+
+                        const VSpace(60),
+
+                        // 底部版本信息
+                        Text(
+                          '小马笔记 v1.0.0',
+                          style: theme.textStyle.caption.standard(
+                            color: theme.textColorScheme.secondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
             ),
@@ -95,184 +166,77 @@ class MobileSignInScreen extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildTopSection(BuildContext context, AppFlowyThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Logo和标题
-          FlowyLogoTitle(
-            title: LocaleKeys.welcomeText.tr(),
-            logoSize: const Size.square(48),
-          ),
-          VSpace(theme.spacing.l),
+class _MobileOrDivider extends StatelessWidget {
+  const _MobileOrDivider();
 
-          // 欢迎文字
-          Text(
-            LocaleKeys.welcomeTo.tr(),
-            style: theme.textStyle.body.standard(
-              color: theme.textColorScheme.secondary,
-            ),
-            textAlign: TextAlign.center,
-          ),
-
-          VSpace(theme.spacing.l),
-
-          // 快速开始按钮
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 320),
-            child: AFOutlinedTextButton.normal(
-              text: LocaleKeys.signIn_quickStart.tr(),
-              size: AFButtonSize.l,
-              onTap: () {
-                // 直接调用匿名登录
-                context
-                    .read<SignInBloc>()
-                    .add(const SignInEvent.signInAsGuest());
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLoginSection(BuildContext context, AppFlowyThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // 主要登录方式
-          Container(
-            width: double.infinity,
-            constraints: const BoxConstraints(maxWidth: 320),
-            child: isLocalAuthEnabled
-                ? const SignInAnonymousButtonV3()
-                : const ContinueWithEmailAndPassword(),
-          ),
-
-          VSpace(theme.spacing.xl),
-
-          // 第三方登录
-          if (isAuthEnabled) ...[
-            _buildThirdPartySignInButtons(context),
-            VSpace(theme.spacing.l),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomSection(BuildContext context, AppFlowyThemeData theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          // 设置和匿名登录按钮
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildSettingsButton(context),
-              if (!isLocalAuthEnabled) const SignInAnonymousButtonV2(),
-            ],
-          ),
-
-          VSpace(theme.spacing.m),
-
-          // 版本信息或其他底部信息
-          Text(
-            '小马笔记 v1.0.0',
-            style: theme.textStyle.caption.standard(
-              color: theme.textColorScheme.secondary,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThirdPartySignInButtons(BuildContext context) {
-    final theme = AppFlowyTheme.of(context);
-    return Column(
+  @override
+  Widget build(BuildContext context) {
+    return Row(
       children: [
-        // 分割线
-        Row(
-          children: [
-            Expanded(
-              child: Container(
-                height: 1,
-                color: theme.textColorScheme.secondary.withOpacity(0.3),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(
-                LocaleKeys.signIn_or.tr(),
-                style: theme.textStyle.body.standard(
-                  color: theme.textColorScheme.secondary,
-                ),
-              ),
-            ),
-            Expanded(
-              child: Container(
-                height: 1,
-                color: theme.textColorScheme.secondary.withOpacity(0.3),
-              ),
-            ),
-          ],
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
         ),
-
-        VSpace(theme.spacing.l),
-
-        // 第三方登录按钮
-        Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(maxWidth: 320),
-          child: ThirdPartySignInButtons(
-            expanded: Platform.isAndroid,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 17),
+          child: Text(
+            "或",
+            style: TextStyle(
+              color: const Color(0xFF999999),
+              fontSize: 18,
+              fontFamily: 'PingFangSC-Regular',
+              fontWeight: FontWeight.normal,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _buildSettingsButton(BuildContext context) {
-    final theme = AppFlowyTheme.of(context);
+class _MobileCustomOrDivider extends StatelessWidget {
+  const _MobileCustomOrDivider({required this.text});
+  
+  final String text;
 
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: theme.textColorScheme.secondary.withOpacity(0.2),
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
         ),
-      ),
-      child: AFGhostIconTextButton(
-        text: LocaleKeys.signIn_settings.tr(),
-        textColor: (context, isHovering, disabled) {
-          return theme.textColorScheme.secondary;
-        },
-        size: AFButtonSize.s,
-        padding: EdgeInsets.symmetric(
-          horizontal: theme.spacing.m,
-          vertical: theme.spacing.s,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 17),
+          child: Text(
+            text,
+            style: TextStyle(
+              color: const Color(0xFF333333),
+              fontSize: 18,
+              fontFamily: 'PingFangSC-Regular',
+            ),
+          ),
         ),
-        onTap: () => context.push(MobileLaunchSettingsPage.routeName),
-        iconBuilder: (context, isHovering, disabled) {
-          return FlowySvg(
-            FlowySvgs.settings_s,
-            size: const Size.square(18),
-            color: theme.textColorScheme.secondary,
-          );
-        },
-      ),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
+        ),
+      ],
     );
   }
 }

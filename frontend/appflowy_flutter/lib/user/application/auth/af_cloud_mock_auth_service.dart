@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy/user/application/auth/backend_auth_service.dart';
 import 'package:appflowy/user/application/auth/device_id.dart';
-import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/errors.pb.dart';
@@ -100,7 +99,20 @@ class AppFlowyCloudMockAuthService implements AuthService {
     required String email,
     Map<String, String> params = const {},
   }) async {
-    throw UnimplementedError();
+    // Mock implementation for magic link
+    final payload = SignInUrlPayloadPB.create()
+      ..authenticator = AuthTypePB.Server
+      ..email = email;
+
+    final getSignInURLResult = await UserEventGenerateSignInURL(payload).send();
+
+    return getSignInURLResult.fold(
+      (urlPB) async {
+        // For mock purposes, we'll simulate magic link generation
+        return FlowyResult.success(UserProfilePB());
+      },
+      (error) => FlowyResult.failure(error),
+    );
   }
 
   @override
@@ -113,6 +125,7 @@ class AppFlowyCloudMockAuthService implements AuthService {
     required String email,
     required String passcode,
   }) async {
+    // Mock implementation for passcode login
     throw UnimplementedError();
   }
 
@@ -134,5 +147,14 @@ class AppFlowyCloudMockAuthService implements AuthService {
       email: email,
       hasCustomPassword: false,
     ));
+  }
+
+  @override
+  Future<FlowyResult<GotrueTokenResponsePB, FlowyError>> signInWithPhoneSms({
+    required String phone,
+    required String code,
+  }) async {
+    // Mock implementation for phone SMS login - return empty token response
+    throw UnimplementedError();
   }
 }

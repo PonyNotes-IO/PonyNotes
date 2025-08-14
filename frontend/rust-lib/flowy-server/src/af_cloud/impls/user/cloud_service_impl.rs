@@ -29,6 +29,7 @@ use crate::af_cloud::impls::user::util::encryption_type_from_profile;
 use crate::af_cloud::impls::util::check_request_workspace_id_is_match;
 use crate::af_cloud::{AFCloudClient, AFServer};
 use flowy_error::{ErrorCode, FlowyError, FlowyResult};
+use serde_json::json;
 use flowy_user_pub::cloud::{UserCloudService, UserCollabParams, UserUpdate, UserUpdateReceiver};
 use flowy_user_pub::entities::{
   AFCloudOAuthParams, AuthResponse, AuthType, Role, UpdateUserProfileParams, UserProfile,
@@ -156,6 +157,109 @@ where
     let client = try_get_client?;
     let response = client.sign_in_with_passcode(&email, &passcode).await?;
     Ok(response)
+  }
+
+  async fn send_sms_code(&self, phone: &str) -> Result<(), FlowyError> {
+    let phone = phone.to_owned();
+    let try_get_client = self.server.try_get_client();
+    let client = try_get_client?;
+    
+    // Send SMS code request through AppFlowy Cloud, which will proxy to GoTrue
+    let gotrue_url = client.gotrue_url();
+    let api_url = format!("{}/otp", gotrue_url);
+    
+    // Prepare request body
+    let body = json!({
+      "phone": phone,
+      "create_user": true
+    });
+    
+    // Create HTTP client
+    let http_client = reqwest::Client::new();
+    
+    // Send SMS code request
+    let response = http_client
+      .post(&api_url)
+      .header("Content-Type", "application/json")
+      .header("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwcGZsb3d5LWNsb3VkLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ2NjM0NTUxLCJleHAiOjE5NjIyMTA1NTF9.rJwNZnhJGYqe33F-S6P6VHB-YkYcD7sYNWP0VIGPMfE")
+      .json(&body)
+      .send()
+      .await
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to send SMS code: {}", e)))?;
+    
+    if response.status().is_success() {
+      Ok(())
+    } else {
+      let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+      Err(FlowyError::internal().with_context(format!("SMS code request failed: {}", error_text)))
+    }
+  }
+
+  async fn sign_in_with_phone_sms(
+    &self,
+    phone: &str,
+    code: &str,
+  ) -> Result<GotrueTokenResponse, FlowyError> {
+    let try_get_client = self.server.try_get_client();
+    let client = try_get_client?;
+    
+    // Verify SMS code through AppFlowy Cloud, which will proxy to GoTrue
+    let gotrue_url = client.gotrue_url();
+    let api_url = format!("{}/verify", gotrue_url);
+    
+    // Prepare request body
+    let body = serde_json::json!({
+      "type": "sms",
+      "phone": phone,
+      "token": code
+    });
+    
+    // Create HTTP client
+    let http_client = reqwest::Client::new();
+    
+    // Make request to AppFlowy Cloud
+    let response = http_client
+      .post(&api_url)
+      .header("Content-Type", "application/json")
+      .header("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwcGZsb3d5LWNsb3VkLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ2NjM0NTUxLCJleHAiOjE5NjIyMTA1NTF9.rJwNZnhJGYqe33F-S6P6VHB-YkYcD7sYNWP0VIGPMfE")
+      .json(&body)
+      .send()
+      .await
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to send SMS verification request: {}", e)))?;
+    
+    if !response.status().is_success() {
+      let error_text = response.text().await.unwrap_or_default();
+      return Err(FlowyError::internal().with_context(format!("SMS verification failed: {}", error_text)));
+    }
+    
+    // Parse response
+    let response_text = response.text().await
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to read response: {}", e)))?;
+    
+    let response_json: serde_json::Value = serde_json::from_str(&response_text)
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to parse response: {}", e)))?;
+    
+    // Extract token information from response
+    if let Some(access_token) = response_json.get("access_token").and_then(|v| v.as_str()) {
+      Ok(GotrueTokenResponse {
+        access_token: access_token.to_string(),
+        token_type: response_json.get("token_type").and_then(|v| v.as_str()).unwrap_or("bearer").to_string(),
+        expires_in: response_json.get("expires_in").and_then(|v| v.as_i64()).unwrap_or(3600),
+        expires_at: response_json.get("expires_at").and_then(|v| v.as_i64()).unwrap_or(0),
+        refresh_token: response_json.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        provider_access_token: response_json.get("provider_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        provider_refresh_token: response_json.get("provider_refresh_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        user: response_json.get("user")
+          .and_then(|v| serde_json::from_value(v.clone()).ok())
+          .unwrap_or_else(|| {
+            // Create an empty User if parsing fails - this should not happen in normal flow
+            serde_json::from_str(r#"{"id":"","email":"","created_at":"","updated_at":""}"#)
+              .expect("Failed to create default User")
+          }),
+      })
+    } else {
+      Err(FlowyError::internal().with_context("No access token in response"))
+    }
   }
 
   async fn generate_oauth_url_with_provider(&self, provider: &str) -> Result<String, FlowyError> {
@@ -581,6 +685,78 @@ where
       .update_workspace_settings(&workspace_id, &workspace_settings)
       .await?;
     Ok(settings)
+  }
+}
+
+impl<T> AFCloudUserAuthServiceImpl<T>
+where
+  T: AFServer,
+{
+  /// Verify SMS code by calling GoTrue API
+  async fn _verify_sms_code(
+    &self,
+    phone: &str,
+    code: &str,
+  ) -> Result<GotrueTokenResponse, FlowyError> {
+    let try_get_client = self.server.try_get_client();
+    let client = try_get_client?;
+    
+    // Get GoTrue URL for SMS verification
+    let gotrue_url = client.gotrue_url();
+    let api_url = format!("{}/verify", gotrue_url);
+    
+    // Prepare request body
+    let body = json!({
+      "type": "sms",
+      "phone": phone,
+      "token": code
+    });
+    
+    // Create HTTP client
+    let http_client = reqwest::Client::new();
+    
+    // Make request to GoTrue
+    let response = http_client
+      .post(&api_url)
+      .header("Content-Type", "application/json")
+      .json(&body)
+      .send()
+      .await
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to send SMS verification request: {}", e)))?;
+    
+    if !response.status().is_success() {
+      let error_text = response.text().await.unwrap_or_default();
+      return Err(FlowyError::internal().with_context(format!("SMS verification failed: {}", error_text)));
+    }
+    
+    // Parse response
+    let response_text = response.text().await
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to read response: {}", e)))?;
+    
+    let response_json: serde_json::Value = serde_json::from_str(&response_text)
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to parse response: {}", e)))?;
+    
+    // Extract token information from response
+    if let Some(access_token) = response_json.get("access_token").and_then(|v| v.as_str()) {
+      Ok(GotrueTokenResponse {
+        access_token: access_token.to_string(),
+        token_type: response_json.get("token_type").and_then(|v| v.as_str()).unwrap_or("bearer").to_string(),
+        expires_in: response_json.get("expires_in").and_then(|v| v.as_i64()).unwrap_or(3600),
+        expires_at: response_json.get("expires_at").and_then(|v| v.as_i64()).unwrap_or(0),
+        refresh_token: response_json.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        provider_access_token: response_json.get("provider_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        provider_refresh_token: response_json.get("provider_refresh_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        user: response_json.get("user")
+          .and_then(|v| serde_json::from_value(v.clone()).ok())
+          .unwrap_or_else(|| {
+            // Create an empty User if parsing fails - this should not happen in normal flow
+            serde_json::from_str(r#"{"id":"","email":"","created_at":"","updated_at":""}"#)
+              .expect("Failed to create default User")
+          }),
+      })
+    } else {
+      Err(FlowyError::internal().with_context("No access token in response"))
+    }
   }
 }
 

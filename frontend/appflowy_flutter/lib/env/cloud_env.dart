@@ -265,10 +265,12 @@ Future<AppFlowyCloudConfiguration> configurationFromUri(
   // in the development environment.
   // If you modify following code, please update the corresponding documentation in the appflowy billing.
   if (authenticatorType == AuthenticatorType.appflowyCloudDevelop) {
+    // For development environment, all requests should go through AppFlowy Cloud
+    // AppFlowy Cloud will proxy authentication requests to GoTrue internally
     return AppFlowyCloudConfiguration(
       base_url: "$baseUrl:8000",
       ws_base_url: "ws://${baseUri.host}:8000/ws/v1",
-      gotrue_url: "$baseUrl:9999",
+      gotrue_url: "$baseUrl:8000/auth/v1",
       enable_sync_trace: true,
       base_web_domain: ShareConstants.testBaseWebDomain,
     );
@@ -352,5 +354,9 @@ Future<String> _getAppFlowyCloudWSUrl(String baseURL) async {
 }
 
 Future<String> _getAppFlowyCloudGotrueUrl(String baseURL) async {
+  // For development environment, use proxy server that handles /auth/v1 path mapping
+  if (baseURL.contains("localhost:8000")) {
+    return "http://localhost:9998";
+  }
   return "$baseURL/gotrue";
 }

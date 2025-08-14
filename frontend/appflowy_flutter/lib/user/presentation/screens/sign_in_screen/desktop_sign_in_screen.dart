@@ -9,8 +9,10 @@ import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/presentation/router.dart';
 import 'package:appflowy/user/presentation/screens/qq_qr_login_screen.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/anonymous_sign_in_button.dart';
+
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/widgets.dart';
-import 'package:appflowy/user/presentation/widgets/widgets.dart';
+import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/logo/logo.dart';
+
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -62,78 +64,98 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
       },
       child: BlocBuilder<SignInBloc, SignInState>(
         builder: (context, state) {
-          final bottomPadding = UniversalPlatform.isDesktop ? 20.0 : 24.0;
           return Scaffold(
             appBar: _buildAppBar(),
-            body: CenteredAuthContainer(
-              maxWidth: 380,
-              children: [
-                // logo and title
-                FlowyLogoTitle(
-                  title: "欢迎使用小马笔记",
-                  logoSize: Size.square(80),
+            backgroundColor: Colors.white,
+            body: Container(
+              width: double.infinity,
+              height: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFFFF8F6), // 浅色渐变背景，更贴近设计稿
+                    Colors.white,
+                  ],
                 ),
-                VSpace(40),
-
-                // 快速开始按钮
-                GestureDetector(
-                  onTap: () {
-                    // 直接调用匿名登录
-                    context
-                        .read<SignInBloc>()
-                        .add(const SignInEvent.signInAsGuest());
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFF4F0),
-                      border: Border.all(color: const Color(0xFFF89575)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    child: Text(
-                      //"LocaleKeys.signIn_quickStart.tr()",
-                      "快速开始",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: const Color(0xFFF89575),
-                        fontSize: 20,
-                        fontWeight: FontWeight.w500,
+              ),
+              child: Center(
+                child: Container(
+                  width: 380,
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo部分 - 恢复小马原始图标
+                      const AFLogo(
+                        size: Size.square(80),
                       ),
-                    ),
+                      const VSpace(30),
+
+                      // 标题 - 减小字体大小
+                      const Text(
+                        "欢迎使用小马笔记",
+                        style: TextStyle(
+                          color: Color(0xFF333333),
+                          fontSize: 24,
+                          fontFamily: 'DingTalk-JinBuTi',
+                          fontWeight: FontWeight.normal,
+                        ),
+                      ),
+                      const VSpace(40),
+
+                      // 快速开始按钮
+                      GestureDetector(
+                        onTap: () {
+                          context
+                              .read<SignInBloc>()
+                              .add(const SignInEvent.signInAsGuest());
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFFF4F0),
+                            border: Border.all(color: const Color(0xFFF89575)),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          child: const Text(
+                            "快速开始",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Color(0xFFF89575),
+                              fontSize: 20,
+                              fontFamily: 'PingFangSC-Medium',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const VSpace(10),
+
+                      // 分割线
+                      const _OrDivider(),
+                      const VSpace(10),
+
+                      // 邮箱/手机号登录部分
+                      isLocalAuthEnabled
+                          ? const SignInAnonymousButtonV3()
+                          : const ContinueWithEmailAndPassword(),
+
+                      // 第三方登录部分
+                      if (isAuthEnabled) ...[
+                        const VSpace(40),
+                        const _CustomOrDivider(text: "其他登录方式"),
+                        const VSpace(40),
+                        const ThirdPartySignInButtons(),
+                      ],
+
+                      const VSpace(40),
+                    ],
                   ),
                 ),
-                VSpace(10),
-
-                const _OrDivider(),
-                VSpace(10),
-
-                // continue with email and password
-                isLocalAuthEnabled
-                    ? const SignInAnonymousButtonV3()
-                    : const ContinueWithEmailAndPassword(),
-
-                VSpace(20),
-
-                // third-party sign in.
-                if (isAuthEnabled) ...[
-                  const _CustomOrDivider(text: "其他登录方式"),
-                  VSpace(40),
-                  const ThirdPartySignInButtons(),
-                  VSpace(40),
-                ],
-
-                // 隐藏设置和匿名登录按钮以符合设计稿
-                // const Row(
-                //   mainAxisSize: MainAxisSize.min,
-                //   children: [
-                //     DesktopSignInSettingsButton(),
-                //     HSpace(20),
-                //     SignInAnonymousButtonV2(),
-                //   ],
-                // ),
-                VSpace(bottomPadding),
-              ],
+              ),
             ),
           );
         },
@@ -156,6 +178,8 @@ class _DesktopSignInScreenState extends State<DesktopSignInScreen>
     // must call setState once when the window is focused
     setState(() {});
   }
+
+
 
   void _showQQLoginDialog(BuildContext context) {
     showDialog(
@@ -225,22 +249,29 @@ class _OrDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Flexible(
-          child: AFDivider(),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 17),
           child: Text(
-            LocaleKeys.signIn_or.tr(),
+            "或",
             style: TextStyle(
               color: const Color(0xFF999999),
               fontSize: 18,
               fontFamily: 'PingFangSC-Regular',
+              fontWeight: FontWeight.normal,
             ),
           ),
         ),
-        Flexible(
-          child: AFDivider(),
+        Expanded(
+          child: Container(
+            height: 1,
+            color: const Color(0xFFE0E0E0),
+          ),
         ),
       ],
     );
@@ -283,3 +314,4 @@ class _CustomOrDivider extends StatelessWidget {
     );
   }
 }
+

@@ -13,6 +13,8 @@
           "type": "dart",
           "env": {
               "RUST_LOG": "debug",
+              "NO_PROXY": "localhost,127.0.0.1,::1",
+              "no_proxy": "localhost,127.0.0.1,::1"
           },
           // uncomment the following line to testing performance.
           // "flutterMode": "profile",
@@ -27,7 +29,9 @@
           "preLaunchTask": "AF: Build Appflowy Core",
           "env": {
               "RUST_LOG": "trace",
-              "RUST_BACKTRACE": "1"
+              "RUST_BACKTRACE": "1",
+              "NO_PROXY": "localhost,127.0.0.1,::1",
+              "no_proxy": "localhost,127.0.0.1,::1"
           },
           "cwd": "${workspaceRoot}/appflowy_flutter"
       },
@@ -42,7 +46,10 @@
           "type": "dart",
           "preLaunchTask": "AF: Clean + Rebuild All",
           "env": {
-              "RUST_LOG": "trace"
+              "RUST_LOG": "trace",
+              "RUST_BACKTRACE": "1",
+              "NO_PROXY": "localhost,127.0.0.1,::1",
+              "no_proxy": "localhost,127.0.0.1,::1"
           },
           "cwd": "${workspaceRoot}/appflowy_flutter"
       },

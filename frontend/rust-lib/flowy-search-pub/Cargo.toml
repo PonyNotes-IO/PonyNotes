@@ -9,7 +9,7 @@ edition = "2024"
 lib-infra = { workspace = true }
 collab = { workspace = true }
 collab-folder = { workspace = true }
-flowy-error = { workspace = true }
+flowy-error = { workspace = true, features = ["impl_from_tantivy"] }
 client-api = { workspace = true }
 uuid.workspace = true
 tokio.workspace = true

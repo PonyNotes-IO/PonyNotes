@@ -123,6 +123,17 @@ class AppFlowyCloudAuthService implements AuthService {
   }
 
   @override
+  Future<FlowyResult<GotrueTokenResponsePB, FlowyError>> signInWithPhoneSms({
+    required String phone,
+    required String code,
+  }) async {
+    return _backendAuthService.signInWithPhoneSms(
+      phone: phone,
+      code: code,
+    );
+  }
+
+  @override
   Future<FlowyResult<bool, FlowyError>> checkUserExists({
     required String email,
   }) async {
