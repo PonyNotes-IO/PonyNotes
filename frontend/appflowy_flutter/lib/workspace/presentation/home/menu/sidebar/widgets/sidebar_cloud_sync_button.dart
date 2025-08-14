@@ -36,7 +36,7 @@ class _SidebarCloudSyncButtonState extends State<SidebarCloudSyncButton> {
         useIntrinsicWidth: true,
         margin: EdgeInsets.zero,
         text: FlowySvg(
-          FlowySvgs.cloud_sync_s,
+          FlowySvgs.cloud_sync_m,
           color: widget.isHover
               ? Theme.of(context).colorScheme.onSurface
               : null,

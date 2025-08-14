@@ -1,5 +1,16 @@
-<!-- 文件库按钮左侧图标 -->
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M2 4.5C2 3.67157 2.67157 3 3.5 3H6.5L8 4.5H13.5C14.3284 4.5 15 5.17157 15 6V12.5C15 13.3284 14.3284 14 13.5 14H3.5C2.67157 14 2 13.3284 2 12.5V4.5Z" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
-<path d="M6.5 3V4.5H8" stroke="currentColor" stroke-width="1.33333" stroke-linecap="round" stroke-linejoin="round"/>
-</svg> 
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="18px" height="15px" viewBox="0 0 18 15" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>编组</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="主页黑色" transform="translate(-25.000000, -808.000000)" fill-rule="nonzero">
+            <g id="编组-3备份-6" transform="translate(15.000000, 796.000000)">
+                <g id="编组" transform="translate(10.500000, 12.523027)">
+                    <g transform="translate(0.000000, 0.000000)">
+                        <polygon id="路径" fill="#C7C7C7" points="9.39582979 8.80756642 13.422614 8.80756642 13.422614 10.5690797 9.39582979 10.5690797"></polygon>
+                        <path d="M4.81576225,0.65 L8.55943835,2.41151328 L15.6577189,2.41151328 C15.8500063,2.41151328 16.0245666,2.48758596 16.1507844,2.61181665 C16.2732382,2.73234266 16.3499853,2.89855113 16.3499853,3.08264825 L16.3499877,12.7727469 C16.3504888,12.9561921 16.2742653,13.1218056 16.1524038,13.2419273 C16.0263995,13.3661327 15.8518959,13.4421063 15.6597163,13.4421063 L1.3422614,13.4421063 C1.14997512,13.4421063 0.97541641,13.3660343 0.849199942,13.2418044 C0.726746252,13.1212781 0.65,12.9550689 0.65,12.7709713 L0.65,1.32113496 C0.65,1.13703736 0.726746252,0.970828197 0.849199942,0.850301859 C0.97541641,0.726071966 1.14997512,0.65 1.3422614,0.65 L4.81576225,0.65 Z" id="形状" stroke="#C7C7C7" stroke-width="1.3"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

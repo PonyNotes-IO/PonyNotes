@@ -352,8 +352,8 @@ class _SidebarState extends State<_Sidebar> {
             const VSpace(16),
             // PonyNotes custom header
             Container(
-              height: HomeSizes.workspaceSectionHeight,
-              padding: menuHorizontalInset - const EdgeInsets.only(right: 6),
+                height: HomeSizes.workspaceSectionHeight,
+                padding: menuHorizontalInset - const EdgeInsets.only(right: 6),
               child: _PonyNotesHeader(userProfile: widget.userProfile),
             ),
             if (FeatureFlag.search.isOn) ...[
@@ -648,9 +648,11 @@ class _PonyNotesHeaderState extends State<_PonyNotesHeader> {
                     ),
                   ),
                   child: const Center(
-                    child: Text(
-                      '🐴', // 小马emoji
-                      style: TextStyle(fontSize: 16),
+                    child: Image(
+                      image: AssetImage('assets/images/app_logo_m.jpg'),
+                      width: 16,
+                      height: 16,
+                      fit: BoxFit.contain,
                     ),
                   ),
                 ),

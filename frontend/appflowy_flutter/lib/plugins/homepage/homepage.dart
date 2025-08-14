@@ -100,12 +100,12 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(32.0),
+        padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 32.0),
         child: Column(
           children: [
             // 问候语 - 居中显示
             Center(child: _buildGreeting(greeting, userName)),
-            const SizedBox(height: 32),
+            const SizedBox(height: 12),
 
             // 三个区域并排展示
             Column(
@@ -369,9 +369,31 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
           const SizedBox(height: 16),
-          _buildCalendarSection(),
-          const SizedBox(height: 16),
-          _buildTodoList(),
+          // 将日历和待办列表水平排列
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // 日历部分 - 占据较小的固定宽度
+                SizedBox(
+                  width: 240,
+                  child: _buildCalendarSection(),
+                ),
+                // 分割线 - 自动适应高度并居中
+                Container(
+                  width: 1,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: isLightMode ? Colors.grey.shade300 : const Color(0xFF4A4D52),
+                  ),
+                ),
+                // 待办列表部分 - 占据剩余空间
+                Expanded(
+                  child: _buildTodoList(),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

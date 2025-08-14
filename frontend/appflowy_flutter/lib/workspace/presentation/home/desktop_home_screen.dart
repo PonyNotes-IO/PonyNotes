@@ -106,24 +106,34 @@ class DesktopHomeScreen extends StatelessWidget {
                     )
                   : null,
               body: BlocListener<HomeBloc, HomeState>(
-                listenWhen: (p, c) => p.latestView != c.latestView,
+                listenWhen: (p, c) => 
+                  p.latestView != c.latestView || 
+                  (p.workspaceSetting == null && c.workspaceSetting != null),
                 listener: (context, state) {
                   final view = state.latestView;
-                  if (view != null) {
-                    // Only open the last opened view if the [TabsState.currentPageManager] current opened plugin is blank and the last opened view is not null.
-                    // All opened widgets that display on the home screen are in the form of plugins. There is a list of built-in plugins defined in the [PluginType] enum, including board, grid and trash.
                     final currentPageManager =
                         context.read<TabsBloc>().state.currentPageManager;
 
-                    if (currentPageManager.plugin.pluginType ==
-                        PluginType.blank) {
+                  // Only open views if the current plugin is blank
+                  if (currentPageManager.plugin.pluginType == PluginType.blank) {
+                    if (view != null) {
+                      // Open the last opened view if it exists and is not a space
                       getIt<TabsBloc>().add(
                         TabsEvent.openPlugin(plugin: view.plugin()),
                       );
-                    }
 
                     // switch to the space that contains the last opened view
                     _switchToSpace(view);
+                    } else {
+                      // If no latest view, open the homepage by default
+                      final homePlugin = makePlugin(
+                        pluginType: PluginType.homepage,
+                        data: null,
+                      );
+                      getIt<TabsBloc>().add(
+                        TabsEvent.openPlugin(plugin: homePlugin),
+                      );
+                    }
                   }
                 },
                 child: BlocBuilder<HomeSettingBloc, HomeSettingState>(
