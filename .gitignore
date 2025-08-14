@@ -23,6 +23,7 @@ node_modules
 
 # ignore settings.json
 frontend/.vscode/settings.json
+frontend/debug-dbs
 
 # Commit the highest level pubspec.lock, but ignore the others
 pubspec.lock

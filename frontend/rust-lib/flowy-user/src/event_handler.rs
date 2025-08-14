@@ -328,6 +328,29 @@ pub async fn sign_in_with_passcode_handler(
 }
 
 #[tracing::instrument(level = "debug", skip(data, manager), err)]
+pub async fn sign_in_with_phone_sms_handler(
+  data: AFPluginData<PhoneSmsSignInPB>,
+  manager: AFPluginState<Weak<UserManager>>,
+) -> DataResult<GotrueTokenResponsePB, FlowyError> {
+  let manager = upgrade_manager(manager)?;
+  let params = data.into_inner();
+  let response = manager
+    .sign_in_with_phone_sms(&params.phone, &params.code)
+    .await?;
+  data_result_ok(response.into())
+}
+
+#[tracing::instrument(level = "debug", skip(data, manager), err)]
+pub async fn send_sms_code_handler(
+  data: AFPluginData<SendSmsCodePB>,
+  manager: AFPluginState<Weak<UserManager>>,
+) -> Result<(), FlowyError> {
+  let manager = upgrade_manager(manager)?;
+  let params = data.into_inner();
+  manager.send_sms_code(&params.phone).await
+}
+
+#[tracing::instrument(level = "debug", skip(data, manager), err)]
 pub async fn oauth_sign_in_handler(
   data: AFPluginData<OauthSignInPB>,
   manager: AFPluginState<Weak<UserManager>>,

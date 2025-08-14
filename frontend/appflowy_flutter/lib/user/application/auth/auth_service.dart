@@ -123,6 +123,17 @@ abstract class AuthService {
     required String passcode,
   });
 
+  /// Authenticates a user with SMS verification code sent to their phone.
+  ///
+  /// - `phone`: The phone number of the user.
+  /// - `code`: The SMS verification code.
+  ///
+  /// Returns [GotrueTokenResponsePB] if the user is authenticated, otherwise returns [FlowyError].
+  Future<FlowyResult<GotrueTokenResponsePB, FlowyError>> signInWithPhoneSms({
+    required String phone,
+    required String code,
+  });
+
   /// Signs out the currently authenticated user.
   Future<void> signOut();
 

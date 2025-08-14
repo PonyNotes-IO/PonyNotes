@@ -60,6 +60,11 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
             email: email,
             passcode: passcode,
           ),
+          signInWithPhoneSms: (phone, code) async => _onSignInWithPhoneSms(
+            emit,
+            phone: phone,
+            code: code,
+          ),
           deepLinkStateChange: (result) => _onDeepLinkStateChange(emit, result),
           cancel: () {
             emit(
@@ -327,6 +332,49 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     );
   }
 
+  Future<void> _onSignInWithPhoneSms(
+    Emitter<SignInState> emit, {
+    required String phone,
+    required String code,
+  }) async {
+    if (state.isSubmitting) {
+      Log.error('Sign in with phone SMS is already in progress');
+      return;
+    }
+
+    Log.info('Sign in with phone SMS: $phone, $code');
+
+    emit(
+      state.copyWith(
+        isSubmitting: true,
+        emailError: null,
+        passwordError: null,
+        successOrFail: null,
+      ),
+    );
+
+    final result = await authService.signInWithPhoneSms(
+      phone: phone,
+      code: code,
+    );
+
+    emit(
+      result.fold(
+        (gotrueTokenResponse) {
+          if (isAppFlowyCloudEnabled) {
+            getIt<AppFlowyCloudDeepLink>().passGotrueTokenResponse(
+              gotrueTokenResponse,
+            );
+          }
+          return state.copyWith(
+            isSubmitting: false,
+          );
+        },
+        (error) => _stateFromCode(error),
+      ),
+    );
+  }
+
   Future<void> _onSignInAsGuest(
     Emitter<SignInState> emit,
   ) async {
@@ -549,6 +597,10 @@ class SignInEvent with _$SignInEvent {
     required String email,
     required String passcode,
   }) = SignInWithPasscode;
+  const factory SignInEvent.signInWithPhoneSms({
+    required String phone,
+    required String code,
+  }) = SignInWithPhoneSms;
 
   // Event handlers
   const factory SignInEvent.emailChanged({

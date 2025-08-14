@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:appflowy/workspace/application/settings/plan/workspace_subscription_ext.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/errors.pb.dart';
+import 'package:appflowy_backend/protobuf/flowy-error/code.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/workspace.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:appflowy_result/appflowy_result.dart';
@@ -83,6 +84,22 @@ class UserBackendService implements IUserBackendService {
   ) async {
     final payload = PasscodeSignInPB(email: email, passcode: passcode);
     return UserEventPasscodeSignIn(payload).send();
+  }
+
+  static Future<FlowyResult<GotrueTokenResponsePB, FlowyError>>
+      signInWithPhoneSms(
+    String phone,
+    String code,
+  ) async {
+    final payload = PhoneSmsSignInPB(phone: phone, code: code);
+    return UserEventPhoneSmsSignIn(payload).send();
+  }
+
+  static Future<FlowyResult<void, FlowyError>> sendSmsCode(
+    String phone,
+  ) async {
+    final payload = SendSmsCodePB(phone: phone);
+    return UserEventSendSmsCode(payload).send();
   }
 
   Future<FlowyResult<void, FlowyError>> signInWithPassword(

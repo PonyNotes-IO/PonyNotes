@@ -130,6 +130,18 @@ impl UserCloudService for LocalServerUserServiceImpl {
     Err(FlowyError::local_version_not_support().with_context("Not support"))
   }
 
+  async fn send_sms_code(&self, _phone: &str) -> Result<(), FlowyError> {
+    Err(FlowyError::local_version_not_support().with_context("Not support"))
+  }
+
+  async fn sign_in_with_phone_sms(
+    &self,
+    _phone: &str,
+    _code: &str,
+  ) -> Result<GotrueTokenResponse, FlowyError> {
+    Err(FlowyError::local_version_not_support().with_context("Not support"))
+  }
+
   async fn generate_oauth_url_with_provider(&self, _provider: &str) -> Result<String, FlowyError> {
     Err(FlowyError::internal().with_context("Can't oauth url when using offline mode"))
   }

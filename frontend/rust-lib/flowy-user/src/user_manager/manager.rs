@@ -749,6 +749,29 @@ impl UserManager {
   }
 
   #[instrument(level = "info", skip_all)]
+  pub(crate) async fn send_sms_code(&self, phone: &str) -> Result<(), FlowyError> {
+    self
+      .cloud_service()?
+      .set_server_auth_type(&AuthType::AppFlowyCloud, None)?;
+    let auth_service = self.cloud_service()?.get_user_service()?;
+    auth_service.send_sms_code(phone).await
+  }
+
+  #[instrument(level = "info", skip_all)]
+  pub(crate) async fn sign_in_with_phone_sms(
+    &self,
+    phone: &str,
+    code: &str,
+  ) -> Result<GotrueTokenResponse, FlowyError> {
+    self
+      .cloud_service()?
+      .set_server_auth_type(&AuthType::AppFlowyCloud, None)?;
+    let auth_service = self.cloud_service()?.get_user_service()?;
+    let response = auth_service.sign_in_with_phone_sms(phone, code).await?;
+    Ok(response)
+  }
+
+  #[instrument(level = "info", skip_all)]
   pub(crate) async fn generate_oauth_url(
     &self,
     oauth_provider: &str,

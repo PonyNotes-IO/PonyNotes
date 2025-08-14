@@ -2,13 +2,21 @@
 class Validator {
   /// 校验手机号（中国大陆主流号段，禁止无效号段）
   static bool isValidPhone(String phone) {
-    if (phone.length != 11) return false;
-    if (!RegExp(r'^\d{11}$').hasMatch(phone)) return false;
+    // 处理国际格式 +86 开头的手机号
+    String cleanPhone = phone.trim();
+    if (cleanPhone.startsWith('+86')) {
+      cleanPhone = cleanPhone.substring(3);
+    } else if (cleanPhone.startsWith('86') && cleanPhone.length == 13) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+    
+    if (cleanPhone.length != 11) return false;
+    if (!RegExp(r'^\d{11}$').hasMatch(cleanPhone)) return false;
     const forbidden = [
       '00000000000',
       '12345678901',
     ];
-    if (forbidden.contains(phone)) return false;
+    if (forbidden.contains(cleanPhone)) return false;
     final validPrefixes = [
       // 移动
       '134', '135', '136', '137', '138', '139', '1440', '147', '148', '150',
@@ -24,8 +32,8 @@ class Validator {
       // 虚拟运营商
       '165', '167', '1700', '1701', '1702',
     ];
-    final prefix4 = phone.substring(0, 4);
-    final prefix3 = phone.substring(0, 3);
+    final prefix4 = cleanPhone.substring(0, 4);
+    final prefix3 = cleanPhone.substring(0, 3);
     if (validPrefixes.contains(prefix4) || validPrefixes.contains(prefix3)) {
       return true;
     }
@@ -57,5 +65,16 @@ class Validator {
   /// 校验输入是否为合法邮箱或手机号
   static bool isValidEmailOrPhone(String input) {
     return isValidEmail(input) || isValidPhone(input);
+  }
+
+  /// 清理手机号格式，移除国际区号
+  static String cleanPhoneNumber(String phone) {
+    String cleanPhone = phone.trim();
+    if (cleanPhone.startsWith('+86')) {
+      cleanPhone = cleanPhone.substring(3);
+    } else if (cleanPhone.startsWith('86') && cleanPhone.length == 13) {
+      cleanPhone = cleanPhone.substring(2);
+    }
+    return cleanPhone;
   }
 }

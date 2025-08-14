@@ -47,7 +47,7 @@ class _SignInWithMagicLinkButtonsState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SizedBox(
-          height: UniversalPlatform.isMobile ? 38.0 : 48.0,
+          height: UniversalPlatform.isMobile ? 40.0 : 40.0,
           child: FlowyTextField(
             autoFocus: false,
             focusNode: _focusNode,

@@ -128,7 +128,7 @@ enum ThirdPartySignInButtonType {
 class MobileThirdPartySignInButton extends StatelessWidget {
   const MobileThirdPartySignInButton({
     super.key,
-    this.height = 38,
+    this.height = 30,
     this.fontSize = 14.0,
     required this.onTap,
     required this.type,

@@ -104,6 +104,21 @@ pub struct PasscodeSignInPB {
   pub passcode: String,
 }
 
+#[derive(ProtoBuf, Default)]
+pub struct PhoneSmsSignInPB {
+  #[pb(index = 1)]
+  pub phone: String,
+
+  #[pb(index = 2)]
+  pub code: String,
+}
+
+#[derive(ProtoBuf, Default)]
+pub struct SendSmsCodePB {
+  #[pb(index = 1)]
+  pub phone: String,
+}
+
 #[derive(ProtoBuf, Default, Debug, Clone)]
 pub struct GotrueTokenResponsePB {
   #[pb(index = 1)]

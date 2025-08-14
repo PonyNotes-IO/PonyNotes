@@ -61,9 +61,9 @@ class _DesktopThirdPartySignInState extends State<_DesktopThirdPartySignIn> {
   Widget build(BuildContext context) {
     return Container(
       width: 360,
-      height: 70,
+      height: 56,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _CircleIconButton(
             type: ThirdPartySignInButtonType.wechat,
@@ -97,23 +97,28 @@ class _CircleIconButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 70,
-        height: 70,
+        width: 56,
+        height: 56,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white,
+          border: Border.all(
+            color: const Color(0xFFE0E0E0),
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: Offset(0, 2),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+              spreadRadius: 1,
             ),
           ],
         ),
         child: Center(
           child: FlowySvg(
             type.icon,
-            size: Size.square(32),
+            size: const Size.square(29),
             blendMode: type.blendMode,
           ),
         ),

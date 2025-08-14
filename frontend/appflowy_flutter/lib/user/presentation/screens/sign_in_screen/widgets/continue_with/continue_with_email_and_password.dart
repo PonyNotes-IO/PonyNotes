@@ -1,15 +1,17 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/user/application/password/password_check_service.dart';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
+import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password_page.dart';
+import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_phone_sms_page.dart';
 import 'package:appflowy/user/presentation/utils/legal_document_navigator.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:string_validator/string_validator.dart';
+
 import 'package:appflowy/util/validator.dart';
 
 class ContinueWithEmailAndPassword extends StatefulWidget {
@@ -78,7 +80,7 @@ class _ContinueWithEmailAndPasswordState
                   fontWeight: FontWeight.w500,
                 ),
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 19, vertical: 13),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 19, vertical: 10),
               ),
               style: TextStyle(
                 fontSize: 20,
@@ -93,7 +95,12 @@ class _ContinueWithEmailAndPasswordState
                 ? () {}
                 : () {
                     final emailOrPhone = controller.text.trim();
+                    print('🔍 用户输入: $emailOrPhone');
+                    print('📱 是否为有效手机号: ${Validator.isValidPhone(emailOrPhone)}');
+                    print('📧 是否为有效邮箱: ${Validator.isValidEmail(emailOrPhone)}');
+                    
                     if (!Validator.isValidEmailOrPhone(emailOrPhone)) {
+                      print('❌ 验证失败: 输入不是有效的邮箱或手机号');
                       emailKey.currentState?.syncError(
                         errorText: LocaleKeys.signIn_invalidEmailOrPhone.tr(),
                       );
@@ -198,9 +205,16 @@ class _ContinueWithEmailAndPasswordState
                       );
                       return;
                     }
-                    if (isEmail(emailOrPhone)) {
+                    if (Validator.isValidEmail(emailOrPhone)) {
+                      print('✅ 识别为邮箱，调用邮箱登录');
                       _signInWithEmail(context, emailOrPhone);
-                    } else {}
+                    } else if (Validator.isValidPhone(emailOrPhone)) {
+                      // 清理手机号格式（移除+86等国际区号）
+                      final cleanPhone = Validator.cleanPhoneNumber(emailOrPhone);
+                      print('✅ 识别为手机号，清理后: $cleanPhone');
+                      print('📞 调用手机号登录');
+                      _signInWithPhone(context, cleanPhone);
+                    }
                   },
             child: Container(
               width: double.infinity,
@@ -208,7 +222,7 @@ class _ContinueWithEmailAndPasswordState
                 color: const Color(0xFFF89575),
                 borderRadius: BorderRadius.circular(8),
               ),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 10),
               child: Text(
                 _isLoading
                     ? LocaleKeys.signIn_signingIn.tr()
@@ -354,6 +368,56 @@ class _ContinueWithEmailAndPasswordState
       // 处理异常
       if (mounted) {
         _showUserCheckFailedDialog(context, input, e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _signInWithPhone(BuildContext context, String phone) async {
+    if (_isLoading) return;
+
+    print('📱 开始发送短信验证码到: $phone');
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // 发送短信验证码
+      print('🚀 调用 UserBackendService.sendSmsCode...');
+      final result = await UserBackendService.sendSmsCode(phone);
+      print('📤 短信发送结果: ${result.isSuccess ? "成功" : "失败"}');
+      
+      if (!mounted) return;
+
+      result.fold(
+        (_) {
+          // 短信发送成功，跳转到短信验证页面
+          print('✅ 短信发送成功，跳转到验证页面');
+          emailKey.currentState?.clearError();
+          _pushContinueWithPhoneSmsPage(context, phone);
+        },
+        (error) {
+          print('❌ 短信发送失败: ${error.msg}');
+          // 简化错误信息显示给用户
+          String errorMessage = error.msg;
+          if (errorMessage.contains('EOF') || errorMessage.contains('dysmsapi.aliyuncs.com')) {
+            errorMessage = '短信服务暂时不可用，请稍后重试或联系客服';
+          } else if (errorMessage.contains('sms_send_failed')) {
+            errorMessage = '短信发送失败，请检查手机号或稍后重试';
+          }
+          emailKey.currentState?.syncError(errorText: errorMessage);
+        },
+      );
+    } catch (e) {
+      print('💥 异常: 发送短信验证码失败: $e');
+      if (mounted) {
+        emailKey.currentState?.syncError(errorText: '发送短信验证码失败: $e');
       }
     } finally {
       if (mounted) {
@@ -515,6 +579,37 @@ class _ContinueWithEmailAndPasswordState
             },
             onForgotPassword: () {
               // todo: implement forgot password
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _pushContinueWithPhoneSmsPage(
+    BuildContext context,
+    String phone,
+  ) {
+    final signInBloc = context.read<SignInBloc>();
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        settings: const RouteSettings(name: '/continue-with-phone-sms'),
+        builder: (context) => BlocProvider.value(
+          value: signInBloc,
+          child: ContinueWithPhoneSmsPage(
+            phone: phone,
+            backToLogin: () {
+              emailKey.currentState?.clearError();
+              Navigator.pop(context);
+            },
+            onVerifySms: (code) {
+              signInBloc.add(
+                SignInEvent.signInWithPhoneSms(
+                  phone: phone,
+                  code: code,
+                ),
+              );
             },
           ),
         ),
