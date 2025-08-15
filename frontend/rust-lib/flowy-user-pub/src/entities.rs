@@ -210,6 +210,15 @@ where
       })
       .unwrap_or_default();
     let workspace_type = WorkspaceType::from(auth_type);
+    
+    // Extract phone number from metadata if available
+    let phone_number = value
+      .metadata()
+      .as_ref()
+      .and_then(|m| m.get("phone_number"))
+      .and_then(|v| v.as_str())
+      .map(|s| s.to_string());
+    
     Self {
       uid: value.user_id(),
       email: value.user_email().clone(),
@@ -219,7 +228,7 @@ where
       auth_type: *auth_type,
       workspace_type,
       updated_at: value.updated_at(),
-      phone_number: None,
+      phone_number,
     }
   }
 }

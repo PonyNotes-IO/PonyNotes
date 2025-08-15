@@ -30,23 +30,33 @@ pub fn user_profile_from_af_profile(
   let icon_url = {
     profile
       .metadata
-      .map(|m| {
+      .as_ref()
+      .and_then(|m| {
         m.get(USER_METADATA_ICON_URL)
-          .map(|v| v.as_str().map(|s| s.to_string()).unwrap_or_default())
+          .and_then(|v| v.as_str().map(|s| s.to_string()))
       })
       .unwrap_or_default()
   };
+  
+  // Extract phone number from metadata
+  let phone_number = profile
+    .metadata
+    .as_ref()
+    .and_then(|m| m.get("phone_number"))
+    .and_then(|v| v.as_str())
+    .map(|s| s.to_string());
+  
   let workspace_type = WorkspaceType::from(&auth_type);
   Ok(UserProfile {
     email: profile.email,
     name: profile.name.unwrap_or("".to_string()),
     token,
-    icon_url: icon_url.unwrap_or_default(),
+    icon_url,
     auth_type: AuthType::AppFlowyCloud,
     uid: profile.uid,
     updated_at: profile.updated_at,
     workspace_type,
-    phone_number: None,
+    phone_number,
   })
 }
 

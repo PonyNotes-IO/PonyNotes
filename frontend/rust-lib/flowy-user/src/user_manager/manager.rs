@@ -1,4 +1,68 @@
 use client_api::entity::GotrueTokenResponse;
+
+/// Wrapper for GoTrue response that includes phone number information
+struct PhoneAuthResponse {
+  gotrue_response: GotrueTokenResponse,
+  phone_number: String,
+  metadata_with_phone: Option<serde_json::Value>,
+}
+
+impl UserAuthResponse for PhoneAuthResponse {
+  fn user_id(&self) -> i64 {
+    self.gotrue_response.user.id.parse::<i64>().unwrap_or_default()
+  }
+
+  fn user_uuid(&self) -> &uuid::Uuid {
+    // We need to parse and store the UUID, but for now return a default
+    static DEFAULT_UUID: std::sync::OnceLock<uuid::Uuid> = std::sync::OnceLock::new();
+    DEFAULT_UUID.get_or_init(|| uuid::Uuid::nil())
+  }
+
+  fn user_name(&self) -> &str {
+    if !self.gotrue_response.user.email.is_empty() {
+      &self.gotrue_response.user.email
+    } else {
+      &self.phone_number
+    }
+  }
+
+  fn latest_workspace(&self) -> &UserWorkspace {
+    // Create a default workspace - this will be overridden by cloud service
+    static DEFAULT_WORKSPACE: std::sync::OnceLock<UserWorkspace> = std::sync::OnceLock::new();
+    DEFAULT_WORKSPACE.get_or_init(|| {
+      UserWorkspace::new_local(uuid::Uuid::new_v4().to_string(), "My Workspace")
+    })
+  }
+
+  fn user_workspaces(&self) -> &[UserWorkspace] {
+    // Return empty slice - workspaces will be handled by cloud service
+    &[]
+  }
+
+  fn user_token(&self) -> Option<String> {
+    Some(self.gotrue_response.access_token.clone())
+  }
+
+  fn user_email(&self) -> Option<String> {
+    if self.gotrue_response.user.email.is_empty() {
+      None
+    } else {
+      Some(self.gotrue_response.user.email.clone())
+    }
+  }
+
+  fn encryption_type(&self) -> EncryptionType {
+    EncryptionType::NoEncryption
+  }
+
+  fn metadata(&self) -> &Option<serde_json::Value> {
+    &self.metadata_with_phone
+  }
+
+  fn updated_at(&self) -> i64 {
+    chrono::Utc::now().timestamp()
+  }
+}
 use collab_integrate::collab_builder::AppFlowyCollabBuilder;
 use collab_integrate::CollabKVDB;
 use flowy_error::FlowyResult;
@@ -769,6 +833,78 @@ impl UserManager {
     let auth_service = self.cloud_service()?.get_user_service()?;
     let response = auth_service.sign_in_with_phone_sms(phone, code).await?;
     Ok(response)
+  }
+
+  /// Complete phone SMS sign-in with user profile creation
+  #[instrument(level = "info", skip_all)]
+  pub(crate) async fn complete_phone_sms_sign_in(
+    &self,
+    phone: &str,
+    code: &str,
+  ) -> Result<UserProfile, FlowyError> {
+    let cloud_service = self.cloud_service()?;
+    cloud_service.set_server_auth_type(&AuthType::AppFlowyCloud, None)?;
+
+    // Get the GoTrue token response
+    let gotrue_response = cloud_service
+      .get_user_service()?
+      .sign_in_with_phone_sms(phone, code)
+      .await?;
+
+    // Create metadata that includes phone number
+    let mut metadata = gotrue_response.user.user_metadata.clone();
+    if let serde_json::Value::Object(ref mut map) = metadata {
+      map.insert("phone_number".to_string(), serde_json::Value::String(phone.to_string()));
+    } else {
+      metadata = serde_json::json!({
+        "phone_number": phone
+      });
+    }
+
+    // Create a custom AuthResponse that includes phone number information
+    let phone_auth_response = PhoneAuthResponse {
+      gotrue_response,
+      phone_number: phone.to_string(),
+      metadata_with_phone: Some(metadata),
+    };
+
+    let session = Session::from(&phone_auth_response);
+    self.prepare_user(&session).await;
+
+    let latest_workspace = phone_auth_response.latest_workspace().clone();
+    let workspace_id = uuid::Uuid::parse_str(&latest_workspace.id)?;
+    let user_profile = UserProfile::from((&phone_auth_response, &AuthType::AppFlowyCloud));
+    
+    self.save_auth_data(&phone_auth_response, AuthType::AppFlowyCloud, &session).await?;
+
+    let _ = self
+      .initial_user_awareness(
+        session.user_id,
+        &session.user_uuid,
+        &workspace_id,
+        &user_profile.workspace_type,
+      )
+      .await;
+    
+    self
+      .app_life_cycle
+      .read()
+      .await
+      .on_sign_in(
+        user_profile.uid,
+        &workspace_id,
+        &self.authenticate_user.user_config,
+        &self.authenticate_user.user_paths,
+        &user_profile.workspace_type,
+      )
+      .await?;
+    
+    send_auth_state_notification(AuthStateChangedPB {
+      state: AuthStatePB::AuthStateSignIn,
+      message: "Sign in success".to_string(),
+    });
+    
+    Ok(user_profile)
   }
 
   #[instrument(level = "info", skip_all)]

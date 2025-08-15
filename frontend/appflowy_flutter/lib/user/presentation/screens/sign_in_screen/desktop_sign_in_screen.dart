@@ -221,7 +221,7 @@ class DesktopSignInSettingsButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = AppFlowyTheme.of(context);
     return AFGhostIconTextButton(
-      text: LocaleKeys.signIn_settings.tr(),
+      text: "设置",
       textColor: (context, isHovering, disabled) {
         return theme.textColorScheme.secondary;
       },
