@@ -40,7 +40,15 @@ impl UserAuthResponse for PhoneAuthResponse {
   }
 
   fn user_token(&self) -> Option<String> {
-    Some(self.gotrue_response.access_token.clone())
+    // Format token as JSON to be compatible with AppFlowy's token format
+    let token_json = serde_json::json!({
+      "access_token": self.gotrue_response.access_token,
+      "token_type": self.gotrue_response.token_type,
+      "expires_in": self.gotrue_response.expires_in,
+      "expires_at": self.gotrue_response.expires_at,
+      "refresh_token": self.gotrue_response.refresh_token
+    });
+    Some(token_json.to_string())
   }
 
   fn user_email(&self) -> Option<String> {
