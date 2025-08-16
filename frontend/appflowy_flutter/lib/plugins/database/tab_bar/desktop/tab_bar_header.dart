@@ -103,15 +103,18 @@ class _DatabaseTabBarState extends State<DatabaseTabBar> {
           scrollDirection: Axis.horizontal,
           shrinkWrap: true,
           itemCount: state.tabBars.length + 1,
-          itemBuilder: (context, index) => index == state.tabBars.length
-              ? AddDatabaseViewButton(
-                  onTap: (layoutType) {
-                    context
-                        .read<DatabaseTabBarBloc>()
-                        .add(DatabaseTabBarEvent.createView(layoutType, null));
-                  },
-                )
-              : DatabaseTabBarItem(
+          itemBuilder: (context, index) {
+            if (index == state.tabBars.length) {
+              // 最后一个位置显示添加按钮
+              return AddDatabaseViewButton(
+                onTap: (layoutType) {
+                  context
+                      .read<DatabaseTabBarBloc>()
+                      .add(DatabaseTabBarEvent.createView(layoutType, null));
+                },
+              );
+            }
+            return DatabaseTabBarItem(
                   key: ValueKey(state.tabBars[index].viewId),
                   view: state.tabBars[index].view,
                   isSelected: state.selectedIndex == index,
@@ -120,7 +123,8 @@ class _DatabaseTabBarState extends State<DatabaseTabBar> {
                         .read<DatabaseTabBarBloc>()
                         .add(DatabaseTabBarEvent.selectView(selectedView.id));
                   },
-                ),
+                );
+          },
           separatorBuilder: (context, index) => VerticalDivider(
             width: 1.0,
             thickness: 1.0,

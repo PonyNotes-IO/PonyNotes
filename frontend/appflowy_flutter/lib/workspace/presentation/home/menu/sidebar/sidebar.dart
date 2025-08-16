@@ -649,7 +649,7 @@ class _PonyNotesHeaderState extends State<_PonyNotesHeader> {
                   ),
                   child: const Center(
                     child: Image(
-                      image: AssetImage('assets/images/app_logo_m.jpg'),
+                      image: AssetImage('assets/images/app_icon_m.jpg'),
                       width: 16,
                       height: 16,
                       fit: BoxFit.contain,

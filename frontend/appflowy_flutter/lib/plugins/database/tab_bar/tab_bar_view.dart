@@ -155,6 +155,7 @@ class _DatabaseTabBarViewState extends State<DatabaseTabBarView> {
                   const ViewEvent.initial(),
                 ),
             ),
+
           ],
           child: BlocBuilder<DatabaseTabBarBloc, DatabaseTabBarState>(
             builder: (innerContext, state) {
@@ -166,6 +167,7 @@ class _DatabaseTabBarViewState extends State<DatabaseTabBarView> {
               final showActionWrapper = widget.showActions &&
                   widget.actionBuilder != null &&
                   widget.node != null;
+              
               final Widget child = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -307,13 +309,15 @@ class _DatabaseTabBarViewState extends State<DatabaseTabBarView> {
     final tab = state.tabBars[state.selectedIndex];
     final controller = state.tabBarControllerByViewId[tab.viewId]!.controller;
 
-    return tab.builder.content(
+    final content = tab.builder.content(
       context,
       tab.view,
       controller,
       widget.shrinkWrap,
       widget.initialRowId,
     );
+
+    return content;
   }
 
   Widget pageSettingBarExtensionFromState(
