@@ -566,6 +566,9 @@
           "change": "更改邮箱"
         }
       },
+      "phone": {
+        "title": "手机号"
+      },
       "login": {
         "title": "登录账户",
         "loginLabel": "登录",

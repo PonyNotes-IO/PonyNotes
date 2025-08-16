@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/title_logo.dart';
-import 'package:appflowy/workspace/presentation/home/toast.dart';
+
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
@@ -270,12 +270,22 @@ class _ContinueWithUnifiedVerificationState extends State<ContinueWithUnifiedVer
 
   void _showLegalDoc(String title) {
     // 显示法律文档
-    showMessageToast('显示$title');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('显示$title'),
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _sendVerificationCode() async {
     if (!_agreed) {
-      showMessageToast('请先同意用户协议和隐私政策');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('请先同意用户协议和隐私政策'),
+          duration: Duration(seconds: 2),
+        ),
+      );
       return;
     }
 
@@ -315,10 +325,15 @@ class _ContinueWithUnifiedVerificationState extends State<ContinueWithUnifiedVer
       inputKey.currentState?.clearError();
       _startCountdown();
 
-      showMessageToast(
-        inputType == VerificationType.email 
-            ? '验证码已发送到您的邮箱' 
-            : '验证码已发送到您的手机',
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            inputType == VerificationType.email 
+                ? '验证码已发送到您的邮箱' 
+                : '验证码已发送到您的手机',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
       );
 
       // 自动聚焦到验证码输入框
@@ -350,7 +365,12 @@ class _ContinueWithUnifiedVerificationState extends State<ContinueWithUnifiedVer
 
   Future<void> _login() async {
     if (!_agreed) {
-      showMessageToast('请先同意用户协议和隐私政策');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('请先同意用户协议和隐私政策'),
+          duration: Duration(seconds: 2),
+        ),
+      );
       return;
     }
 
