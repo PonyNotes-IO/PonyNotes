@@ -92,12 +92,12 @@ class _DatePickerState extends State<DatePicker> {
           );
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 8.0), // 减少水平padding
       child: Column(
         children: [
           // 自定义头部
           _buildCustomHeader(context, widget.focusedDay),
-          SizedBox(height: 8),
+          SizedBox(height: 4), // 减少间距
           // 日历主体
           Expanded(
             child: TableCalendar(
@@ -118,7 +118,7 @@ class _DatePickerState extends State<DatePicker> {
               headerVisible: false, // 隐藏默认头部
               headerStyle: calendarStyle.headerStyle,
               calendarStyle: CalendarStyle(
-                cellMargin: const EdgeInsets.all(3.5),
+                cellMargin: const EdgeInsets.all(2.0), // 减少单元格边距
                 defaultDecoration: boxDecoration,
                 selectedDecoration: boxDecoration.copyWith(
                   color: calendarStyle.selectedColor,
@@ -158,7 +158,7 @@ class _DatePickerState extends State<DatePicker> {
                   final locale = context.locale.toLanguageTag();
                   final label = DateFormat.E(locale).format(day);
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
+                    padding: const EdgeInsets.only(bottom: 4.0), // 减少底部padding
                     child: Center(
                       child: Text(label, style: calendarStyle.dowTextStyle),
                     ),
@@ -183,7 +183,7 @@ class _DatePickerState extends State<DatePicker> {
 
   Widget _buildCustomHeader(BuildContext context, DateTime focusedDay) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0), // 减少padding
       child: Column(
         children: [
           // 月份导航行
@@ -194,7 +194,7 @@ class _DatePickerState extends State<DatePicker> {
                 child: Text(
                   '${focusedDay.year}年${focusedDay.month}月',
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14, // 稍微减小字体
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -203,7 +203,7 @@ class _DatePickerState extends State<DatePicker> {
               Row(
                 children: [
                   IconButton(
-                    icon: Icon(Icons.chevron_left, size: 20),
+                    icon: Icon(Icons.chevron_left, size: 18), // 减小图标尺寸
                     onPressed: () {
                       // 计算上个月
                       final previousMonth = DateTime(
@@ -214,12 +214,12 @@ class _DatePickerState extends State<DatePicker> {
                     },
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+                      minWidth: 28, // 减小最小宽度
+                      minHeight: 28, // 减小最小高度
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.chevron_right, size: 20),
+                    icon: Icon(Icons.chevron_right, size: 18), // 减小图标尺寸
                     onPressed: () {
                       // 计算下个月
                       final nextMonth = DateTime(
@@ -230,8 +230,8 @@ class _DatePickerState extends State<DatePicker> {
                     },
                     padding: EdgeInsets.zero,
                     constraints: BoxConstraints(
-                      minWidth: 32,
-                      minHeight: 32,
+                      minWidth: 28, // 减小最小宽度
+                      minHeight: 28, // 减小最小高度
                     ),
                   ),
                 ],
@@ -424,15 +424,15 @@ class _CalendarStyle {
   _CalendarStyle.desktop({
     required this.selectedColor,
     required this.dowTextStyle,
-  })  : rowHeight = 33,
-        dowHeight = 35,
+  })  : rowHeight = 28, // 减少行高
+        dowHeight = 30, // 减少星期行高
         headerVisible = false,
         headerStyle = const HeaderStyle(),
         availableGestures = AvailableGestures.horizontalSwipe;
 
   _CalendarStyle.mobile({required this.dowTextStyle})
-      : rowHeight = 48,
-        dowHeight = 48,
+      : rowHeight = 40, // 减少移动端行高
+        dowHeight = 40, // 减少移动端星期行高
         headerVisible = false,
         headerStyle = const HeaderStyle(),
         selectedColor = const Color(0xFF00BCF0),

@@ -360,27 +360,25 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   Widget _buildExpandedSidebar() {
     return Column(
       children: [
-        // 日历组件 - 使用Flexible让它根据内容调整大小
-        Flexible(
-          flex: 3, // 给日历分配更多空间
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-            child: DatePicker(
-              isRange: false,
-              focusedDay: _focusedDay,
-              selectedDay: _selectedDay,
-              onDaySelected: (selected, focused) {
-                setState(() {
-                  _selectedDay = selected;
-                  _focusedDay = focused;
-                });
-              },
-              onPageChanged: (focusedDay) {
-                setState(() {
-                  _focusedDay = focusedDay;
-                });
-              },
-            ),
+        // 日历组件 - 固定高度以避免布局错误
+        Container(
+          height: 280, // 设置固定高度
+          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          child: DatePicker(
+            isRange: false,
+            focusedDay: _focusedDay,
+            selectedDay: _selectedDay,
+            onDaySelected: (selected, focused) {
+              setState(() {
+                _selectedDay = selected;
+                _focusedDay = focused;
+              });
+            },
+            onPageChanged: (focusedDay) {
+              setState(() {
+                _focusedDay = focusedDay;
+              });
+            },
           ),
         ),
         // 分隔线
@@ -389,7 +387,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
           margin: EdgeInsets.symmetric(horizontal: 16),
           color: Theme.of(context).dividerColor,
         ),
-        SizedBox(height: 12),
+        SizedBox(height: 8),
         // 日记项目列表标题
         Container(
           padding: EdgeInsets.symmetric(horizontal: 16),
@@ -412,9 +410,8 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
           ),
         ),
         SizedBox(height: 8),
-        // 日记项目列表 - 使用Flexible限制最大空间
-        Flexible(
-          flex: 2, // 给列表分配相对较少的空间
+        // 日记项目列表 - 使用Expanded让其占据剩余空间
+        Expanded(
           child: ListView.builder(
             padding: EdgeInsets.symmetric(horizontal: 8),
             itemCount: _diaryItems.length,
