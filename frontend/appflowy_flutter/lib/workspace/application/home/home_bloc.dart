@@ -34,20 +34,14 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             print('HomeBloc initial event');
             Future.delayed(const Duration(milliseconds: 300), () {
               if (!isClosed) {
-                print('HomeBloc delayed initialization, sending didReceiveWorkspaceSetting');
                 add(HomeEvent.didReceiveWorkspaceSetting(workspaceSetting));
               }
             });
 
             _workspaceListener.start(
               onLatestUpdated: (result) {
-                print('HomeBloc workspace listener onLatestUpdated called');
                 result.fold(
                   (latest) {
-                    print('HomeBloc received latest workspace setting: hasLatestView=${latest.hasLatestView()}');
-                    if (latest.hasLatestView()) {
-                      print('Latest view: ${latest.latestView.name} (${latest.latestView.id})');
-                    }
                     add(HomeEvent.didReceiveWorkspaceSetting(latest));
                   },
                   (r) => Log.error(r),
@@ -59,27 +53,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             emit(state.copyWith(isLoading: e.isLoading));
           },
           didReceiveWorkspaceSetting: (_DidReceiveWorkspaceSetting value) {
-            print('HomeBloc didReceiveWorkspaceSetting event');
             // the latest view is shared across all the members of the workspace.
 
             final latestView = value.setting.hasLatestView()
                 ? value.setting.latestView
                 : state.latestView;
 
-            print('Latest view from setting: ${value.setting.hasLatestView() ? value.setting.latestView.name : 'null'}');
-            print('Current state latest view: ${state.latestView?.name ?? 'null'}');
-            print('Final latest view: ${latestView?.name ?? 'null'}');
-
             ViewPB? validLatestView;
             if (latestView != null && !latestView.isSpace) {
               // Only set validLatestView if it's not a space
               validLatestView = latestView;
-              print('Valid latest view set: ${validLatestView.name}');
-            } else {
-              print('Latest view is null or a space, setting validLatestView to null');
             }
-
-            print('Emitting new state with validLatestView: ${validLatestView?.name ?? 'null'}');
             emit(
               state.copyWith(
                 workspaceSetting: value.setting,

@@ -42,7 +42,7 @@ class CalendarMainPlugin extends Plugin {
   PluginWidgetBuilder get widgetBuilder => CalendarMainWidgetBuilder();
 
   @override
-  PluginId get id => "CalendarMainStack";
+  PluginId get id => ""; // 空ID避免视图查找
 }
 
 class CalendarMainWidgetBuilder extends PluginWidgetBuilder {
@@ -211,7 +211,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
               onPressed: () {
                 if (scheduleTitle.isNotEmpty) {
                   // TODO: 保存日程到数据库或状态管理
-                  print('新建日程: $scheduleTitle, 日期: $scheduleDate, 时间: $scheduleTime');
+                  // 创建日程逻辑将在后续实现
                 }
                 Navigator.of(context).pop();
               },
