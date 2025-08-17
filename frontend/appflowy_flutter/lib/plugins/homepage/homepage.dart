@@ -570,7 +570,6 @@ class _HomePageState extends State<HomePage> {
       );
     } catch (e) {
       // 处理错误
-      debugPrint('打开日历时发生错误: $e');
     }
   }
 } 

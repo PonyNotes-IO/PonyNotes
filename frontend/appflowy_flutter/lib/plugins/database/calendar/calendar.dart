@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/date_picker.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
+import 'package:flowy_infra_ui/style_widget/text.dart';
 
 class CalendarPluginBuilder extends PluginBuilder {
   @override
@@ -42,22 +43,22 @@ class CalendarMainPlugin extends Plugin {
   PluginWidgetBuilder get widgetBuilder => CalendarMainWidgetBuilder();
 
   @override
-  PluginId get id => ""; // 空ID避免视图查找
+  PluginId get id => "CalendarMainStack"; // 使用固定ID，类似问AI的做法
 }
 
 class CalendarMainWidgetBuilder extends PluginWidgetBuilder {
   @override
-  String? get viewName => null; // 去除标题
+  String? get viewName => '日历'; // 显示标题
 
   @override
-  Widget get leftBarItem => const SizedBox.shrink(); // 去除左侧标题
+  Widget get leftBarItem => const FlowyText.medium('日历'); // 显示左侧标题
 
   @override
   Widget? get rightBarItem => null;
 
   @override
   Widget tabBarItem(String pluginId, [bool shortForm = false]) =>
-      const SizedBox.shrink();
+      leftBarItem; // 显示标签栏标题
 
   @override
   List<NavigationItem> get navigationItems => [this];
@@ -71,6 +72,8 @@ class CalendarMainWidgetBuilder extends PluginWidgetBuilder {
     required bool shrinkWrap,
     Map<String, dynamic>? data,
   }) {
+    // 不依赖context.userProfile，避免触发GET_VIEW_PB查询
+    // 直接返回日历面板，避免视图查找错误
     return CalendarMainPanel();
   }
 }

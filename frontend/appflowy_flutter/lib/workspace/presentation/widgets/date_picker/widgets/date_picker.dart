@@ -1,6 +1,13 @@
+import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/startup/plugin/plugin.dart';
+import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
+import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra/theme_extension.dart';
+import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:get_it/get_it.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:universal_platform/universal_platform.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
@@ -309,7 +316,8 @@ class _DatePickerState extends State<DatePicker> {
               ),
               onTap: () {
                 _popoverController.hide();
-                // TODO: 处理新建日程
+                // 显示新建日程对话框
+                _showNewEventDialog(context);
               },
               child: Container(
                 width: double.infinity,
@@ -415,6 +423,21 @@ class _DatePickerState extends State<DatePicker> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  void _showNewEventDialog(BuildContext context) {
+    // 创建新建日程插件，在主界面中打开
+    final newEventPlugin = makePlugin(
+      pluginType: PluginType.newEvent,
+      data: {'selectedDate': widget.focusedDay},
+    );
+
+    // 在新标签页中打开新建日程页面
+    GetIt.I<TabsBloc>().add(
+      TabsEvent.openPlugin(
+        plugin: newEventPlugin,
       ),
     );
   }

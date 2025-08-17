@@ -1,5 +1,6 @@
 import 'package:appflowy/plugins/ai_chat/chat.dart';
 import 'package:appflowy/plugins/database/calendar/calendar.dart';
+import 'package:appflowy/plugins/database/calendar/presentation/new_event_plugin.dart';
 import 'package:appflowy/plugins/database/board/board.dart';
 import 'package:appflowy/plugins/database/grid/grid.dart';
 import 'package:appflowy/plugins/database_document/database_document_plugin.dart';
@@ -49,6 +50,10 @@ class PluginLoadTask extends LaunchTask {
     registerPlugin(
       builder: HomePagePluginBuilder(),
       config: HomePagePluginConfig(),
+    );
+    registerPlugin(
+      builder: NewEventPluginBuilder(),
+      config: NewEventPluginConfig(),
     );
   }
 }

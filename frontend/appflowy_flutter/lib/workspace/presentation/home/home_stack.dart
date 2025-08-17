@@ -637,7 +637,13 @@ class PageNotifier extends ChangeNotifier {
     }
 
     // Set the plugin view as the latest view.
-    if (setLatest && newPlugin.id.isNotEmpty) {
+    // 跳过独立插件（问AI、日历等），避免将插件ID误当作视图ID
+    final shouldSkipSetLatest = newPlugin.pluginType == PluginType.standaloneAiChat ||
+                               newPlugin.pluginType == PluginType.calendar ||
+                               newPlugin.pluginType == PluginType.homepage ||
+                               newPlugin.pluginType == PluginType.blank;
+    
+    if (setLatest && newPlugin.id.isNotEmpty && !shouldSkipSetLatest) {
       FolderEventSetLatestView(ViewIdPB(value: newPlugin.id)).send();
     }
 
