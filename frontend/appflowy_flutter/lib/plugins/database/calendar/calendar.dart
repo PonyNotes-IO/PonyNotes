@@ -86,6 +86,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   DateTime? _selectedDay;
   bool _isSidebarExpanded = true;
   final PopoverController _settingsPopoverController = PopoverController();
+  final PopoverController _addPopoverController = PopoverController();
   List<String> _diaryItems = [
     '小马笔记教程',
     '星月考研笔记汇总', 
@@ -134,44 +135,224 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     );
   }
 
-  Widget _buildSettingsMenu() {
+  void _showCreateScheduleDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String scheduleTitle = '';
+        DateTime? scheduleDate = _selectedDay ?? _focusedDay;
+        TimeOfDay scheduleTime = TimeOfDay.now();
+        
+        return AlertDialog(
+          title: Text('新建日程'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                onChanged: (value) {
+                  scheduleTitle = value;
+                },
+                decoration: InputDecoration(
+                  hintText: '输入日程标题',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('日期: ${DateFormat('yyyy-MM-dd').format(scheduleDate)}'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final DateTime? picked = await showDatePicker(
+                        context: context,
+                        initialDate: scheduleDate,
+                        firstDate: DateTime(2000),
+                        lastDate: DateTime(2100),
+                      );
+                      if (picked != null) {
+                        scheduleDate = picked;
+                      }
+                    },
+                    child: Text('选择日期'),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text('时间: ${scheduleTime.format(context)}'),
+                  ),
+                  TextButton(
+                    onPressed: () async {
+                      final TimeOfDay? picked = await showTimePicker(
+                        context: context,
+                        initialTime: scheduleTime,
+                      );
+                      if (picked != null) {
+                        scheduleTime = picked;
+                      }
+                    },
+                    child: Text('选择时间'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (scheduleTitle.isNotEmpty) {
+                  // TODO: 保存日程到数据库或状态管理
+                  print('新建日程: $scheduleTitle, 日期: $scheduleDate, 时间: $scheduleTime');
+                }
+                Navigator.of(context).pop();
+              },
+              child: Text('创建'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildAddMenu() {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 8),
+      width: 140,
+      padding: EdgeInsets.all(4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          ListTile(
-            leading: Icon(Icons.settings, size: 20),
-            title: Text('日历设置', style: TextStyle(fontSize: 14)),
+          InkWell(
             onTap: () {
-              _settingsPopoverController.close();
-              // TODO: 打开日历设置页面
+              _addPopoverController.close();
+              _showAddDiaryDialog();
             },
+            child: Container(
+              height: 38,
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.book, size: 18),
+                  SizedBox(width: 8),
+                  Text('新建日记页', style: TextStyle(fontSize: 14)),
+                ],
+              ),
+            ),
           ),
-          ListTile(
-            leading: Icon(Icons.import_export, size: 20),
-            title: Text('导入/导出', style: TextStyle(fontSize: 14)),
+          InkWell(
             onTap: () {
-              _settingsPopoverController.close();
-              // TODO: 打开导入导出功能
+              _addPopoverController.close();
+              _showCreateScheduleDialog();
             },
+            child: Container(
+              height: 38,
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  Icon(Icons.event, size: 18),
+                  SizedBox(width: 8),
+                  Text('新建日程', style: TextStyle(fontSize: 14)),
+                ],
+              ),
+            ),
           ),
-          ListTile(
-            leading: Icon(Icons.sync, size: 20),
-            title: Text('同步设置', style: TextStyle(fontSize: 14)),
-            onTap: () {
-              _settingsPopoverController.close();
-              // TODO: 打开同步设置
-            },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSettingsMenu() {
+    return Container(
+      width: 180,
+      padding: EdgeInsets.all(4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Text(
+              '日历显示设置',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
           ),
-          Divider(),
-          ListTile(
-            leading: Icon(Icons.info_outline, size: 20),
-            title: Text('关于', style: TextStyle(fontSize: 14)),
+          // 订阅系统日历
+          InkWell(
             onTap: () {
               _settingsPopoverController.close();
-              // TODO: 显示关于信息
+              // TODO: 切换订阅系统日历
             },
+            child: Container(
+              height: 42,
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.calendar_month_outlined, size: 18),
+                  SizedBox(width: 10),
+                  Text('订阅系统日历', style: TextStyle(fontSize: 14)),
+                  Spacer(),
+                  Container(
+                    width: 36,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Container(
+                        width: 18,
+                        height: 18,
+                        margin: EdgeInsets.only(right: 1),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // 日记模式
+          InkWell(
+            onTap: () {
+              _settingsPopoverController.close();
+              // TODO: 切换日记模式
+            },
+            child: Container(
+              height: 42,
+              padding: EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_note, size: 18),
+                  SizedBox(width: 10),
+                  Text('日记模式', style: TextStyle(fontSize: 14)),
+                  Spacer(),
+                  Text(
+                    '默认',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -190,7 +371,12 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
               duration: Duration(milliseconds: 300),
               width: _isSidebarExpanded ? 300 : 60,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Column(
+              clipBehavior: Clip.hardEdge,
+              child: OverflowBox(
+                alignment: Alignment.topLeft,
+                minWidth: 0,
+                maxWidth: _isSidebarExpanded ? 300 : 60,
+                child: Column(
                 children: [
                   // 顶部工具栏，包含收起/展开按钮和其他操作按钮
                   Container(
@@ -204,63 +390,96 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                         ),
                       ),
                     ),
-                    child: _isSidebarExpanded 
-                      ? Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                '日历',
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w600,
+                    child: ClipRect(
+                      child: _isSidebarExpanded 
+                        ? Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding: EdgeInsets.only(left: 8),
+                                  child: Text(
+                                    '日历',
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
                               ),
-                            ),
-                            // 添加按钮
-                            IconButton(
-                              icon: Icon(Icons.add, size: 20),
-                              onPressed: _showAddDiaryDialog,
-                              tooltip: '添加新日记项',
-                            ),
-                            // 更多选项按钮
-                            AppFlowyPopover(
-                              controller: _settingsPopoverController,
-                              direction: PopoverDirection.bottomWithCenterAligned,
-                              child: IconButton(
-                                icon: Icon(Icons.more_horiz, size: 20),
-                                onPressed: () => _settingsPopoverController.show(),
-                                tooltip: '更多选项',
+                              // 添加按钮
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: AppFlowyPopover(
+                                  controller: _addPopoverController,
+                                  direction: PopoverDirection.bottomWithCenterAligned,
+                                  child: IconButton(
+                                    icon: Icon(Icons.add, size: 18),
+                                    onPressed: () => _addPopoverController.show(),
+                                    tooltip: '添加新内容',
+                                    padding: EdgeInsets.zero,
+                                    constraints: BoxConstraints.tightFor(width: 32, height: 32),
+                                  ),
+                                  popupBuilder: (context) => _buildAddMenu(),
+                                ),
                               ),
-                              popupBuilder: (context) => _buildSettingsMenu(),
-                            ),
-                            // 收起/展开按钮 (使用双箭头图标)
-                            IconButton(
-                              icon: Icon(Icons.keyboard_double_arrow_left, size: 20),
+                              SizedBox(width: 4),
+                              // 更多选项按钮
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: AppFlowyPopover(
+                                  controller: _settingsPopoverController,
+                                  direction: PopoverDirection.bottomWithCenterAligned,
+                                  child: IconButton(
+                                    icon: Icon(Icons.more_horiz, size: 18),
+                                    onPressed: () => _settingsPopoverController.show(),
+                                    tooltip: '更多选项',
+                                    padding: EdgeInsets.zero,
+                                    constraints: BoxConstraints.tightFor(width: 32, height: 32),
+                                  ),
+                                  popupBuilder: (context) => _buildSettingsMenu(),
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                              // 收起/展开按钮 (使用双箭头图标)
+                              SizedBox(
+                                width: 32,
+                                height: 32,
+                                child: IconButton(
+                                  icon: Icon(Icons.keyboard_double_arrow_left, size: 18),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isSidebarExpanded = !_isSidebarExpanded;
+                                    });
+                                  },
+                                  tooltip: '收起侧边栏',
+                                  padding: EdgeInsets.zero,
+                                  constraints: BoxConstraints.tightFor(width: 32, height: 32),
+                                ),
+                              ),
+                              SizedBox(width: 4),
+                            ],
+                          )
+                        : Center(
+                            child: IconButton(
+                              icon: Icon(Icons.keyboard_double_arrow_right, size: 22),
                               onPressed: () {
                                 setState(() {
                                   _isSidebarExpanded = !_isSidebarExpanded;
                                 });
                               },
-                              tooltip: '收起侧边栏',
+                              tooltip: '展开侧边栏',
                             ),
-                          ],
-                        )
-                      : Center(
-                          child: IconButton(
-                            icon: Icon(Icons.keyboard_double_arrow_right, size: 20),
-                            onPressed: () {
-                              setState(() {
-                                _isSidebarExpanded = !_isSidebarExpanded;
-                              });
-                            },
-                            tooltip: '展开侧边栏',
                           ),
-                        ),
+                    ),
                   ),
                   // 侧边栏内容
                   Expanded(
                     child: _isSidebarExpanded ? _buildExpandedSidebar() : _buildCollapsedSidebar(),
                   ),
                 ],
+                ),
               ),
             ),
                       // 右侧详情区 - 完全铺满剩余空间
@@ -360,25 +579,28 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   Widget _buildExpandedSidebar() {
     return Column(
       children: [
-        // 日历组件 - 固定高度以避免布局错误
+        // 日历组件 - 使用紧凑的固定高度
         Container(
-          height: 280, // 设置固定高度
-          padding: EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-          child: DatePicker(
-            isRange: false,
-            focusedDay: _focusedDay,
-            selectedDay: _selectedDay,
-            onDaySelected: (selected, focused) {
-              setState(() {
-                _selectedDay = selected;
-                _focusedDay = focused;
-              });
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
+          height: 280, // 紧凑的固定高度，减少留白
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: ClipRect(
+            child: DatePicker(
+              isRange: false,
+              focusedDay: _focusedDay,
+              selectedDay: _selectedDay,
+              onDaySelected: (selected, focused) {
+                setState(() {
+                  _selectedDay = selected;
+                  _focusedDay = focused;
+                });
+              },
+              onPageChanged: (focusedDay) {
+                setState(() {
+                  _focusedDay = focusedDay;
+                });
+              },
+            ),
           ),
         ),
         // 分隔线
@@ -393,13 +615,16 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
           padding: EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              Text(
-                '我的日记',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+              Expanded(
+                child: Text(
+                  '我的日记',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Spacer(),
+              SizedBox(width: 8),
               Text(
                 '${_diaryItems.length}',
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
@@ -420,15 +645,15 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                 margin: EdgeInsets.only(bottom: 1),
                 child: ListTile(
                   dense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   leading: Icon(
                     Icons.book_outlined,
-                    size: 16,
+                    size: 18,
                     color: Theme.of(context).colorScheme.primary,
                   ),
                   title: Text(
                     _diaryItems[index],
-                    style: TextStyle(fontSize: 13),
+                    style: TextStyle(fontSize: 14),
                     overflow: TextOverflow.ellipsis,
                   ),
                   onTap: () {
@@ -443,42 +668,12 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     );
   }
 
-  Widget _buildCollapsedSidebar() {
-    return Column(
-      children: [
-        SizedBox(height: 16),
-        // 只显示图标
-        IconButton(
-          icon: Icon(Icons.calendar_today, size: 24),
-          onPressed: () {
-            // TODO: 快速导航功能
-          },
-          tooltip: '日历导航',
-        ),
-        SizedBox(height: 16),
-        // 显示日记项目数量
-        Container(
-          padding: EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primaryContainer,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            '${_diaryItems.length}',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-        ),
-      ],
-    );
+    Widget _buildCollapsedSidebar() {
+    return const SizedBox.shrink();
   }
-
 }
-  
-  class CalendarPluginConfig implements PluginConfig {
+
+class CalendarPluginConfig implements PluginConfig {
   @override
   bool get creatable => true;
 }
