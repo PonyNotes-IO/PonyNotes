@@ -9,6 +9,7 @@ import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/date_picker.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
+import 'presentation/new_event_page.dart';
 
 class CalendarPluginBuilder extends PluginBuilder {
   @override
@@ -88,6 +89,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _isSidebarExpanded = true;
+  bool _isShowingNewEvent = false; // 新增：是否显示新建日程界面
   final PopoverController _settingsPopoverController = PopoverController();
   final PopoverController _addPopoverController = PopoverController();
   List<String> _diaryItems = [
@@ -139,91 +141,31 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   }
 
   void _showCreateScheduleDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        String scheduleTitle = '';
-        DateTime? scheduleDate = _selectedDay ?? _focusedDay;
-        TimeOfDay scheduleTime = TimeOfDay.now();
-        
-        return AlertDialog(
-          title: Text('新建日程'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                onChanged: (value) {
-                  scheduleTitle = value;
-                },
-                decoration: InputDecoration(
-                  hintText: '输入日程标题',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('日期: ${DateFormat('yyyy-MM-dd').format(scheduleDate)}'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      final DateTime? picked = await showDatePicker(
-                        context: context,
-                        initialDate: scheduleDate,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (picked != null) {
-                        scheduleDate = picked;
-                      }
-                    },
-                    child: Text('选择日期'),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('时间: ${scheduleTime.format(context)}'),
-                  ),
-                  TextButton(
-                    onPressed: () async {
-                      final TimeOfDay? picked = await showTimePicker(
-                        context: context,
-                        initialTime: scheduleTime,
-                      );
-                      if (picked != null) {
-                        scheduleTime = picked;
-                      }
-                    },
-                    child: Text('选择时间'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                if (scheduleTitle.isNotEmpty) {
-                  // TODO: 保存日程到数据库或状态管理
-                  // 创建日程逻辑将在后续实现
-                }
-                Navigator.of(context).pop();
-              },
-              child: Text('创建'),
-            ),
-          ],
-        );
-      },
+    setState(() {
+      _isShowingNewEvent = true;
+    });
+  }
+
+  void _hideNewEventPage() {
+    setState(() {
+      _isShowingNewEvent = false;
+    });
+  }
+
+  void _onEventCreated(String title, DateTime date, TimeOfDay time, String? description) {
+    // TODO: 保存日程到数据库或状态管理
+    // 创建日程逻辑将在后续实现
+    
+    // 显示成功提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('日程创建成功: $title'),
+        backgroundColor: Colors.green,
+      ),
     );
+    
+    // 隐藏新建日程界面
+    _hideNewEventPage();
   }
 
   Widget _buildAddMenu() {
@@ -274,7 +216,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
 
   Widget _buildSettingsMenu() {
     return Container(
-      width: 180,
+      width: 350,
       padding: EdgeInsets.all(4),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -485,93 +427,15 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                 ),
               ),
             ),
-                      // 右侧详情区 - 完全铺满剩余空间
+            // 右侧详情区 - 完全铺满剩余空间
             Expanded(
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
                 color: Theme.of(context).colorScheme.surface,
-                child: Column(
-                  children: [
-                    // 右侧顶部工具栏
-                    Container(
-                      height: 50,
-                      padding: EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        border: Border(
-                          bottom: BorderSide(
-                            color: Theme.of(context).dividerColor,
-                            width: 0.5,
-                          ),
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(
-                            _selectedDay != null 
-                              ? DateFormat('yyyy年MM月dd日').format(_selectedDay!)
-                              : DateFormat('yyyy年MM月').format(_focusedDay),
-                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          Spacer(),
-                          // 视图切换按钮
-                          SegmentedButton<String>(
-                            segments: [
-                              ButtonSegment(value: 'month', label: Text('月视图')),
-                              ButtonSegment(value: 'week', label: Text('周视图')),
-                              ButtonSegment(value: 'day', label: Text('日视图')),
-                            ],
-                            selected: {'month'},
-                            onSelectionChanged: (Set<String> selection) {
-                              // TODO: 实现视图切换
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 主内容区
-                    Expanded(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.calendar_month_outlined,
-                              size: 64,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                            SizedBox(height: 16),
-                            Text(
-                              '选择左侧日记本查看详情',
-                              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                            SizedBox(height: 8),
-                            if (_selectedDay != null)
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primaryContainer,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  '当前选中: ${DateFormat('yyyy年MM月dd日 EEEE', 'zh_CN').format(_selectedDay!)}',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                    color: Theme.of(context).colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                child: _isShowingNewEvent 
+                  ? _buildNewEventView()
+                  : _buildDefaultView(),
               ),
             ),
         ],
@@ -673,6 +537,117 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
 
     Widget _buildCollapsedSidebar() {
     return const SizedBox.shrink();
+  }
+
+  Widget _buildDefaultView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.calendar_month_outlined,
+            size: 64,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+          SizedBox(height: 16),
+          Text(
+            '选择左侧日记本查看详情',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 8),
+          if (_selectedDay != null)
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                '当前选中: ${_selectedDay!.year}年${_selectedDay!.month}月${_selectedDay!.day}日',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewEventView() {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        children: [
+          // 新建日程顶部工具栏
+          Container(
+            height: 56,
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '新建日程',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                // 取消按钮
+                TextButton(
+                  onPressed: _hideNewEventPage,
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                // 保存按钮
+                ElevatedButton(
+                  onPressed: () {
+                    // 这里需要触发保存逻辑，目前先调用隐藏方法
+                    // 后续可以添加具体的保存逻辑
+                    _hideNewEventPage();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: Text(
+                    '保存',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 新建日程内容
+          Expanded(
+            child: NewEventPage(
+              selectedDate: _selectedDay ?? _focusedDay,
+              onEventCreated: _onEventCreated,
+              onCancel: _hideNewEventPage,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

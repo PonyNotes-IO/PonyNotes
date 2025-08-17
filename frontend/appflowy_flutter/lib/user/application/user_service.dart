@@ -86,7 +86,7 @@ class UserBackendService implements IUserBackendService {
     return UserEventPasscodeSignIn(payload).send();
   }
 
-  static Future<FlowyResult<UserProfilePB, FlowyError>>
+  static Future<FlowyResult<GotrueTokenResponsePB, FlowyError>>
       signInWithPhoneSms(
     String phone,
     String code,

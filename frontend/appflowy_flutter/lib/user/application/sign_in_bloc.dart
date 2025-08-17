@@ -360,7 +360,10 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
 
     emit(
       result.fold(
-        (userProfile) {
+        (gotrueTokenResponse) {
+          getIt<AppFlowyCloudDeepLink>().passGotrueTokenResponse(
+            gotrueTokenResponse,
+          );
           return state.copyWith(
             isSubmitting: false,
           );
