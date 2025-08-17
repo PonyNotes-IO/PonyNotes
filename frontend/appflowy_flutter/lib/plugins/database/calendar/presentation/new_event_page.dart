@@ -14,10 +14,12 @@ class NewEventPage extends StatefulWidget {
     super.key,
     required this.selectedDate,
     required this.onEventCreated,
+    this.onCancel,
   });
 
   final DateTime selectedDate;
   final Function(String title, DateTime date, TimeOfDay time, String? description) onEventCreated;
+  final VoidCallback? onCancel;
 
   @override
   State<NewEventPage> createState() => _NewEventPageState();
@@ -30,6 +32,9 @@ class _NewEventPageState extends State<NewEventPage> {
   late TimeOfDay _selectedTime;
   ReminderOption _selectedReminderOption = ReminderOption.none;
   bool _includeTime = true;
+
+  // 添加GlobalKey以便外部访问
+  static final GlobalKey<_NewEventPageState> globalKey = GlobalKey<_NewEventPageState>();
 
   @override
   void initState() {
@@ -47,119 +52,130 @@ class _NewEventPageState extends State<NewEventPage> {
     super.dispose();
   }
 
+  // 公开的保存方法
+  bool saveEvent() {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      // 显示错误提示
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('标题不能为空'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return false;
+    }
+
+    final description = _descriptionController.text.trim();
+    
+    widget.onEventCreated(
+      title,
+      _selectedDate,
+      _includeTime ? _selectedTime : const TimeOfDay(hour: 9, minute: 0),
+      description.isNotEmpty ? description : null,
+    );
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 600),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 页面标题
-                Row(
-                  children: [
-                    Icon(
-                      Icons.event_note,
-                      size: 24,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FlowyText.semibold(
-                        LocaleKeys.calendar_newEventButtonTooltip.tr(),
-                        fontSize: 24,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                
-                                 // 事件标题
-                 FlowyText.medium(
-                   LocaleKeys.grid_row_textPlaceholder.tr(),
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 事件标题
+              FlowyText.medium(
+                LocaleKeys.grid_row_textPlaceholder.tr(),
+                fontSize: 16,
+              ),
+              const SizedBox(height: 12),
+              FlowyTextField(
+                controller: _titleController,
+                hintText: LocaleKeys.calendar_defaultNewCalendarTitle.tr(),
+                autoFocus: true,
+              ),
+              const SizedBox(height: 24),
+              
+              // 日期时间选择
+              FlowyText.medium(
+                LocaleKeys.grid_field_dateFieldName.tr(),
+                fontSize: 16,
+              ),
+              const SizedBox(height: 12),
+              _buildDateTimeSelector(),
+              const SizedBox(height: 24),
+              
+              // 提醒设置
+              FlowyText.medium(
+                LocaleKeys.datePicker_reminderLabel.tr(),
+                fontSize: 16,
+              ),
+              const SizedBox(height: 12),
+              ReminderSelector(
+                mutex: null,
+                selectedOption: _selectedReminderOption,
+                onOptionSelected: (option) {
+                  setState(() {
+                    _selectedReminderOption = option;
+                  });
+                },
+                timeFormat: TimeFormatPB.TwentyFourHour,
+                hasTime: _includeTime,
+              ),
+              const SizedBox(height: 24),
+              
+              // 描述
+              FlowyText.medium(
+                LocaleKeys.document_textBlock_placeholder.tr(),
+                fontSize: 16,
+              ),
+             const SizedBox(height: 12),
+             FlowyTextField(
+               controller: _descriptionController,
+               hintText: LocaleKeys.document_textBlock_placeholder.tr(),
+               maxLines: 6,
+             ),
+             const SizedBox(height: 32),
+             
+             // 按钮区域
+             Row(
+               mainAxisAlignment: MainAxisAlignment.end,
+               children: [
+                 FlowyTextButton(
+                   '取消',
                    fontSize: 16,
-                 ),
-                 const SizedBox(height: 12),
-                 FlowyTextField(
-                   controller: _titleController,
-                   hintText: LocaleKeys.calendar_defaultNewCalendarTitle.tr(),
-                   autoFocus: true,
-                 ),
-                 const SizedBox(height: 24),
-                 
-                 // 日期时间选择
-                 FlowyText.medium(
-                   LocaleKeys.grid_field_dateFieldName.tr(),
-                   fontSize: 16,
-                 ),
-                 const SizedBox(height: 12),
-                 _buildDateTimeSelector(),
-                 const SizedBox(height: 24),
-                 
-                 // 提醒设置
-                 FlowyText.medium(
-                   LocaleKeys.datePicker_reminderLabel.tr(),
-                   fontSize: 16,
-                 ),
-                 const SizedBox(height: 12),
-                 ReminderSelector(
-                   mutex: null,
-                   selectedOption: _selectedReminderOption,
-                   onOptionSelected: (option) {
-                     setState(() {
-                       _selectedReminderOption = option;
-                     });
+                   fontColor: Theme.of(context).colorScheme.onSurfaceVariant,
+                   onPressed: () {
+                     // 调用取消回调或返回
+                     if (widget.onCancel != null) {
+                       widget.onCancel!();
+                     } else {
+                       Navigator.of(context).maybePop();
+                     }
                    },
-                   timeFormat: TimeFormatPB.TwentyFourHour,
-                   hasTime: _includeTime,
                  ),
-                 const SizedBox(height: 24),
-                 
-                 // 描述
-                 FlowyText.medium(
-                   LocaleKeys.document_textBlock_placeholder.tr(),
-                   fontSize: 16,
+                 const SizedBox(width: 16),
+                 FlowyButton(
+                   text: FlowyText.regular(
+                     '创建日程',
+                     fontSize: 16,
+                     color: Colors.white,
+                   ),
+                   onTap: _createEvent,
+                   useIntrinsicWidth: true,
+                   margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                  ),
-                const SizedBox(height: 12),
-                FlowyTextField(
-                  controller: _descriptionController,
-                  hintText: LocaleKeys.document_textBlock_placeholder.tr(),
-                  maxLines: 6,
-                ),
-                const SizedBox(height: 32),
-                
-                // 按钮区域
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    FlowyTextButton(
-                      LocaleKeys.button_cancel.tr(),
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      onPressed: () {
-                        // 关闭当前标签页
-                        getIt<TabsBloc>().add(const TabsEvent.closeCurrentTab());
-                      },
-                    ),
-                    const SizedBox(width: 16),
-                    FlowyTextButton(
-                      LocaleKeys.button_create.tr(),
-                      fontColor: Colors.white,
-                      fillColor: Theme.of(context).colorScheme.primary,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      onPressed: _createEvent,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+               ],
+             ),
+           ],
+         ),
+       ),
+     ),
+   );
   }
 
   Widget _buildDateTimeSelector() {
@@ -265,25 +281,6 @@ class _NewEventPageState extends State<NewEventPage> {
   }
 
   void _createEvent() {
-    final title = _titleController.text.trim();
-    if (title.isEmpty) {
-      // 显示错误提示
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('标题不能为空'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    final description = _descriptionController.text.trim();
-    
-    widget.onEventCreated(
-      title,
-      _selectedDate,
-      _includeTime ? _selectedTime : const TimeOfDay(hour: 9, minute: 0),
-      description.isNotEmpty ? description : null,
-    );
+    saveEvent();
   }
 } 
