@@ -89,9 +89,10 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _isSidebarExpanded = true;
-  bool _isShowingNewEvent = false; // 新增：是否显示新建日程界面
+    bool _isShowingNewEvent = false; // 新增：是否显示新建日程界面
   final PopoverController _settingsPopoverController = PopoverController();
   final PopoverController _addPopoverController = PopoverController();
+  bool Function()? _saveEventCallback; // 保存事件的回调函数
   List<String> _diaryItems = [
     '小马笔记教程',
     '星月考研笔记汇总', 
@@ -152,14 +153,19 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     });
   }
 
-  void _onEventCreated(String title, DateTime date, TimeOfDay time, String? description) {
+  void _onEventCreated(Map<String, dynamic> eventData) {
     // TODO: 保存日程到数据库或状态管理
     // 创建日程逻辑将在后续实现
+    
+    final description = eventData['description'] as String;
+    final isAllDay = eventData['isAllDay'] as bool;
+    final startTime = eventData['startTime'] as TimeOfDay;
+    final endTime = eventData['endTime'] as TimeOfDay;
     
     // 显示成功提示
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('日程创建成功: $title'),
+        content: Text('日程创建成功: $description'),
         backgroundColor: Colors.green,
       ),
     );
@@ -620,9 +626,10 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                 // 保存按钮
                 ElevatedButton(
                   onPressed: () {
-                    // 这里需要触发保存逻辑，目前先调用隐藏方法
-                    // 后续可以添加具体的保存逻辑
-                    _hideNewEventPage();
+                    // 调用保存回调函数
+                    if (_saveEventCallback != null && _saveEventCallback!()) {
+                      _hideNewEventPage();
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
@@ -643,6 +650,9 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
               selectedDate: _selectedDay ?? _focusedDay,
               onEventCreated: _onEventCreated,
               onCancel: _hideNewEventPage,
+              onSaveRequested: (saveCallback) {
+                _saveEventCallback = saveCallback;
+              },
             ),
           ),
         ],
