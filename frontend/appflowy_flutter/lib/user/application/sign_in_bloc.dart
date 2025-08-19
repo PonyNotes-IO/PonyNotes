@@ -4,6 +4,7 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/startup/tasks/appflowy_cloud_task.dart';
 import 'package:appflowy/startup/tasks/deeplink/deeplink_handler.dart';
 import 'package:appflowy/user/application/auth/auth_service.dart';
+import 'package:appflowy/user/application/auth/douyin_auth_service.dart';
 import 'package:appflowy/user/application/password/password_http_service.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/code.pb.dart';
@@ -219,6 +220,40 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
           ),
         ),
       );
+      return;
+    }
+
+    // 处理抖音登录
+    if (platform == 'douyin') {
+      // 导入抖音登录服务
+      final douyinService = DouyinAuthService.instance;
+      
+      // 执行抖音登录
+      try {
+        final result = await douyinService.performDouyinLogin();
+        
+        emit(
+          result.fold(
+            (userProfile) => state.copyWith(
+              isSubmitting: false,
+              successOrFail: FlowyResult.success(userProfile),
+            ),
+            (error) => state.copyWith(
+              isSubmitting: false,
+              successOrFail: FlowyResult.failure(error),
+            ),
+          ),
+        );
+      } catch (e) {
+        emit(
+          state.copyWith(
+            isSubmitting: false,
+            successOrFail: FlowyResult.failure(
+              FlowyError()..msg = '抖音登录失败: $e',
+            ),
+          ),
+        );
+      }
       return;
     }
 
