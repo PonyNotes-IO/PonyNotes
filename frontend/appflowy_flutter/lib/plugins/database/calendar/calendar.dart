@@ -89,7 +89,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   bool _isSidebarExpanded = true;
-    bool _isShowingNewEvent = false; // 新增：是否显示新建日程界面
+  bool _isShowingNewEvent = false; // 新增：是否显示新建日程界面
   final PopoverController _settingsPopoverController = PopoverController();
   final PopoverController _addPopoverController = PopoverController();
   bool Function()? _saveEventCallback; // 保存事件的回调函数

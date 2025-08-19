@@ -128,7 +128,7 @@ class BackendAuthService implements AuthService {
   }
 
   @override
-  Future<FlowyResult<UserProfilePB, FlowyError>> signInWithPhoneSms({
+  Future<FlowyResult<GotrueTokenResponsePB, FlowyError>> signInWithPhoneSms({
     required String phone,
     required String code,
   }) async {

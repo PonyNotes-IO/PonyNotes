@@ -60,13 +60,18 @@ class _ContinueWithPhoneSmsState extends State<ContinueWithPhoneSms> {
                 });
               },
               onVerifySms: (code) {
-                // 调用登录事件
-                context.read<SignInBloc>().add(
-                  SignInEvent.signInWithPhoneSms(
-                    phone: _currentPhone,
-                    code: code,
-                  ),
-                );
+                // 重置SignInBloc状态，确保没有进行中的操作阻止新的请求
+                final signInBloc = context.read<SignInBloc>();
+                signInBloc.add(const SignInEvent.cancel());
+                // 给一点时间让cancel事件处理完成
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  signInBloc.add(
+                    SignInEvent.signInWithPhoneSms(
+                      phone: _currentPhone,
+                      code: code,
+                    ),
+                  );
+                });
               },
             )
           : _buildPhoneInputPage(),

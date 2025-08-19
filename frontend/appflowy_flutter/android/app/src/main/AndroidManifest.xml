@@ -35,7 +35,7 @@
         <category android:name="android.intent.category.BROWSABLE" />
         <data android:scheme="http" />
         <data android:scheme="https" />
-        <data android:scheme="appflowy-flutter" />
+        <data android:scheme="ponynotes-flutter" />
       </intent-filter>
     </activity>
     <!--

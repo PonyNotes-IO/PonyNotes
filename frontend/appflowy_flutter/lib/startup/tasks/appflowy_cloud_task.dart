@@ -21,7 +21,7 @@ import 'package:appflowy_result/appflowy_result.dart';
 import 'package:flutter/material.dart';
 import 'package:url_protocol/url_protocol.dart';
 
-const appflowyDeepLinkSchema = 'appflowy-flutter';
+const appflowyDeepLinkSchema = 'ponynotes-flutter';
 
 class AppFlowyCloudDeepLink {
   AppFlowyCloudDeepLink() {

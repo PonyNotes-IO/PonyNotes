@@ -305,6 +305,9 @@ class _ContinueWithUnifiedVerificationState extends State<ContinueWithUnifiedVer
       _currentType = inputType;
     });
 
+    // 重置SignInBloc状态，确保没有进行中的操作阻止新的请求
+    context.read<SignInBloc>().add(const SignInEvent.cancel());
+
     try {
       if (inputType == VerificationType.email) {
         // 发送邮箱验证码
@@ -392,8 +395,13 @@ class _ContinueWithUnifiedVerificationState extends State<ContinueWithUnifiedVer
       return;
     }
 
-    // 开始登录
+    // 确保SignInBloc状态是干净的，防止"already in progress"错误
+    context.read<SignInBloc>().add(const SignInEvent.cancel());
+    
+    // 给一点时间让cancel事件处理完成
+    await Future.delayed(const Duration(milliseconds: 100));
 
+    // 开始登录
     // 根据类型调用不同的登录事件
     if (_currentType == VerificationType.email) {
       context.read<SignInBloc>().add(
