@@ -51,7 +51,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "io.appflowy.appflowy"
+        applicationId "com.ponynotes.ponynotes"
         minSdkVersion 29
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
@@ -80,7 +80,7 @@ android {
         }
     }
 
-    namespace 'io.appflowy.appflowy'
+    namespace 'com.ponynotes.ponynotes'
 
     externalNativeBuild {
         cmake {

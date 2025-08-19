@@ -7,7 +7,7 @@ import 'package:appflowy_result/appflowy_result.dart';
 class OpenAppDeepLinkHandler extends DeepLinkHandler<void> {
   @override
   bool canHandle(Uri uri) {
-    return uri.toString() == 'appflowy-flutter://';
+    return uri.toString() == 'ponynotes-flutter://';
   }
 
   @override

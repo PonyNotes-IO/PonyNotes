@@ -31,7 +31,7 @@
 				<string></string>
 				<key>CFBundleURLSchemes</key>
 				<array>
-					<string>appflowy-flutter</string>
+					<string>ponynotes-flutter</string>
 				</array>
 			</dict>
 		</array>
