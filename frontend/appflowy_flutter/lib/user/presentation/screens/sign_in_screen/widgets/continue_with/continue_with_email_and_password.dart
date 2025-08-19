@@ -1,5 +1,5 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
-import 'package:appflowy/user/application/password/password_check_service.dart';
+
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
@@ -340,30 +340,14 @@ class _ContinueWithEmailAndPasswordState
     });
 
     try {
-      // 使用通用的密码检查服务
-      final authInfoResult =
-          await PasswordCheckService.getUserAuthInfo(email: input);
-
-      if (!mounted) return;
-
-      authInfoResult.fold(
-        (authInfo) {
-          // 如果用户存在且有自定义密码，跳转到密码登录
-          if (authInfo.exists && authInfo.hasCustomPassword) {
-            _pushContinueWithPasswordPage(context, input);
-          }
-          // 如果用户不存在或存在但没有自定义密码，都跳转到验证码登录
-          else {
-            context
-                .read<SignInBloc>()
-                .add(SignInEvent.signInWithMagicLink(email: input));
-            _pushContinueWithMagicLinkOrPasscodePage(context, input);
-          }
-        },
-        (error) {
-          _showUserCheckFailedDialog(context, input, error.msg);
-        },
-      );
+      // 直接跳转到邮箱验证码登录，不再检查用户状态
+      // 重置SignInBloc状态，确保没有进行中的操作阻止新的请求
+      context.read<SignInBloc>().add(const SignInEvent.cancel());
+      
+      context
+          .read<SignInBloc>()
+          .add(SignInEvent.signInWithMagicLink(email: input));
+      _pushContinueWithMagicLinkOrPasscodePage(context, input);
     } catch (e) {
       // 处理异常
       if (mounted) {
@@ -382,6 +366,9 @@ class _ContinueWithEmailAndPasswordState
     if (_isLoading) return;
 
     print('📱 开始发送短信验证码到: $phone');
+    
+    // 重置SignInBloc状态，确保没有进行中的操作阻止新的请求
+    context.read<SignInBloc>().add(const SignInEvent.cancel());
     
     setState(() {
       _isLoading = true;
@@ -507,7 +494,7 @@ class _ContinueWithEmailAndPasswordState
     );
   }
 
-  void _pushContinueWithMagicLinkOrPasscodePage(
+    void _pushContinueWithMagicLinkOrPasscodePage(
     BuildContext context,
     String email,
   ) {
@@ -520,6 +507,7 @@ class _ContinueWithEmailAndPasswordState
     Navigator.push(
       context,
       MaterialPageRoute(
+        settings: const RouteSettings(name: '/continue-with-email-verification'),
         builder: (context) => BlocProvider.value(
           value: signInBloc,
           child: ContinueWithMagicLinkOrPasscodePage(
@@ -537,12 +525,17 @@ class _ContinueWithEmailAndPasswordState
               }
             },
             onEnterPasscode: (passcode) {
-              signInBloc.add(
-                SignInEvent.signInWithPasscode(
-                  email: email,
-                  passcode: passcode,
-                ),
-              );
+              // 重置SignInBloc状态，确保没有进行中的操作阻止新的请求
+              signInBloc.add(const SignInEvent.cancel());
+              // 给一点时间让cancel事件处理完成
+              Future.delayed(const Duration(milliseconds: 100), () {
+                signInBloc.add(
+                  SignInEvent.signInWithPasscode(
+                    email: email,
+                    passcode: passcode,
+                  ),
+                );
+              });
             },
           ),
         ),
@@ -604,12 +597,17 @@ class _ContinueWithEmailAndPasswordState
               Navigator.pop(context);
             },
             onVerifySms: (code) {
-              signInBloc.add(
-                SignInEvent.signInWithPhoneSms(
-                  phone: phone,
-                  code: code,
-                ),
-              );
+              // 重置SignInBloc状态，确保没有进行中的操作阻止新的请求
+              signInBloc.add(const SignInEvent.cancel());
+              // 给一点时间让cancel事件处理完成
+              Future.delayed(const Duration(milliseconds: 100), () {
+                signInBloc.add(
+                  SignInEvent.signInWithPhoneSms(
+                    phone: phone,
+                    code: code,
+                  ),
+                );
+              });
             },
           ),
         ),
