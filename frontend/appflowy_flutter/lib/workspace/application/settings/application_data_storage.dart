@@ -11,7 +11,7 @@ import 'package:path/path.dart' as p;
 
 import '../../../startup/tasks/prelude.dart';
 
-const appFlowyDataFolder = "AppFlowyDataDoNotRename";
+const appFlowyDataFolder = "PonyNotesDataDoNotRename";
 
 class ApplicationDataStorage {
   ApplicationDataStorage();
@@ -33,8 +33,8 @@ class ApplicationDataStorage {
       path = path.replaceAll('/', '\\');
     }
 
-    // If the path is not ends with `AppFlowyData`, we will append the
-    // `AppFlowyData` to the path. If the path is ends with `AppFlowyData`,
+    // If the path is not ends with `PonyNotesData`, we will append the
+    // `PonyNotesData` to the path. If the path is ends with `PonyNotesData`,
     // which means the path is the custom path.
     if (p.basename(path) != appFlowyDataFolder) {
       path = p.join(path, appFlowyDataFolder);

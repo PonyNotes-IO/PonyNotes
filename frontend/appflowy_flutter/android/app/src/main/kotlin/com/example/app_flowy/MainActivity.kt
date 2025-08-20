@@ -1,4 +1,4 @@
-package io.appflowy.appflowy
+package com.ponynotes.ponynotes
 
 import io.flutter.embedding.android.FlutterActivity
 

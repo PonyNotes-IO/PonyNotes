@@ -1,5 +1,6 @@
 import 'package:appflowy/user/application/sign_in_bloc.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/douyin_qr_login_dialog.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -36,9 +37,35 @@ class ThirdPartySignInButtons extends StatelessWidget {
   }
 
   void _signIn(BuildContext context, String provider) {
+    // 特殊处理抖音登录，显示二维码对话框
+    if (provider == 'douyin') {
+      _showDouyinQRLogin(context);
+      return;
+    }
+    
     context.read<SignInBloc>().add(
           SignInEvent.signInWithOAuth(platform: provider),
         );
+  }
+
+  void _showDouyinQRLogin(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => DouyinQRLoginDialog(
+        onLoginSuccess: () {
+          Navigator.of(context).pop();
+          // 这里可以触发登录成功的逻辑
+          // 实际应该通过SignInBloc处理
+        },
+        onLoginError: (error) {
+          Navigator.of(context).pop();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('登录失败: $error')),
+          );
+        },
+      ),
+    );
   }
 }
 

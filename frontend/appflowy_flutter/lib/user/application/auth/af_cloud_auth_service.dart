@@ -123,7 +123,7 @@ class AppFlowyCloudAuthService implements AuthService {
   }
 
   @override
-  Future<FlowyResult<UserProfilePB, FlowyError>> signInWithPhoneSms({
+  Future<FlowyResult<GotrueTokenResponsePB, FlowyError>> signInWithPhoneSms({
     required String phone,
     required String code,
   }) async {
@@ -165,7 +165,9 @@ extension ProviderTypePBExtension on ProviderTypePB {
       case 'apple':
         return ProviderTypePB.Apple;
       case 'wechat':
-        return ProviderTypePB.Google; // 临时使用Google，待WeChat类型生成
+        return ProviderTypePB.WeChat;
+      case 'douyin':
+        return ProviderTypePB.Douyin;
       default:
         throw UnimplementedError();
     }

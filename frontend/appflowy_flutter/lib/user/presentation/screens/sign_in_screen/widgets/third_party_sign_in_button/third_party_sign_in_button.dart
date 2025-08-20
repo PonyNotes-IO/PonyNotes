@@ -29,7 +29,7 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.qq:
         return 'qq';
       case ThirdPartySignInButtonType.tikTok:
-        return 'tikTok';
+        return 'douyin';
       case ThirdPartySignInButtonType.anonymous:
         throw UnsupportedError('Anonymous session does not have a provider');
     }
@@ -71,7 +71,7 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.qq:
         return LocaleKeys.signIn_signInWithQQ.tr();
       case ThirdPartySignInButtonType.tikTok:
-        return LocaleKeys.signIn_signInWithTiktok.tr();
+        return '抖音登录';
       case ThirdPartySignInButtonType.anonymous:
         return 'Anonymous session';
     }
@@ -90,6 +90,7 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.discord:
       case ThirdPartySignInButtonType.anonymous:
       case ThirdPartySignInButtonType.tikTok:
+        return const Color(0xFFFF0050); // 抖音品牌色
       case ThirdPartySignInButtonType.qq:
         return isDarkMode ? Colors.black : Colors.grey.shade100;
     }
@@ -107,6 +108,7 @@ enum ThirdPartySignInButtonType {
       case ThirdPartySignInButtonType.discord:
       case ThirdPartySignInButtonType.anonymous:
       case ThirdPartySignInButtonType.tikTok:
+        return Colors.white; // 抖音按钮使用白色文字
       case ThirdPartySignInButtonType.qq:
         return isDarkMode ? Colors.white : Colors.black;
     }

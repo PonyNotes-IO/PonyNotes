@@ -277,7 +277,7 @@ pub enum UserEvent {
   #[event(input = "PasscodeSignInPB", output = "GotrueTokenResponsePB")]
   PasscodeSignIn = 65,
 
-  #[event(input = "PhoneSmsSignInPB", output = "UserProfilePB")]
+  #[event(input = "PhoneSmsSignInPB", output = "GotrueTokenResponsePB")]
   PhoneSmsSignIn = 66,
 
   #[event(input = "SendSmsCodePB")]
