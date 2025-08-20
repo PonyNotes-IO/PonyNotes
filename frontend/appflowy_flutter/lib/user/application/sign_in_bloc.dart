@@ -223,29 +223,26 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
       return;
     }
 
-    // 处理抖音登录 - 使用自定义抖音登录服务
+    // 处理抖音登录
     if (platform == 'douyin') {
+      // 导入抖音登录服务
+      final douyinService = DouyinAuthService.instance;
+      
+      // 执行抖音登录
       try {
-        // 调用自定义抖音登录服务
-        final result = await DouyinAuthService.instance.performDouyinLogin();
+        final result = await douyinService.performDouyinLogin();
         
-        result.fold(
-          (userProfile) {
-            emit(
-              state.copyWith(
-                isSubmitting: false,
-                successOrFail: FlowyResult.success(userProfile),
-              ),
-            );
-          },
-          (error) {
-            emit(
-              state.copyWith(
-                isSubmitting: false,
-                successOrFail: FlowyResult.failure(error),
-              ),
-            );
-          },
+        emit(
+          result.fold(
+            (userProfile) => state.copyWith(
+              isSubmitting: false,
+              successOrFail: FlowyResult.success(userProfile),
+            ),
+            (error) => state.copyWith(
+              isSubmitting: false,
+              successOrFail: FlowyResult.failure(error),
+            ),
+          ),
         );
       } catch (e) {
         emit(
