@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
+import 'package:appflowy/generated/flowy_svgs.g.dart';
 
 class NewEventPage extends StatefulWidget {
   final DateTime selectedDate;
@@ -243,20 +244,10 @@ class _NewEventPageState extends State<NewEventPage> {
                 children: [
                   // 全天选项
                   ListTile(
-                    leading: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _isAllDay ? theme.primaryColor : (theme.dividerColor),
-                          width: 2,
-                        ),
-                        color: _isAllDay ? theme.primaryColor : Colors.transparent,
-                      ),
-                      child: _isAllDay 
-                        ? Icon(Icons.check, size: 16, color: Colors.white)
-                        : null,
+                    leading: FlowySvg(
+                      FlowySvgs.time_m,
+                      color: theme.iconTheme.color,
+                      size: const Size.square(24),
                     ),
                     title: Text(
                       '全天',
@@ -283,20 +274,10 @@ class _NewEventPageState extends State<NewEventPage> {
                   
                   // 重要选项
                   ListTile(
-                    leading: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _isImportant ? theme.primaryColor : theme.dividerColor,
-                          width: 2,
-                        ),
-                        color: _isImportant ? theme.primaryColor : Colors.transparent,
-                      ),
-                      child: _isImportant 
-                        ? Icon(Icons.check, size: 16, color: Colors.white)
-                        : null,
+                    leading: FlowySvg(
+                      FlowySvgs.alarm_m,
+                      color: theme.iconTheme.color,
+                      size: const Size.square(24),
                     ),
                     title: Text(
                       '重要',
@@ -314,10 +295,10 @@ class _NewEventPageState extends State<NewEventPage> {
                   
                   // 日程重复选项
                   ListTile(
-                    leading: Icon(
-                      Icons.repeat,
+                    leading: FlowySvg(
+                      FlowySvgs.repeat_m,
                       color: theme.iconTheme.color,
-                      size: 24,
+                      size: const Size.square(24),
                     ),
                     title: Text(
                       '日程重复',
@@ -333,32 +314,32 @@ class _NewEventPageState extends State<NewEventPage> {
                     },
                   ),
                   
-                  // 我的日历选项
-                  ListTile(
-                    leading: Icon(
-                      Icons.calendar_today,
-                      color: theme.iconTheme.color,
-                      size: 24,
-                    ),
-                    title: Text(
-                      '我的日历',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    onTap: () {
-                      // 显示日历选择器
-                    },
-                  ),
-                  
-                  // 添加说明选项
-                  ListTile(
-                    leading: Icon(
-                      Icons.edit_note,
-                      color: theme.iconTheme.color,
-                      size: 24,
-                    ),
+                                  // 我的日历选项
+                 ListTile(
+                   leading: FlowySvg(
+                     FlowySvgs.group_m,
+                     color: theme.iconTheme.color,
+                     size: const Size.square(24),
+                   ),
+                   title: Text(
+                     '我的日历',
+                     style: TextStyle(
+                       fontSize: 16,
+                       color: theme.textTheme.bodyLarge?.color,
+                     ),
+                   ),
+                   onTap: () {
+                     // 显示日历选择器
+                   },
+                 ),
+                 
+                 // 添加说明选项
+                 ListTile(
+                   leading: FlowySvg(
+                     FlowySvgs.edit_m,
+                     color: theme.iconTheme.color,
+                     size: const Size.square(24),
+                   ),
                     title: Text(
                       '添加说明',
                       style: TextStyle(
