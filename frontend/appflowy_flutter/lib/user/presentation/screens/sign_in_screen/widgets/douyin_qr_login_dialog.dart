@@ -1,5 +1,6 @@
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/user/application/auth/douyin_auth_service.dart';
+import 'package:appflowy/workspace/presentation/home/toast.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
@@ -45,9 +46,8 @@ class _DouyinQrLoginDialogState extends State<DouyinQrLoginDialog> {
         Navigator.of(context).pop();
       } else {
         // 显示错误信息
-        showFlowyToast(
-          message: result.getFailure().msg,
-          toastType: ToastType.error,
+        showMessageToast(
+          result.fold((success) => '', (error) => error.msg),
         );
       }
     }
@@ -104,11 +104,12 @@ class _DouyinQrLoginDialogState extends State<DouyinQrLoginDialog> {
             // 在浏览器中打开按钮
             SizedBox(
               width: double.infinity,
-              child: FlowyButton(
-                isLoading: _isLoading,
-                text: FlowyText.medium('在浏览器中打开'),
-                onTap: _openInBrowser,
-              ),
+              child: _isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : FlowyButton(
+                      text: FlowyText.medium('在浏览器中打开'),
+                      onTap: _openInBrowser,
+                    ),
             ),
           ],
         ),

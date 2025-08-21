@@ -38,7 +38,7 @@ Future<void> _setAuthenticatorType(AuthenticatorType ty) async {
   }
 }
 
-const String kAppflowyCloudUrl = "https://cloud.xiaomabiji.com";
+const String kAppflowyCloudUrl = "https://api.xiaomabiji.com";
 
 /// Retrieves the currently set cloud type.
 ///

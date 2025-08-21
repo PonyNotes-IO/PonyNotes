@@ -52,19 +52,7 @@ class ThirdPartySignInButtons extends StatelessWidget {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => DouyinQRLoginDialog(
-        onLoginSuccess: () {
-          Navigator.of(context).pop();
-          // 这里可以触发登录成功的逻辑
-          // 实际应该通过SignInBloc处理
-        },
-        onLoginError: (error) {
-          Navigator.of(context).pop();
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('登录失败: $error')),
-          );
-        },
-      ),
+      builder: (context) => const DouyinQrLoginDialog(),
     );
   }
 }
