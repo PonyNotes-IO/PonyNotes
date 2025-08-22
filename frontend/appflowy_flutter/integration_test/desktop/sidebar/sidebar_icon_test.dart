@@ -298,7 +298,7 @@ void main() {
 
     /// prepare local image
     const testIconLink =
-        'https://beta.appflowy.cloud/api/file_storage/008e6f23-516b-4d8d-b1fe-2b75c51eee26/v1/blob/6bdf8dff%2D0e54%2D4d35%2D9981%2Dcde68bef1141/BGpLnRtb3AGBNgSJsceu70j83zevYKrMLzqsTIJcBeI=.svg';
+        'https://api.xiaomabiji.com/api/file_storage/008e6f23-516b-4d8d-b1fe-2b75c51eee26/v1/blob/6bdf8dff%2D0e54%2D4d35%2D9981%2Dcde68bef1141/BGpLnRtb3AGBNgSJsceu70j83zevYKrMLzqsTIJcBeI=.svg';
 
     /// create document, board, grid and calendar views
     for (final value in ViewLayoutPB.values) {

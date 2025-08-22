@@ -331,13 +331,13 @@ pub async fn sign_in_with_passcode_handler(
 pub async fn sign_in_with_phone_sms_handler(
   data: AFPluginData<PhoneSmsSignInPB>,
   manager: AFPluginState<Weak<UserManager>>,
-) -> DataResult<GotrueTokenResponsePB, FlowyError> {
+) -> DataResult<UserProfilePB, FlowyError> {
   let manager = upgrade_manager(manager)?;
   let params = data.into_inner();
-  let response = manager
-    .sign_in_with_phone_sms(&params.phone, &params.code)
+  let user_profile = manager
+    .complete_phone_sms_sign_in(&params.phone, &params.code)
     .await?;
-  data_result_ok(response.into())
+  data_result_ok(user_profile.into())
 }
 
 #[tracing::instrument(level = "debug", skip(data, manager), err)]

@@ -1,5 +1,5 @@
 PODS:
-  - app_links (1.0.0):
+  - app_links (6.4.1):
     - FlutterMacOS
   - appflowy_backend (0.0.1):
     - FlutterMacOS
@@ -135,7 +135,7 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/window_manager/macos
 
 SPEC CHECKSUMS:
-  app_links: afe860c55c7ef176cea7fb630a2b7d7736de591d
+  app_links: 05a6ec2341985eb05e9f97dc63f5837c39895c3f
   appflowy_backend: 464aeb3e5c6966a41641a2111e5ead72ce2695f7
   auto_updater_macos: 3a42f1a06be6981f1a18be37e6e7bf86aa732118
   bitsdojo_window_macos: 7959fb0ca65a3ccda30095c181ecb856fae48ea9

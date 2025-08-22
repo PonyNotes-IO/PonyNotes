@@ -54,12 +54,9 @@ const String kAppflowyCloudUrl = "https://api.xiaomabiji.com";
 Future<AuthenticatorType> getAuthenticatorType() async {
   final value = await getIt<KeyValueStorage>().get(KVKeys.kCloudType);
   if (value == null && !integrationMode().isUnitTest) {
-    // if the cloud type is not set, then set it to AppFlowy Cloud as default.
-    await useAppFlowyBetaCloudWithURL(
-      kAppflowyCloudUrl,
-      AuthenticatorType.appflowyCloud,
-    );
-    return AuthenticatorType.appflowyCloud;
+    // if the cloud type is not set, then set it to Self-hosted AppFlowy Cloud as default.
+    await useSelfHostedAppFlowyCloud(kAppflowyCloudUrl);
+    return AuthenticatorType.appflowyCloudSelfHost;
   }
 
   switch (value ?? "0") {
@@ -72,11 +69,8 @@ Future<AuthenticatorType> getAuthenticatorType() async {
     case "4":
       return AuthenticatorType.appflowyCloudDevelop;
     default:
-      await useAppFlowyBetaCloudWithURL(
-        kAppflowyCloudUrl,
-        AuthenticatorType.appflowyCloud,
-      );
-      return AuthenticatorType.appflowyCloud;
+      await useSelfHostedAppFlowyCloud(kAppflowyCloudUrl);
+      return AuthenticatorType.appflowyCloudSelfHost;
   }
 }
 
