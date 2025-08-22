@@ -112,8 +112,8 @@ class SettingsDialogBloc
     return result.fold(
       (cloudSetting) {
         final whiteList = [
-          "https://beta.appflowy.cloud",
-          "https://test.appflowy.cloud",
+          "https://api.xiaomabiji.com",
+          "https://api.xiaomabiji.com",
         ];
 
         return whiteList.contains(cloudSetting.serverUrl);

@@ -455,11 +455,11 @@ Future<bool> isBillingEnabled() async {
   return result.fold(
     (cloudSetting) {
       final whiteList = [
-        "https://beta.appflowy.cloud",
-        "https://test.appflowy.cloud",
+        "https://api.xiaomabiji.com",
+        "https://api.xiaomabiji.com",
       ];
       if (kDebugMode) {
-        whiteList.add("http://localhost:8000");
+        whiteList.add("https://api.xiaomabiji.com");
       }
 
       final isWhiteListed = whiteList.contains(cloudSetting.serverUrl);

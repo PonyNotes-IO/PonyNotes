@@ -43,7 +43,7 @@ uuid.workspace = true
 chrono = { workspace = true, default-features = false, features = ["clock"] }
 base64 = "^0.21"
 tokio-stream.workspace = true
-semver = "1.0.22"
+semver = { version = "1.0.22", features = ["serde"] }
 validator = { workspace = true, features = ["derive"] }
 rayon = "1.10.0"
 num_enum.workspace = true

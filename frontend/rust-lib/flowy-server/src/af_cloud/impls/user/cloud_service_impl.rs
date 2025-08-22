@@ -164,24 +164,26 @@ where
     let try_get_client = self.server.try_get_client();
     let client = try_get_client?;
     
-    // Send SMS code request through AppFlowy Cloud, which will proxy to GoTrue
-    let gotrue_url = client.gotrue_url();
-    let api_url = format!("{}/otp", gotrue_url);
+    // Send SMS code request directly to custom SMS service instead of GoTrue
+    let base_url = client.base_url();
+    let api_url = format!("{}/api/sms/send-code", base_url);
     
-    // Prepare request body
+    // Prepare request body for custom SMS service
     let body = json!({
       "phone": phone,
-      "create_user": true
+      "purpose": "login"
     });
     
-    // Create HTTP client
-    let http_client = reqwest::Client::new();
+    // Create HTTP client with SSL certificate verification disabled for development
+    let http_client = reqwest::Client::builder()
+      .danger_accept_invalid_certs(true)
+      .build()
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
     
-    // Send SMS code request
+    // Send SMS code request to custom SMS service
     let response = http_client
       .post(&api_url)
       .header("Content-Type", "application/json")
-      .header("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwcGZsb3d5LWNsb3VkLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ2NjM0NTUxLCJleHAiOjE5NjIyMTA1NTF9.rJwNZnhJGYqe33F-S6P6VHB-YkYcD7sYNWP0VIGPMfE")
       .json(&body)
       .send()
       .await
@@ -203,25 +205,26 @@ where
     let try_get_client = self.server.try_get_client();
     let client = try_get_client?;
     
-    // Verify SMS code through AppFlowy Cloud, which will proxy to GoTrue
-    let gotrue_url = client.gotrue_url();
-    let api_url = format!("{}/verify", gotrue_url);
+    // Use custom SMS login API instead of GoTrue
+    let base_url = client.base_url();
+    let api_url = format!("{}/api/sms/phone-login", base_url);
     
-    // Prepare request body
+    // Prepare request body for custom SMS login service
     let body = serde_json::json!({
-      "type": "sms",
       "phone": phone,
-      "token": code
+      "code": code
     });
     
-    // Create HTTP client
-    let http_client = reqwest::Client::new();
+    // Create HTTP client with SSL certificate verification disabled for development
+    let http_client = reqwest::Client::builder()
+      .danger_accept_invalid_certs(true)
+      .build()
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
     
-    // Make request to AppFlowy Cloud
+    // Make request to custom SMS login service
     let response = http_client
       .post(&api_url)
       .header("Content-Type", "application/json")
-      .header("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFwcGZsb3d5LWNsb3VkLWRldiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNjQ2NjM0NTUxLCJleHAiOjE5NjIyMTA1NTF9.rJwNZnhJGYqe33F-S6P6VHB-YkYcD7sYNWP0VIGPMfE")
       .json(&body)
       .send()
       .await
@@ -712,8 +715,11 @@ where
       "token": code
     });
     
-    // Create HTTP client
-    let http_client = reqwest::Client::new();
+    // Create HTTP client with SSL certificate verification disabled for development
+    let http_client = reqwest::Client::builder()
+      .danger_accept_invalid_certs(true)
+      .build()
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
     
     // Make request to GoTrue
     let response = http_client
