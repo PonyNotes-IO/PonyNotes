@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/workspace/presentation/widgets/toggle/toggle.dart';
 
 class NewEventPage extends StatefulWidget {
   final DateTime selectedDate;
@@ -31,6 +32,7 @@ class _NewEventPageState extends State<NewEventPage> {
   bool _isRepeat = false;
   String _calendar = '我的日历';
   String _description = '';
+  String _reminderOption = '无';
 
   @override
   void initState() {
@@ -94,6 +96,141 @@ class _NewEventPageState extends State<NewEventPage> {
   String _getWeekday(int weekday) {
     const weekdays = ['一', '二', '三', '四', '五', '六', '日'];
     return weekdays[weekday - 1];
+  }
+
+  // 构建全天日期选择器
+  Widget _buildAllDayDatePicker(ThemeData theme, bool isDark) {
+    return GestureDetector(
+      onTap: () => _showDatePicker(),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Column(
+          children: [
+            Text(
+              _formatAllDayDate(_startDate),
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w300,
+                color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '全天',
+              style: TextStyle(
+                fontSize: 16,
+                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // 构建时间区间选择器
+  Widget _buildTimeRangePicker(ThemeData theme, bool isDark) {
+    return Row(
+      children: [
+        // 开始时间
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _showCustomTimePicker(isStartTime: true),
+            child: Column(
+              children: [
+                Text(
+                  _formatTime(_startTime),
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w300,
+                    color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
+                  ),
+                ),
+                Text(
+                  _formatDate(_startDate),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        
+        // 箭头
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Icon(
+            Icons.arrow_forward,
+            color: theme.iconTheme.color?.withOpacity(0.4) ?? (isDark ? Colors.grey[600] : Colors.grey[400]),
+            size: 24,
+          ),
+        ),
+        
+        // 结束时间
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _showCustomTimePicker(isStartTime: false),
+            child: Column(
+              children: [
+                Text(
+                  _formatTime(_endTime),
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.w300,
+                    color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
+                  ),
+                ),
+                Text(
+                  _formatDate(_endDate),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // 格式化全天日期显示
+  String _formatAllDayDate(DateTime date) {
+    final today = DateTime.now();
+    if (date.year == today.year && date.month == today.month && date.day == today.day) {
+      return '今天';
+    }
+    return '${date.month}月${date.day}日';
+  }
+
+  // 显示日期选择器
+  Future<void> _showDatePicker() async {
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: _startDate,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).primaryColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (selectedDate != null) {
+      setState(() {
+        _startDate = selectedDate;
+        _endDate = selectedDate; // 全天模式下结束日期等于开始日期
+      });
+    }
   }
 
   // 显示自定义时间选择器
@@ -167,71 +304,7 @@ class _NewEventPageState extends State<NewEventPage> {
                 children: [
                   SizedBox(height: 20),
                   // 时间选择器
-                  Row(
-                    children: [
-                      // 开始时间
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _showCustomTimePicker(isStartTime: true),
-                          child: Column(
-                            children: [
-                              Text(
-                                _formatTime(_startTime),
-                                style: TextStyle(
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.w300,
-                                  color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
-                                ),
-                              ),
-                              Text(
-                                _formatDate(_startDate),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      
-                      // 箭头
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
-                        child: Icon(
-                          Icons.arrow_forward,
-                          color: theme.iconTheme.color?.withOpacity(0.4) ?? (isDark ? Colors.grey[600] : Colors.grey[400]),
-                          size: 24,
-                        ),
-                      ),
-                      
-                      // 结束时间
-                      Expanded(
-                        child: GestureDetector(
-                          onTap: () => _showCustomTimePicker(isStartTime: false),
-                          child: Column(
-                            children: [
-                              Text(
-                                _formatTime(_endTime),
-                                style: TextStyle(
-                                  fontSize: 48,
-                                  fontWeight: FontWeight.w300,
-                                  color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
-                                ),
-                              ),
-                              Text(
-                                _formatDate(_endDate),
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  _isAllDay ? _buildAllDayDatePicker(theme, isDark) : _buildTimeRangePicker(theme, isDark),
                   SizedBox(height: 40),
                 ],
               ),
@@ -256,14 +329,22 @@ class _NewEventPageState extends State<NewEventPage> {
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
-                    trailing: Switch(
+                    trailing: Toggle(
                       value: _isAllDay,
                       onChanged: (value) {
                         setState(() {
                           _isAllDay = value;
+                          if (_isAllDay) {
+                            // 切换到全天模式时，设置结束日期等于开始日期
+                            _endDate = _startDate;
+                            // 设置默认时间为全天
+                            _startTime = const TimeOfDay(hour: 0, minute: 0);
+                            _endTime = const TimeOfDay(hour: 23, minute: 59);
+                          }
                         });
                       },
-                      activeColor: theme.primaryColor,
+                      style: const ToggleStyle.mobile(),
+                      padding: EdgeInsets.zero,
                     ),
                     onTap: () {
                       setState(() {
@@ -272,7 +353,7 @@ class _NewEventPageState extends State<NewEventPage> {
                     },
                   ),
                   
-                  // 重要选项
+                  // 准时选项
                   ListTile(
                     leading: FlowySvg(
                       FlowySvgs.alarm_m,
@@ -280,16 +361,14 @@ class _NewEventPageState extends State<NewEventPage> {
                       size: const Size.square(24),
                     ),
                     title: Text(
-                      '重要',
+                      _reminderOption,
                       style: TextStyle(
                         fontSize: 16,
                         color: theme.textTheme.bodyLarge?.color,
                       ),
                     ),
                     onTap: () {
-                      setState(() {
-                        _isImportant = !_isImportant;
-                      });
+                      _showReminderDialog();
                     },
                   ),
                   
@@ -412,6 +491,23 @@ class _NewEventPageState extends State<NewEventPage> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showReminderDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // 阻止点击外部区域关闭弹窗
+      builder: (BuildContext context) {
+        return ReminderSelectionDialog(
+          currentOption: _reminderOption,
+          onSave: (selectedOption) {
+            setState(() {
+              _reminderOption = selectedOption;
+            });
+          },
+        );
+      },
     );
   }
 }
@@ -842,6 +938,156 @@ class _CustomTimePickerBottomSheetState extends State<CustomTimePickerBottomShee
             ),
           ),
         ],
+      ),
+    );
+  }
+} 
+
+// 提醒选择弹窗
+class ReminderSelectionDialog extends StatefulWidget {
+  final String currentOption;
+  final Function(String) onSave;
+
+  const ReminderSelectionDialog({
+    Key? key,
+    required this.currentOption,
+    required this.onSave,
+  }) : super(key: key);
+
+  @override
+  State<ReminderSelectionDialog> createState() => _ReminderSelectionDialogState();
+}
+
+class _ReminderSelectionDialogState extends State<ReminderSelectionDialog> {
+  late String _tempSelectedOption;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelectedOption = widget.currentOption; // 使用当前选项作为初始值
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = [
+      '无',
+      '准时',
+      '提前5分钟',
+      '提前30分钟',
+      '提前1个小时',
+      '提前1天',
+      '自定义'
+    ];
+
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10), // 放大圆角
+      ),
+      child: Container(
+        width: 280, // 放大宽度
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), // 放大内边距
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: 38, // 放大标题栏高度
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  SizedBox(
+                    width: 28, // 放大关闭按钮区域宽度
+                    child: GestureDetector(
+                      onTap: () {
+                        // 点击关闭按钮，不保存更改
+                        if (mounted && Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Icon(Icons.close, size: 20), // 放大图标
+                    ),
+                  ),
+                  const Text(
+                    '提醒时间',
+                    style: TextStyle(
+                      fontSize: 16, // 放大标题字体
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF9B73),
+                      borderRadius: BorderRadius.circular(6), // 放大圆角
+                    ),
+                    child: GestureDetector(
+                      onTap: () {
+                        // 点击保存按钮，保存选择并关闭
+                        widget.onSave(_tempSelectedOption);
+                        if (mounted && Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4), // 放大内边距
+                        child: Text(
+                          '保存',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14, // 放大按钮字体
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 6), // 放大间距
+            ...options.map((option) {
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _tempSelectedOption = option; // 只更新临时状态
+                  });
+                },
+                child: Container(
+                  height: 34, // 放大每个选项的高度
+                  width: double.infinity,
+                  padding: EdgeInsets.zero, // 移除水平内边距
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 28, // 与关闭按钮区域同宽，确保对齐
+                        child: Transform.scale(
+                          scale: 0.8, // 放大单选按钮
+                          child: Radio<String>(
+                            value: option,
+                            groupValue: _tempSelectedOption, // 使用临时状态
+                            onChanged: (value) {
+                              setState(() {
+                                _tempSelectedOption = value!; // 只更新临时状态
+                              });
+                            },
+                            activeColor: const Color(0xFFFF9B73),
+                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 4), // 放大间距
+                      Text(
+                        option,
+                        style: const TextStyle(
+                          fontSize: 14, // 放大选项字体
+                          height: 1.2, // 放大行高
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ],
+        ),
       ),
     );
   }

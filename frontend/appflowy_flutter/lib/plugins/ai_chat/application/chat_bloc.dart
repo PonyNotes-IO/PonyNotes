@@ -196,25 +196,18 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
 
   // Message handling
   void _handleReceiveMessage(Message message, Emitter<ChatState> emit) {
-    print("🔵 ChatBloc received message: ${message.id}");
-
     final oldMessage =
         chatController.messages.firstWhereOrNull((m) => m.id == message.id);
     if (oldMessage == null) {
       chatController.insert(message);
-      print("➕ Inserted new message: ${message.id}");
     } else {
       chatController.update(oldMessage, message);
-      print("🔄 Updated existing message: ${message.id}");
     }
-
-    print("📊 Total messages now: ${chatController.messages.length}");
 
     // Emit state change to trigger UI rebuild
     emit(state.copyWith(
       clearErrorMessages: !state.clearErrorMessages,
     ));
-    print("✅ ChatBloc state emitted");
   }
 
   // Message sending handlers
@@ -411,7 +404,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
           add(ChatEvent.didReceiveChatSettings(settings: settings));
         }
       },
-      (err) => Log.error("Failed to load chat settings: $err"),
+      (err) {
+        // For new chats, it's normal that settings don't exist yet
+        // Only log as debug instead of error to avoid alarming users
+        Log.debug("Chat settings not found for chat $chatId, will use defaults: $err");
+      },
     );
   }
 
@@ -480,8 +477,6 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     // Send stream request
     await _streamManager.sendStreamRequest(message, format, promptId).fold(
       (question) {
-        print(
-            "Stream request successful, question ID: ${question.messageId}"); // Debug logging
         if (!isClosed) {
           // Create and add answer stream message
           final streamAnswer = _messageHandler.createAnswerStreamMessage(

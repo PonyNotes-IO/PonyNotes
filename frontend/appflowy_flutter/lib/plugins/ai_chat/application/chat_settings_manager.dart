@@ -24,7 +24,11 @@ class ChatSettingsManager {
         (settings) {
           selectedSourcesNotifier.value = settings.ragIds;
         },
-        (err) => Log.error("Failed to load chat settings: $err"),
+        (err) {
+          // For new chats, it's normal that settings don't exist yet
+          // Only log as debug instead of error
+          Log.debug("Chat settings not found for chat $chatId, will use defaults: $err");
+        },
       );
     });
   }

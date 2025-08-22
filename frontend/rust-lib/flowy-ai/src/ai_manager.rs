@@ -679,14 +679,32 @@ impl AIManager {
       },
     }
 
-    let settings = refresh_chat_setting(
+    // Try to refresh from remote, if that fails, create a local chat
+    match refresh_chat_setting(
       &self.user_service,
       &self.cloud_service_wm,
       &self.store_preferences,
       chat_id,
     )
-    .await?;
-    Ok(settings.rag_ids)
+    .await
+    {
+      Ok(settings) => Ok(settings.rag_ids),
+      Err(err) => {
+        // If remote fetch fails, create a local chat with empty settings
+        warn!("[Chat] failed to refresh chat settings from remote, creating local chat: {}", err);
+        
+        let uid = self.user_service.user_id()?;
+        let workspace_id = self.user_service.workspace_id()?;
+        
+        // Create a local chat with default settings
+        self.cloud_service_wm
+          .create_chat(&uid, &workspace_id, chat_id, vec![], "", serde_json::json!({}))
+          .await?;
+        
+        // Return empty rag_ids for new chat
+        Ok(vec![])
+      },
+    }
   }
 
   pub async fn update_rag_ids(&self, chat_id: &Uuid, rag_ids: Vec<String>) -> FlowyResult<()> {

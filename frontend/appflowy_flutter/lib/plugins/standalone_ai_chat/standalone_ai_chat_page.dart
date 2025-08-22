@@ -8,6 +8,7 @@ import 'package:appflowy/plugins/ai_chat/presentation/chat_page/text_message_wid
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_message_widget.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/scroll_to_bottom.dart';
 import 'package:appflowy/plugins/util.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:flutter/material.dart';
@@ -68,8 +69,9 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
 
   /// 确保独立AI聊天记录存在（仅用于StandaloneAiChatPage）
   Future<void> _ensureStandaloneChatExists() async {
-    // 注意：这里只是记录日志，实际的聊天创建会在后端自动处理
-    // 当发送第一条消息时，如果聊天不存在，后端会自动创建
+    // 由于独立AI聊天是临时的，我们不需要预先创建数据库记录
+    // 聊天记录会在第一条消息发送时自动创建
+    // 这样可以避免不必要的数据库操作和潜在的错误
   }
 
   @override
