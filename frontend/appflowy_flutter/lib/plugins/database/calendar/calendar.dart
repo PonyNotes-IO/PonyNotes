@@ -9,7 +9,36 @@ import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/date_picker.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'presentation/new_event_page.dart';
+import 'widgets/schedule_sidebar.dart';
+
+// 添加日历事件类
+class CalendarEvent {
+  final String id;
+  final DateTime date;
+  final String title;
+  final String description;
+  final TimeOfDay startTime;
+  final TimeOfDay endTime;
+  final bool isAllDay;
+  final bool isImportant;
+  final bool isRepeat;
+  final String calendar;
+
+  CalendarEvent({
+    required this.id,
+    required this.date,
+    required this.title,
+    required this.description,
+    required this.startTime,
+    required this.endTime,
+    required this.isAllDay,
+    required this.isImportant,
+    required this.isRepeat,
+    required this.calendar,
+  });
+}
 
 class CalendarPluginBuilder extends PluginBuilder {
   @override
@@ -86,20 +115,89 @@ class CalendarMainPanel extends StatefulWidget {
 }
 
 class _CalendarMainPanelState extends State<CalendarMainPanel> {
-  DateTime _focusedDay = DateTime.now();
-  DateTime? _selectedDay;
-  bool _isSidebarExpanded = true;
-  bool _isShowingNewEvent = false; // 新增：是否显示新建日程界面
-  final PopoverController _settingsPopoverController = PopoverController();
-  final PopoverController _addPopoverController = PopoverController();
-  bool Function()? _saveEventCallback; // 保存事件的回调函数
-  List<String> _diaryItems = [
-    '小马笔记教程',
-    '星月考研笔记汇总', 
-    '新东方考研日记',
-    '每日读书笔记',
-    'OP考研笔记本',
-  ];
+  late DateTime _focusedDay;
+  late DateTime? _selectedDay;
+  late DateTime _firstDay;
+  late DateTime _lastDay;
+  late int _currentMonthIndex;
+  late int _currentYear;
+  late List<CalendarEvent> _events;
+  late bool _showNewEventPage;
+  late Function()? _saveEventCallback;
+  late String? _currentViewId; // 添加当前视图ID
+  late bool _isSidebarExpanded;
+  late PopoverController _settingsPopoverController;
+  late PopoverController _addPopoverController;
+  late List<String> _diaryItems;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusedDay = DateTime.now();
+    _selectedDay = DateTime.now();
+    _firstDay = DateTime.now().subtract(Duration(days: 365));
+    _lastDay = DateTime.now().add(Duration(days: 365));
+    _currentMonthIndex = DateTime.now().month;
+    _currentYear = DateTime.now().year;
+    _events = [];
+    _showNewEventPage = false;
+    _saveEventCallback = null;
+    _currentViewId = null;
+    _isSidebarExpanded = true;
+    _settingsPopoverController = PopoverController();
+    _addPopoverController = PopoverController();
+    _diaryItems = [
+      '小马笔记教程',
+      '星月考研笔记汇总', 
+      '新东方考研日记',
+      '每日读书笔记',
+      'OP考研笔记本',
+    ];
+    
+    // 初始化时尝试创建或获取日历视图
+    _initializeCalendarView();
+  }
+
+  // 初始化日历视图
+  Future<void> _initializeCalendarView() async {
+    try {
+      // 尝试创建一个新的日历视图
+      final result = await ViewBackendService.createView(
+        parentViewId: 'workspace', // 使用工作区作为父视图
+        name: '日历视图',
+        layoutType: ViewLayoutPB.Calendar,
+      );
+      
+      result.fold(
+        (view) {
+          setState(() {
+            _currentViewId = view.id;
+          });
+          print('成功创建日历视图: ${view.id}');
+          
+          // 创建成功后，等待一下让数据库初始化完成，然后刷新数据
+          Future.delayed(Duration(milliseconds: 500), () {
+            if (mounted) {
+              setState(() {}); // 触发重建以加载真实数据
+            }
+          });
+        },
+        (error) {
+          print('创建日历视图失败: ${error.msg}');
+          // 如果创建失败，尝试使用默认ID
+          setState(() {
+            _currentViewId = 'default_calendar_view';
+          });
+        },
+      );
+    } catch (e) {
+      print('初始化日历视图时发生错误: $e');
+      // 使用默认ID作为后备
+      setState(() {
+        _currentViewId = 'default_calendar_view';
+      });
+    }
+  }
 
   void _showAddDiaryDialog() {
     showDialog(
@@ -143,13 +241,13 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
 
   void _showCreateScheduleDialog() {
     setState(() {
-      _isShowingNewEvent = true;
+      _showNewEventPage = true;
     });
   }
 
   void _hideNewEventPage() {
     setState(() {
-      _isShowingNewEvent = false;
+      _showNewEventPage = false;
     });
   }
 
@@ -425,6 +523,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                           ),
                     ),
                   ),
+                  // 右侧工具栏 - 已移除三个按钮
                   // 侧边栏内容
                   Expanded(
                     child: _isSidebarExpanded ? _buildExpandedSidebar() : _buildCollapsedSidebar(),
@@ -439,7 +538,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                 width: double.infinity,
                 height: double.infinity,
                 color: Theme.of(context).colorScheme.surface,
-                child: _isShowingNewEvent 
+                child: _showNewEventPage 
                   ? _buildNewEventView()
                   : _buildDefaultView(),
               ),
@@ -483,58 +582,12 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
           color: Theme.of(context).dividerColor,
         ),
         SizedBox(height: 8),
-        // 日记项目列表标题
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '我的日记',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              SizedBox(width: 8),
-              Text(
-                '${_diaryItems.length}',
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-        SizedBox(height: 8),
-        // 日记项目列表 - 使用Expanded让其占据剩余空间
+        // 统一的日记和日程展示组件 - 使用Expanded让其占据剩余空间
         Expanded(
-          child: ListView.builder(
-            padding: EdgeInsets.symmetric(horizontal: 8),
-            itemCount: _diaryItems.length,
-            itemBuilder: (context, index) {
-              return Container(
-                margin: EdgeInsets.only(bottom: 1),
-                child: ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  leading: Icon(
-                    Icons.book_outlined,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(
-                    _diaryItems[index],
-                    style: TextStyle(fontSize: 14),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  onTap: () {
-                    // TODO: 打开对应的日记项目
-                  },
-                ),
-              );
-            },
+          child: CalendarContent(
+            diaryItems: _diaryItems,
+            selectedDate: _selectedDay ?? _focusedDay,
+            viewId: _currentViewId, // 传递视图ID
           ),
         ),
       ],

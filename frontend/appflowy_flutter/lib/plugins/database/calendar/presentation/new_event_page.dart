@@ -3,6 +3,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:intl/intl.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/workspace/presentation/widgets/toggle/toggle.dart';
+import '../models/schedule_model.dart';
+import 'package:appflowy_backend/protobuf/flowy-database2/protobuf.dart';
+import 'package:appflowy_backend/protobuf/flowy-error/errors.pb.dart';
+import 'package:appflowy_result/appflowy_result.dart';
+import '../../application/row/row_service.dart';
+import '../../application/field/field_info.dart';
 
 class NewEventPage extends StatefulWidget {
   final DateTime selectedDate;
@@ -33,10 +39,14 @@ class _NewEventPageState extends State<NewEventPage> {
   String _calendar = '我的日历';
   String _description = '';
   String _reminderOption = '无';
+  
+  // 使用ScheduleManager来管理日程
+  late ScheduleManager _scheduleManager;
 
   @override
   void initState() {
     super.initState();
+    _scheduleManager = ScheduleManager();
     _startTime = TimeOfDay.now();
     _endTime = TimeOfDay(hour: _startTime.hour + 1, minute: _startTime.minute);
     _startDate = widget.selectedDate;
@@ -62,21 +72,95 @@ class _NewEventPageState extends State<NewEventPage> {
       return false;
     }
 
-    final eventData = {
-      'date': _startDate,
-      'startTime': _startTime,
-      'endTime': _endTime,
-      'startDate': _startDate,
-      'endDate': _endDate,
-      'isAllDay': _isAllDay,
-      'isImportant': _isImportant,
-      'isRepeat': _isRepeat,
-      'calendar': _calendar,
-      'description': _description,
-    };
-
-    widget.onEventCreated(eventData);
+    // 异步保存日程
+    _saveEventAsync();
     return true;
+  }
+
+  Future<void> _saveEventAsync() async {
+    try {
+      // 构建开始和结束时间
+      final startDateTime = DateTime(
+        _startDate.year,
+        _startDate.month,
+        _startDate.day,
+        _startTime.hour,
+        _startTime.minute,
+      );
+      
+      final endDateTime = DateTime(
+        _endDate.year,
+        _endDate.month,
+        _endDate.day,
+        _endTime.hour,
+        _endTime.minute,
+      );
+
+      // 检查widget是否仍然挂载
+      if (!mounted) {
+        print('Widget已卸载，取消保存操作');
+        return;
+      }
+
+      // 使用ScheduleManager创建日程
+      final schedule = ScheduleItem(
+        id: DateTime.now().millisecondsSinceEpoch.toString(), // 生成唯一ID
+        title: _description.isNotEmpty ? _description : '无标题日程',
+        description: _description,
+        startTime: startDateTime,
+        endTime: endDateTime,
+        isAllDay: _isAllDay,
+        isImportant: _isImportant,
+        category: _calendar,
+        color: _isImportant ? Colors.red : Colors.blue,
+      );
+
+      // 添加到ScheduleManager
+      _scheduleManager.addSchedule(schedule);
+
+      // 再次检查widget是否仍然挂载
+      if (!mounted) {
+        print('Widget已卸载，取消处理结果');
+        return;
+      }
+
+      // 创建成功，调用回调
+      final eventData = {
+        'id': schedule.id,
+        'date': _startDate,
+        'startTime': _startTime,
+        'endTime': _endTime,
+        'startDate': _startDate,
+        'endDate': _endDate,
+        'isAllDay': _isAllDay,
+        'isImportant': _isImportant,
+        'isRepeat': _isRepeat,
+        'calendar': _calendar,
+        'description': _description,
+      };
+
+      widget.onEventCreated(eventData);
+      
+      // 显示成功消息
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('日程创建成功'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // 异常处理
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('创建日程时发生错误: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _formatTime(TimeOfDay time) {
@@ -102,28 +186,39 @@ class _NewEventPageState extends State<NewEventPage> {
   Widget _buildAllDayDatePicker(ThemeData theme, bool isDark) {
     return GestureDetector(
       onTap: () => _showDatePicker(),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20),
-        child: Column(
-          children: [
-            Text(
-              _formatAllDayDate(_startDate),
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w300,
-                color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
+      child: Row(
+        children: [
+          // 左侧占位，保持与时间区间选择器布局一致
+          Expanded(
+            child: Container(), // 空容器保持对称
+          ),
+          
+          // 中间显示内容，居中展示
+          Column(
+            children: [
+              Text(
+                _formatAllDayDate(_startDate),
+                style: TextStyle(
+                  fontSize: 48,
+                  fontWeight: FontWeight.w300,
+                  color: theme.textTheme.headlineLarge?.color ?? (isDark ? Colors.white : Colors.black87),
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '全天',
-              style: TextStyle(
-                fontSize: 16,
-                color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
+              Text(
+                '全天',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6) ?? (isDark ? Colors.grey[400] : Colors.grey[600]),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+          
+          // 右侧占位，保持布局对称
+          Expanded(
+            child: Container(), // 空容器保持对称
+          ),
+        ],
       ),
     );
   }
@@ -206,26 +301,25 @@ class _NewEventPageState extends State<NewEventPage> {
     return '${date.month}月${date.day}日';
   }
 
-  // 显示日期选择器
+  // 显示日期选择器（使用自定义时间选择器，但只显示日历部分）
   Future<void> _showDatePicker() async {
-    final selectedDate = await showDatePicker(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      initialDate: _startDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2030),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-              primary: Theme.of(context).primaryColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
+      barrierDismissible: false, // 阻止点击外部区域关闭弹窗
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: CustomTimePickerBottomSheet(
+          initialDate: _startDate,
+          initialTime: _startTime,
+          title: '选择日期',
+          showTimePicker: false, // 只显示日历，不显示时间选择器
+        ),
+      ),
     );
 
-    if (selectedDate != null) {
+    if (result != null) {
+      final selectedDate = result['date'] as DateTime;
       setState(() {
         _startDate = selectedDate;
         _endDate = selectedDate; // 全天模式下结束日期等于开始日期
@@ -239,7 +333,7 @@ class _NewEventPageState extends State<NewEventPage> {
   }) async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      barrierDismissible: true,
+      barrierDismissible: false, // 阻止点击外部区域关闭弹窗
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.all(20),
@@ -247,6 +341,7 @@ class _NewEventPageState extends State<NewEventPage> {
           initialDate: isStartTime ? _startDate : _endDate,
           initialTime: isStartTime ? _startTime : _endTime,
           title: isStartTime ? '开始时间' : '结束时间',
+          showTimePicker: !_isAllDay, // 根据是否勾选全天决定是否显示时间选择器
         ),
       ),
     );
@@ -282,6 +377,29 @@ class _NewEventPageState extends State<NewEventPage> {
         } else {
           _endDate = result['date'];
           _endTime = result['time'];
+          // 确保开始时间在结束时间之前
+          final startDateTime = DateTime(
+            _startDate.year,
+            _startDate.month,
+            _startDate.day,
+            _startTime.hour,
+            _startTime.minute,
+          );
+          final endDateTime = DateTime(
+            _endDate.year,
+            _endDate.month,
+            _endDate.day,
+            _endTime.hour,
+            _endTime.minute,
+          );
+          
+          if (startDateTime.isAfter(endDateTime) || startDateTime.isAtSameMomentAs(endDateTime)) {
+            _startDate = _endDate;
+            _startTime = TimeOfDay(
+              hour: (_endTime.hour - 1 + 24) % 24,
+              minute: _endTime.minute,
+            );
+          }
         }
       });
     }
@@ -445,51 +563,143 @@ class _NewEventPageState extends State<NewEventPage> {
     
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: theme.dialogBackgroundColor,
-        title: Text(
-          '添加说明',
-          style: TextStyle(color: theme.textTheme.titleLarge?.color),
+      barrierDismissible: false, // 防止误触关闭
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16), // 更大的圆角
         ),
-        content: TextField(
-          controller: controller,
-          maxLines: 3,
-          style: TextStyle(color: theme.textTheme.bodyMedium?.color),
-          decoration: InputDecoration(
-            hintText: '请输入日程说明...',
-            hintStyle: TextStyle(color: theme.hintColor),
-            border: OutlineInputBorder(
-              borderSide: BorderSide(color: theme.dividerColor),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: theme.dividerColor),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: theme.primaryColor),
-            ),
+        child: Container(
+          width: 400, // 固定宽度
+          padding: const EdgeInsets.all(24), // 增加内边距
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题栏
+              Row(
+                children: [
+                  Icon(
+                    Icons.edit_note,
+                    color: theme.colorScheme.primary,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '添加说明',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.titleLarge?.color,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // 输入框
+              TextField(
+                controller: controller,
+                maxLines: 4, // 增加行数
+                style: TextStyle(
+                  fontSize: 16,
+                  color: theme.textTheme.bodyMedium?.color,
+                ),
+                decoration: InputDecoration(
+                  hintText: '请输入日程说明...',
+                  hintStyle: TextStyle(
+                    color: theme.hintColor,
+                    fontSize: 16,
+                  ),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  hoverColor: Colors.transparent, // 禁用悬停时的背景颜色变化
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: theme.dividerColor.withOpacity(0.5),
+                      width: 1,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: theme.colorScheme.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
+                ),
+                autofocus: true, // 自动聚焦
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // 按钮栏
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  // 取消按钮
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(
+                      '取消',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: theme.textTheme.bodyLarge?.color,
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(width: 12),
+                  
+                  // 确定按钮
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _description = controller.text;
+                      });
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 12,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Text(
+                      '确定',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              '取消',
-              style: TextStyle(color: theme.textTheme.bodyLarge?.color),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _description = controller.text;
-              });
-              Navigator.pop(context);
-            },
-            child: Text(
-              '确定',
-              style: TextStyle(color: theme.primaryColor),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -517,12 +727,14 @@ class CustomTimePickerBottomSheet extends StatefulWidget {
   final DateTime initialDate;
   final TimeOfDay initialTime;
   final String title;
+  final bool showTimePicker; // 新增参数控制是否显示时间选择器
 
   const CustomTimePickerBottomSheet({
     Key? key,
     required this.initialDate,
     required this.initialTime,
     required this.title,
+    this.showTimePicker = true, // 默认显示时间选择器
   }) : super(key: key);
 
   @override
@@ -723,7 +935,7 @@ class _CustomTimePickerBottomSheetState extends State<CustomTimePickerBottomShee
     final isDark = theme.brightness == Brightness.dark;
     
     return Container(
-      height: 700, // 进一步增加高度以容纳日历
+      height: widget.showTimePicker ? 700 : 500, // 根据是否显示时间选择器调整高度
       width: 400,  // 增加宽度给日历更多空间
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF2D2D2D) : Colors.white,
@@ -760,6 +972,28 @@ class _CustomTimePickerBottomSheetState extends State<CustomTimePickerBottomShee
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                ),
+                // 左上角的关闭按钮
+                Positioned(
+                  left: 0,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: IconButton(
+                      onPressed: () {
+                        Navigator.pop(context); // 关闭弹窗，不返回任何数据
+                      },
+                      icon: Icon(
+                        Icons.close,
+                        color: isDark ? Colors.white : Colors.black87,
+                        size: 20,
+                      ),
+                      style: IconButton.styleFrom(
+                        padding: const EdgeInsets.all(8),
+                        minimumSize: Size.zero,
+                      ),
                     ),
                   ),
                 ),
@@ -809,130 +1043,133 @@ class _CustomTimePickerBottomSheetState extends State<CustomTimePickerBottomShee
                 children: [
                   // 日历部分
                   Expanded(
-                    flex: 4,
+                    flex: widget.showTimePicker ? 4 : 1, // 根据是否显示时间选择器调整比例
                     child: buildCalendar(),
                   ),
                   
-                  const SizedBox(height: 12),
-                  
-                  // 时间标签
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      '时间',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  // 只有在显示时间选择器时才显示时间相关部分
+                  if (widget.showTimePicker) ...[
+                    const SizedBox(height: 12),
+                    
+                    // 时间标签
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '时间',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                        ),
                       ),
                     ),
-                  ),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // 时间选择器
-                  SizedBox(
-                    height: 140,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          // 小时选择器
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Container(
-                                  height: 30,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '时',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark ? Colors.white : Colors.black87,
+                    
+                    const SizedBox(height: 8),
+                    
+                    // 时间选择器
+                    SizedBox(
+                      height: 140,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            // 小时选择器
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: 30,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '时',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: CupertinoPicker(
-                                    scrollController: hourController,
-                                    itemExtent: 28,
-                                    onSelectedItemChanged: (index) {
-                                      setState(() {
-                                        selectedHour = index;
-                                      });
-                                    },
-                                    children: List.generate(24, (index) {
-                                      return Center(
-                                        child: Text(
-                                          index.toString().padLeft(2, '0'),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: isDark ? Colors.white : Colors.black87,
+                                  Expanded(
+                                    child: CupertinoPicker(
+                                      scrollController: hourController,
+                                      itemExtent: 28,
+                                      onSelectedItemChanged: (index) {
+                                        setState(() {
+                                          selectedHour = index;
+                                        });
+                                      },
+                                      children: List.generate(24, (index) {
+                                        return Center(
+                                          child: Text(
+                                            index.toString().padLeft(2, '0'),
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: isDark ? Colors.white : Colors.black87,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    }),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          
-                          // 分隔线
-                          Container(
-                            width: 1,
-                            height: 60,
-                            color: isDark ? Colors.grey[600] : Colors.grey[300],
-                          ),
-                          
-                          // 分钟选择器
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Container(
-                                  height: 30,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    '分',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: isDark ? Colors.white : Colors.black87,
+                                        );
+                                      }),
                                     ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: CupertinoPicker(
-                                    scrollController: minuteController,
-                                    itemExtent: 28,
-                                    onSelectedItemChanged: (index) {
-                                      setState(() {
-                                        selectedMinute = index;
-                                      });
-                                    },
-                                    children: List.generate(60, (index) {
-                                      return Center(
-                                        child: Text(
-                                          index.toString().padLeft(2, '0'),
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: isDark ? Colors.white : Colors.black87,
-                                          ),
-                                        ),
-                                      );
-                                    }),
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            
+                            // 分隔线
+                            Container(
+                              width: 1,
+                              height: 60,
+                              color: isDark ? Colors.grey[600] : Colors.grey[300],
+                            ),
+                            
+                            // 分钟选择器
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    height: 30,
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '分',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? Colors.white : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: CupertinoPicker(
+                                      scrollController: minuteController,
+                                      itemExtent: 28,
+                                      onSelectedItemChanged: (index) {
+                                        setState(() {
+                                          selectedMinute = index;
+                                        });
+                                      },
+                                      children: List.generate(60, (index) {
+                                        return Center(
+                                          child: Text(
+                                            index.toString().padLeft(2, '0'),
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: isDark ? Colors.white : Colors.black87,
+                                            ),
+                                          ),
+                                        );
+                                      }),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -981,111 +1218,155 @@ class _ReminderSelectionDialogState extends State<ReminderSelectionDialog> {
 
     return Dialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10), // 放大圆角
+        borderRadius: BorderRadius.circular(16), // 更大的圆角
       ),
       child: Container(
-        width: 280, // 放大宽度
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14), // 放大内边距
+        width: 320, // 增加宽度
+        padding: const EdgeInsets.all(24), // 增加内边距
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            SizedBox(
-              height: 38, // 放大标题栏高度
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  SizedBox(
-                    width: 28, // 放大关闭按钮区域宽度
-                    child: GestureDetector(
-                      onTap: () {
-                        // 点击关闭按钮，不保存更改
-                        if (mounted && Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: const Icon(Icons.close, size: 20), // 放大图标
-                    ),
-                  ),
-                  const Text(
+            // 标题栏
+            Row(
+              children: [
+                Icon(
+                  Icons.alarm,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
                     '提醒时间',
                     style: TextStyle(
-                      fontSize: 16, // 放大标题字体
+                      fontSize: 18,
                       fontWeight: FontWeight.w600,
+                      color: Theme.of(context).textTheme.titleLarge?.color,
                     ),
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF9B73),
-                      borderRadius: BorderRadius.circular(6), // 放大圆角
-                    ),
-                    child: GestureDetector(
-                      onTap: () {
-                        // 点击保存按钮，保存选择并关闭
-                        widget.onSave(_tempSelectedOption);
-                        if (mounted && Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        }
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4), // 放大内边距
-                        child: Text(
-                          '保存',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 14, // 放大按钮字体
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ),
-                    ),
+                ),
+                // 关闭按钮
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: Icon(
+                    Icons.close,
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    size: 20,
                   ),
-                ],
-              ),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 6), // 放大间距
+            
+            const SizedBox(height: 20),
+            
+            // 选项列表
             ...options.map((option) {
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _tempSelectedOption = option; // 只更新临时状态
-                  });
-                },
-                child: Container(
-                  height: 34, // 放大每个选项的高度
-                  width: double.infinity,
-                  padding: EdgeInsets.zero, // 移除水平内边距
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 28, // 与关闭按钮区域同宽，确保对齐
-                        child: Transform.scale(
-                          scale: 0.8, // 放大单选按钮
-                          child: Radio<String>(
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      setState(() {
+                        _tempSelectedOption = option;
+                      });
+                    },
+                    child: Container(
+                      height: 48, // 增加选项高度
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Row(
+                        children: [
+                          Radio<String>(
                             value: option,
-                            groupValue: _tempSelectedOption, // 使用临时状态
+                            groupValue: _tempSelectedOption,
                             onChanged: (value) {
                               setState(() {
-                                _tempSelectedOption = value!; // 只更新临时状态
+                                _tempSelectedOption = value!;
                               });
                             },
-                            activeColor: const Color(0xFFFF9B73),
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            activeColor: Theme.of(context).colorScheme.primary,
                           ),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              option,
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Theme.of(context).textTheme.bodyMedium?.color,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4), // 放大间距
-                      Text(
-                        option,
-                        style: const TextStyle(
-                          fontSize: 14, // 放大选项字体
-                          height: 1.2, // 放大行高
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               );
             }).toList(),
+            
+            const SizedBox(height: 24),
+            
+            // 按钮栏
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                // 取消按钮
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).textTheme.bodyLarge?.color,
+                    ),
+                  ),
+                ),
+                
+                const SizedBox(width: 12),
+                
+                // 保存按钮
+                ElevatedButton(
+                  onPressed: () {
+                    widget.onSave(_tempSelectedOption);
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    elevation: 0,
+                  ),
+                  child: Text(
+                    '保存',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

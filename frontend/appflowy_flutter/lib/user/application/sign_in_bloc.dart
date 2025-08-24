@@ -394,7 +394,7 @@ class SignInBloc extends Bloc<SignInEvent, SignInState> {
     );
 
     result.fold(
-      (userProfile) {
+      (tokenResponse) {
         emit(state.copyWith(isSubmitting: false));
       },
       (error) {

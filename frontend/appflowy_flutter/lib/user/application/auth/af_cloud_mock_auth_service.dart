@@ -150,11 +150,11 @@ class AppFlowyCloudMockAuthService implements AuthService {
   }
 
   @override
-  Future<FlowyResult<UserProfilePB, FlowyError>> signInWithPhoneSms({
+  Future<FlowyResult<GotrueTokenResponsePB, FlowyError>> signInWithPhoneSms({
     required String phone,
     required String code,
   }) async {
-    // Mock implementation for phone SMS login - return empty user profile
+    // Mock implementation for phone SMS login - return empty token response
     throw UnimplementedError();
   }
 }
