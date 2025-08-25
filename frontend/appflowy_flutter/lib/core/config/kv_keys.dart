@@ -43,12 +43,6 @@ class KVKeys {
   ///  {'viewId': true, 'viewId2': false}
   static const String expandedViews = 'expandedViews';
 
-  /// The key for saving the expanded folder
-  ///
-  /// The value is a json string with the following format:
-  ///  {'SidebarFolderCategoryType.value': true}
-  static const String expandedFolders = 'expandedFolders';
-
   /// @deprecated in version 0.7.6
   /// The key for saving if showing the rename dialog when creating a new file
   ///
@@ -79,12 +73,6 @@ class KVKeys {
   /// The value is a boolean string
   static const String showNotificationIcon = 'showNotificationIcon';
 
-  /// The key for saving the last opened workspace id
-  ///
-  /// The workspace id is a string.
-  @Deprecated('deprecated in version 0.5.5')
-  static const String lastOpenedWorkspaceId = 'lastOpenedWorkspaceId';
-
   /// The key for saving the scale factor
   ///
   /// The value is a double string.
@@ -105,11 +93,6 @@ class KVKeys {
   ///
   /// The value is a string.
   static const String lastOpenedSpaceId = 'lastOpenedSpaceId';
-
-  /// The key for saving the upgrade space tag
-  ///
-  /// The value is a boolean string
-  static const String hasUpgradedSpace = 'hasUpgradedSpace060';
 
   /// The key for saving the recent icons
   ///

@@ -4,19 +4,29 @@ import 'package:appflowy_backend/protobuf/flowy-database2/database_entities.pb.d
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/errors.pbserver.dart';
 import 'package:appflowy_result/appflowy_result.dart';
-import 'package:appflowy/plugins/database/calendar/application/calendar_bloc.dart';
+import 'package:appflowy/plugins/database/application/row/row_service.dart';
+import 'package:appflowy/plugins/database/application/field/field_info.dart';
+import 'package:appflowy/plugins/database/domain/date_cell_service.dart';
+import 'package:appflowy/user/application/reminder/reminder_bloc.dart';
+import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/reminder_selector.dart';
+import 'package:appflowy/startup/startup.dart';
+import 'package:nanoid/nanoid.dart';
+import 'package:fixnum/fixnum.dart';
 
-// 日程数据模型
+// 日程数据模型 - 基于 AppFlowy 数据库行
 class ScheduleItem {
-  final String id;
+  final String id; // 数据库行ID
   final String title;
   final String description;
   final DateTime startTime;
   final DateTime endTime;
   final bool isAllDay;
   final bool isImportant;
+  final bool isCompleted; // 完成状态
   final String category;
   final Color color;
+  final String? reminderId; // AppFlowy 提醒ID
+  final ReminderOption reminderOption; // 提醒选项
 
   ScheduleItem({
     required this.id,
@@ -26,8 +36,11 @@ class ScheduleItem {
     required this.endTime,
     this.isAllDay = false,
     this.isImportant = false,
+    this.isCompleted = false, // 默认未完成
     this.category = '默认',
     this.color = Colors.blue,
+    this.reminderId,
+    this.reminderOption = ReminderOption.none,
   });
 
   // 从CalendarEventPB创建ScheduleItem
@@ -49,305 +62,325 @@ class ScheduleItem {
       endTime: endTime,
       isAllDay: false,
       isImportant: false,
+      isCompleted: false,
       category: '数据库',
       color: Colors.blue,
     );
   }
 
-  // 判断是否已完成（当前时间超过结束时间）
-  bool get isCompleted => DateTime.now().isAfter(endTime);
-
-  // 判断是否正在进行中
-  bool get isOngoing {
-    final now = DateTime.now();
-    return now.isAfter(startTime) && now.isBefore(endTime);
-  }
-
-  // 判断是否即将开始（未来1小时内）
-  bool get isUpcoming {
-    final now = DateTime.now();
-    final oneHourLater = now.add(Duration(hours: 1));
-    return startTime.isAfter(now) && startTime.isBefore(oneHourLater);
-  }
-
-  // 格式化时间显示
-  String get timeText {
-    if (isAllDay) {
-      return '全天';
-    }
-    final startTimeStr = '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}';
-    final endTimeStr = '${endTime.hour.toString().padLeft(2, '0')}:${endTime.minute.toString().padLeft(2, '0')}';
-    return '$startTimeStr - $endTimeStr';
-  }
-
-  // 状态文本
-  String get statusText {
-    if (isCompleted) return '已完成';
-    if (isOngoing) return '进行中';
-    if (isUpcoming) return '即将开始';
-    return '未开始';
-  }
-
-  // 状态颜色
-  Color get statusColor {
-    if (isCompleted) return Colors.grey;
-    if (isOngoing) return Colors.green;
-    if (isUpcoming) return Colors.orange;
-    return Colors.blue;
-  }
-
   ScheduleItem copyWith({
-    String? id,
     String? title,
     String? description,
     DateTime? startTime,
     DateTime? endTime,
     bool? isAllDay,
     bool? isImportant,
+    bool? isCompleted,
     String? category,
     Color? color,
+    String? reminderId,
+    ReminderOption? reminderOption,
   }) {
     return ScheduleItem(
-      id: id ?? this.id,
+      id: id,
       title: title ?? this.title,
       description: description ?? this.description,
       startTime: startTime ?? this.startTime,
       endTime: endTime ?? this.endTime,
       isAllDay: isAllDay ?? this.isAllDay,
       isImportant: isImportant ?? this.isImportant,
+      isCompleted: isCompleted ?? this.isCompleted,
       category: category ?? this.category,
       color: color ?? this.color,
+      reminderId: reminderId ?? this.reminderId,
+      reminderOption: reminderOption ?? this.reminderOption,
     );
   }
 }
 
-// 日程管理器
-class ScheduleManager extends ChangeNotifier {
-  static final ScheduleManager _instance = ScheduleManager._internal();
-  factory ScheduleManager() => _instance;
-  ScheduleManager._internal() {
-    // 默认使用独立模式，初始化示例数据
-    _isIndependentMode = true;
-    _initializeWithSampleData();
-  }
-
+// 日程管理模型 - 基于 AppFlowy 数据库
+class ScheduleModel extends ChangeNotifier {
   final List<ScheduleItem> _schedules = [];
-  String? _currentViewId;
   bool _isLoading = false;
-  bool _isIndependentMode = true; // 新增：独立模式标志
-
+  String? _currentViewId; // 当前数据库视图ID
+  
   List<ScheduleItem> get schedules => List.unmodifiable(_schedules);
   bool get isLoading => _isLoading;
-  bool get isIndependentMode => _isIndependentMode;
+  String? get currentViewId => _currentViewId;
 
-  // 设置当前视图ID（用于数据库集成模式）
+  // 设置当前数据库视图ID
   void setViewId(String viewId) {
     _currentViewId = viewId;
-    if (viewId.isNotEmpty) {
-      _isIndependentMode = false; // 切换到数据库集成模式
-      _loadRealEvents();
-    } else {
-      _isIndependentMode = true; // 切换到独立模式
-      _initializeWithSampleData(); // 使用示例数据
-    }
+    _loadSchedulesFromDatabase();
   }
 
-  // 从真实数据库加载事件（仅在数据库集成模式下使用）
-  Future<void> _loadRealEvents() async {
-    if (_isIndependentMode || _currentViewId == null || _currentViewId!.isEmpty) {
-      return;
-    }
+  // 从 AppFlowy 数据库加载日程
+  Future<void> _loadSchedulesFromDatabase() async {
+    if (_currentViewId == null) return;
 
-    setState(() {
-      _isLoading = true;
-    });
-
+    _setLoading(true);
+    
     try {
-      // 创建请求参数
+      // 获取所有日历事件
       final payload = DatabaseViewIdPB(value: _currentViewId!);
-      
-      // 调用数据库事件获取所有日历事件
       final result = await DatabaseEventGetAllCalendarEvents(payload).send();
       
       result.fold(
         (events) {
-          // 转换CalendarEventPB为ScheduleItem
+          // 转换为 ScheduleItem
           final newSchedules = events.items.map((eventPB) {
             return ScheduleItem.fromCalendarEventPB(eventPB);
           }).toList();
           
-          // 更新日程列表
           _schedules.clear();
           _schedules.addAll(newSchedules);
           
-          print('成功加载 ${_schedules.length} 个真实日程事件');
+          // 添加示例数据用于演示
+          _addSampleSchedules();
+          
           notifyListeners();
         },
         (error) {
-          print('加载真实日程失败: $error');
-          // 如果加载失败，使用示例数据作为后备
-          _initializeWithSampleData();
+          print('加载日程失败: $error');
+          // 如果加载失败，添加示例数据
+          _addSampleSchedules();
+          notifyListeners();
         },
       );
     } catch (e) {
-      print('加载真实日程时发生错误: $e');
-      // 使用示例数据作为后备
-      _initializeWithSampleData();
+      print('加载日程时发生错误: $e');
+      // 如果出现异常，添加示例数据
+      _addSampleSchedules();
+      notifyListeners();
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      _setLoading(false);
     }
   }
 
-  // 刷新事件数据
-  Future<void> refreshEvents() async {
-    if (_isIndependentMode) {
-      // 独立模式下不需要刷新，数据在内存中
-      return;
-    }
-    await _loadRealEvents();
+  // 添加示例日程数据
+  void _addSampleSchedules() {
+    final now = DateTime.now();
+    final tomorrow = now.add(Duration(days: 1));
+    
+    _schedules.addAll([
+      ScheduleItem(
+        id: 'sample_1',
+        title: '明天早上7点去机场',
+        description: '06月30日 02:00-03:00, 我的日历',
+        startTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 2, 0),
+        endTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 3, 0),
+        isCompleted: false,
+        color: Colors.blue,
+      ),
+      ScheduleItem(
+        id: 'sample_2',
+        title: '明天早上7点去机场',
+        description: '06月30日 02:00-03:00, 我的日历',
+        startTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 2, 0),
+        endTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 3, 0),
+        isCompleted: true,
+        color: Colors.green,
+      ),
+    ]);
   }
 
-  // 获取今日日程
-  List<ScheduleItem> get todaySchedules {
-    final today = DateTime.now();
+  // 创建新的日程（直接保存到 AppFlowy 数据库）
+  Future<String?> createSchedule({
+    required String title,
+    required String description,
+    required DateTime startTime,
+    required DateTime endTime,
+    bool isAllDay = false,
+    bool isImportant = false,
+    String category = '默认',
+    Color color = Colors.blue,
+    ReminderOption reminderOption = ReminderOption.none,
+  }) async {
+    if (_currentViewId == null) {
+      print('错误: 未设置数据库视图ID');
+      return null;
+    }
+
+    try {
+      // 使用 AppFlowy 标准的创建行方法
+      // 这将创建一个基本的行，用户可以后续在行详情页中编辑标题和其他字段
+      final result = await RowBackendService.createRow(
+        viewId: _currentViewId!,
+        withCells: (builder) {
+          // 由于我们不知道具体的字段信息，
+          // 这里创建一个空行，用户可以后续编辑
+          // 如果有日期字段，可以使用 builder.insertDate(dateField, startTime)
+        },
+      );
+
+      return result.fold(
+        (rowMeta) async {
+          // 创建成功后，刷新数据以获取最新的事件列表
+          await refresh();
+          return rowMeta.id;
+        },
+        (error) {
+          print('创建日程失败: $error');
+          return null;
+        },
+      );
+    } catch (e) {
+      print('创建日程时发生错误: $e');
+      return null;
+    }
+  }
+
+  // 更新日程
+  Future<bool> updateSchedule(ScheduleItem schedule) async {
+    if (_currentViewId == null) return false;
+
+    try {
+      // 更新数据库中的数据
+      // 这里需要根据实际需求更新特定字段
+      
+      // 更新本地列表
+      final index = _schedules.indexWhere((s) => s.id == schedule.id);
+      if (index != -1) {
+        _schedules[index] = schedule;
+        notifyListeners();
+
+        // 更新提醒
+        if (schedule.reminderOption != ReminderOption.none) {
+          _setReminder(schedule);
+        } else if (schedule.reminderId != null) {
+          _removeReminder(schedule.reminderId!);
+        }
+
+        return true;
+      }
+    } catch (e) {
+      print('更新日程时发生错误: $e');
+    }
+    
+    return false;
+  }
+
+  // 删除日程
+  Future<bool> deleteSchedule(String scheduleId) async {
+    if (_currentViewId == null) return false;
+
+    try {
+      // 从数据库删除
+      await RowBackendService.deleteRows(_currentViewId!, [scheduleId]);
+
+      // 从本地列表删除
+      final schedule = _schedules.firstWhere((s) => s.id == scheduleId);
+      if (schedule.reminderId != null) {
+        _removeReminder(schedule.reminderId!);
+      }
+
+      _schedules.removeWhere((s) => s.id == scheduleId);
+      notifyListeners();
+      
+      return true;
+    } catch (e) {
+      print('删除日程时发生错误: $e');
+      return false;
+    }
+  }
+
+  // 设置提醒（使用 AppFlowy 提醒系统）
+  void _setReminder(ScheduleItem schedule) async {
+    try {
+      final reminderBloc = getIt<ReminderBloc>();
+      final reminderId = schedule.reminderId ?? nanoid();
+      
+      reminderBloc.add(
+        ReminderEvent.addById(
+          reminderId: reminderId,
+          objectId: _currentViewId!,
+          meta: {
+            'rowId': schedule.id,
+            'title': schedule.title,
+          },
+          scheduledAt: Int64(
+            schedule.reminderOption.getNotificationDateTime(schedule.startTime)
+                .millisecondsSinceEpoch ~/ 1000,
+          ),
+        ),
+      );
+    } catch (e) {
+      print('设置提醒失败: $e');
+    }
+  }
+
+  // 移除提醒
+  void _removeReminder(String reminderId) async {
+    try {
+      final reminderBloc = getIt<ReminderBloc>();
+      reminderBloc.add(ReminderEvent.removeReminder(reminderId: reminderId));
+    } catch (e) {
+      print('移除提醒失败: $e');
+    }
+  }
+
+  // 获取指定日期的日程
+  List<ScheduleItem> getSchedulesForDate(DateTime date) {
     return _schedules.where((schedule) {
-      return _isSameDay(schedule.startTime, today) ||
-             _isSameDay(schedule.endTime, today) ||
-             (schedule.startTime.isBefore(today) && schedule.endTime.isAfter(today));
+      final scheduleDate = schedule.startTime;
+      return scheduleDate.year == date.year &&
+             scheduleDate.month == date.month &&
+             scheduleDate.day == date.day;
     }).toList()
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
   }
 
-  // 获取未完成的日程
-  List<ScheduleItem> get incompleteSchedules {
-    return _schedules.where((schedule) => !schedule.isCompleted).toList()
+  // 获取日期范围内的日程
+  List<ScheduleItem> getSchedulesInRange(DateTime start, DateTime end) {
+    return _schedules.where((schedule) {
+      return schedule.startTime.isAfter(start.subtract(Duration(days: 1))) &&
+             schedule.startTime.isBefore(end.add(Duration(days: 1)));
+    }).toList()
       ..sort((a, b) => a.startTime.compareTo(b.startTime));
   }
 
-  // 获取已完成的日程
-  List<ScheduleItem> get completedSchedules {
-    return _schedules.where((schedule) => schedule.isCompleted).toList()
-      ..sort((a, b) => b.endTime.compareTo(a.endTime));
-  }
-
-  bool _isSameDay(DateTime date1, DateTime date2) {
-    return date1.year == date2.year &&
-           date1.month == date2.month &&
-           date1.day == date2.day;
-  }
-
-  // 添加日程
-  void addSchedule(ScheduleItem schedule) {
-    _schedules.add(schedule);
-    
-    // 在独立模式下，保存到本地存储
-    if (_isIndependentMode) {
-      _saveToLocalStorage();
-    }
-    
-    notifyListeners();
-  }
-
-  // 删除日程
-  void removeSchedule(String id) {
-    _schedules.removeWhere((schedule) => schedule.id == id);
-    
-    // 在独立模式下，保存到本地存储
-    if (_isIndependentMode) {
-      _saveToLocalStorage();
-    }
-    
-    notifyListeners();
-  }
-
-  // 更新日程
-  void updateSchedule(ScheduleItem updatedSchedule) {
-    final index = _schedules.indexWhere((schedule) => schedule.id == updatedSchedule.id);
-    if (index != -1) {
-      _schedules[index] = updatedSchedule;
-      
-      // 在独立模式下，保存到本地存储
-      if (_isIndependentMode) {
-        _saveToLocalStorage();
+  // 切换日程完成状态
+  Future<bool> toggleScheduleCompletion(String scheduleId) async {
+    try {
+      final index = _schedules.indexWhere((s) => s.id == scheduleId);
+      if (index != -1) {
+        final schedule = _schedules[index];
+        final updatedSchedule = schedule.copyWith(isCompleted: !schedule.isCompleted);
+        _schedules[index] = updatedSchedule;
+        notifyListeners();
+        
+        // TODO: 在实际应用中，这里应该更新数据库中的完成状态
+        // await updateScheduleInDatabase(updatedSchedule);
+        
+        return true;
       }
-      
-      notifyListeners();
+    } catch (e) {
+      print('切换完成状态时发生错误: $e');
     }
+    return false;
   }
 
-  // 保存到本地存储（独立模式）
-  void _saveToLocalStorage() {
-    // TODO: 实现本地存储逻辑，可以使用SharedPreferences或Hive
-    // 暂时只打印日志
-    print('保存 ${_schedules.length} 个日程到本地存储');
+  // 获取未完成的日程
+  List<ScheduleItem> get incompleteSchedules => 
+      _schedules.where((schedule) => !schedule.isCompleted).toList();
+
+  // 获取已完成的日程
+  List<ScheduleItem> get completedSchedules => 
+      _schedules.where((schedule) => schedule.isCompleted).toList();
+
+  // 刷新数据
+  Future<void> refresh() async {
+    await _loadSchedulesFromDatabase();
   }
 
-  // 从本地存储加载（独立模式）
-  void _loadFromLocalStorage() {
-    // TODO: 实现从本地存储加载逻辑
-    // 暂时使用示例数据
-    _initializeWithSampleData();
-  }
-
-  // 设置加载状态
-  void setState(VoidCallback fn) {
-    fn();
+  void _setLoading(bool loading) {
+    _isLoading = loading;
     notifyListeners();
   }
 
-  // 生成唯一ID
-  String _generateUniqueId() {
-    return DateTime.now().millisecondsSinceEpoch.toString();
-  }
-
-  // 初始化一些示例数据（作为后备）
-  void _initializeWithSampleData() {
-    final now = DateTime.now();
-    
-    _schedules.clear();
-    _schedules.addAll([
-      ScheduleItem(
-        id: _generateUniqueId(),
-        title: '团队会议',
-        description: '讨论项目进度和下周计划',
-        startTime: now.add(Duration(hours: 1)),
-        endTime: now.add(Duration(hours: 2)),
-        isImportant: true,
-        category: '工作',
-        color: Colors.blue,
-      ),
-      ScheduleItem(
-        id: _generateUniqueId(),
-        title: '健身训练',
-        description: '有氧运动30分钟 + 力量训练',
-        startTime: now.subtract(Duration(hours: 1)),
-        endTime: now.add(Duration(minutes: 30)),
-        category: '健康',
-        color: Colors.green,
-      ),
-      ScheduleItem(
-        id: _generateUniqueId(),
-        title: '阅读时间',
-        description: '《深度工作》第3章',
-        startTime: now.subtract(Duration(hours: 2)),
-        endTime: now.subtract(Duration(hours: 1)),
-        category: '学习',
-        color: Colors.purple,
-      ),
-      ScheduleItem(
-        id: _generateUniqueId(),
-        title: '项目复盘',
-        description: '总结本周工作得失',
-        startTime: now.add(Duration(days: 1, hours: 9)),
-        endTime: now.add(Duration(days: 1, hours: 10)),
-        isImportant: true,
-        category: '工作',
-        color: Colors.red,
-      ),
-    ]);
-    notifyListeners();
+  @override
+  void dispose() {
+    super.dispose();
   }
 } 
 

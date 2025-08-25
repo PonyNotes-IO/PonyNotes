@@ -1,537 +1,390 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/schedule_model.dart';
+import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/reminder_selector.dart';
 
 class ScheduleSidebar extends StatefulWidget {
-  const ScheduleSidebar({Key? key}) : super(key: key);
+  final String? databaseViewId; // 传入数据库视图ID以集成AppFlowy数据库
+
+  const ScheduleSidebar({
+    Key? key,
+    this.databaseViewId,
+  }) : super(key: key);
 
   @override
   State<ScheduleSidebar> createState() => _ScheduleSidebarState();
 }
 
 class _ScheduleSidebarState extends State<ScheduleSidebar> {
-  late ScheduleManager _scheduleManager;
-  
-  // 控制收起展开的状态
-  bool _isIncompleteExpanded = true;
-  bool _isCompletedExpanded = true;
-  
+  late ScheduleModel _scheduleModel;
+
   @override
   void initState() {
     super.initState();
-    _scheduleManager = ScheduleManager();
-    // ScheduleManager会自动处理数据初始化，不需要手动调用
-    _scheduleManager.addListener(_onScheduleChanged);
+    _scheduleModel = ScheduleModel();
+    
+    // 如果提供了数据库视图ID，设置为数据库集成模式
+    if (widget.databaseViewId != null && widget.databaseViewId!.isNotEmpty) {
+      _scheduleModel.setViewId(widget.databaseViewId!);
+    }
   }
 
   @override
   void dispose() {
-    _scheduleManager.removeListener(_onScheduleChanged);
+    _scheduleModel.dispose();
     super.dispose();
-  }
-
-  void _onScheduleChanged() {
-    if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 我的日程标题
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            '我的日程',
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+    return ChangeNotifierProvider.value(
+      value: _scheduleModel,
+      child: SizedBox(
+        width: 300,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context),
+            Expanded(
+              child: Consumer<ScheduleModel>(
+                builder: (context, model, child) {
+                  if (model.isLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  return _buildScheduleList(context, model);
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '日程管理',
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.titleMedium?.color ?? Colors.black87,
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Consumer<ScheduleModel>(
+                builder: (context, model, child) {
+                  final isIntegrated = model.currentViewId != null;
+                  return Text(
+                    isIntegrated ? '已集成 AppFlowy 数据库' : '本地数据模式',
+                    style: TextStyle(
+                      color: isIntegrated ? Colors.green : Colors.orange,
+                      fontSize: 12,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Consumer<ScheduleModel>(
+                builder: (context, model, child) {
+                  return IconButton(
+                    icon: Icon(
+                      Icons.refresh,
+                      color: Theme.of(context).iconTheme.color,
+                    ),
+                    onPressed: model.isLoading ? null : () => model.refresh(),
+                    tooltip: '刷新数据',
+                  );
+                },
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.add,
+                  color: Theme.of(context).iconTheme.color,
+                ),
+                onPressed: () => _showCreateScheduleDialog(context),
+                tooltip: '创建新日程',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleList(BuildContext context, ScheduleModel model) {
+    final incompleteSchedules = model.incompleteSchedules;
+    final completedSchedules = model.completedSchedules;
+
+    if (model.schedules.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.calendar_today,
+              size: 64,
+              color: Theme.of(context).iconTheme.color?.withOpacity(0.3) ?? Colors.grey.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '暂无日程',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.grey.withOpacity(0.6),
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              model.currentViewId != null 
+                ? '点击"+"创建新日程\n或在日历视图中添加事件'
+                : '点击"+"创建新日程',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey.withOpacity(0.5),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 未完成日程区域
+          if (incompleteSchedules.isNotEmpty) ...[
+            _buildSectionHeader(context, '未完成', incompleteSchedules.length),
+            const SizedBox(height: 8),
+            ...incompleteSchedules.map((schedule) => 
+              _buildScheduleCard(context, schedule, model)),
+            const SizedBox(height: 16),
+          ],
+          
+          // 已完成日程区域
+          if (completedSchedules.isNotEmpty) ...[
+            _buildSectionHeader(context, '已完成', completedSchedules.length),
+            const SizedBox(height: 8),
+            ...completedSchedules.map((schedule) => 
+              _buildScheduleCard(context, schedule, model)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(BuildContext context, String title, int count) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        children: [
+          Text(
+            '$title ($count)',
+            style: TextStyle(
               fontWeight: FontWeight.w600,
+              color: Theme.of(context).textTheme.titleSmall?.color ?? Colors.black87,
+              fontSize: 14,
             ),
           ),
-        ),
-        // 日程内容
-        Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 8),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleCard(BuildContext context, ScheduleItem schedule, ScheduleModel model) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          // 完成状态复选框
+          SizedBox(
+            width: 20,
+            height: 20,
+            child: Checkbox(
+              value: schedule.isCompleted,
+              onChanged: (bool? value) {
+                model.toggleScheduleCompletion(schedule.id);
+              },
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              activeColor: Theme.of(context).colorScheme.primary,
+              checkColor: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // 内容区域
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildScheduleSubSection('未完成', _scheduleManager.incompleteSchedules, _isIncompleteExpanded, () {
-                  setState(() {
-                    _isIncompleteExpanded = !_isIncompleteExpanded;
-                  });
-                }),
-                SizedBox(height: 16),
-                _buildScheduleSubSection('已完成', _scheduleManager.completedSchedules, _isCompletedExpanded, () {
-                  setState(() {
-                    _isCompletedExpanded = !_isCompletedExpanded;
-                  });
-                }),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScheduleSubSection(String title, List<ScheduleItem> schedules, bool isExpanded, VoidCallback onToggle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: onToggle,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              children: [
                 Text(
-                  title,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  schedule.title,
+                  style: TextStyle(
                     fontWeight: FontWeight.w500,
+                    decoration: schedule.isCompleted ? TextDecoration.lineThrough : null,
+                    color: schedule.isCompleted 
+                        ? Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.grey.withOpacity(0.6)
+                        : Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87,
+                    fontSize: 14,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(width: 4),
-                AnimatedRotation(
-                  turns: isExpanded ? 0.0 : 0.5,
-                  duration: Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                if (schedule.description.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    schedule.description,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      decoration: schedule.isCompleted ? TextDecoration.lineThrough : null,
+                      color: schedule.isCompleted 
+                          ? Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey.withOpacity(0.5)
+                          : Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7) ?? Colors.grey.withOpacity(0.7),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
-        ),
-        if (isExpanded) ...[
-          if (schedules.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Center(
-                child: Text(
-                  '暂无内容',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
-                  ),
-                ),
-              ),
-            )
-          else
-            ...schedules.map((schedule) => _buildScheduleItem(schedule)),
         ],
-      ],
+      ),
     );
   }
 
-  Widget _buildScheduleItem(ScheduleItem schedule) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 3,
-            height: 24,
-            decoration: BoxDecoration(
-              color: schedule.color,
-              borderRadius: BorderRadius.circular(1.5),
-            ),
-          ),
-          SizedBox(width: 8),
-          Icon(
-            Icons.access_time,
-            size: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ],
-      ),
-      title: Text(
-        schedule.title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: schedule.isCompleted 
-            ? Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6)
-            : null,
-          decoration: schedule.isCompleted ? TextDecoration.lineThrough : null,
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduleDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (scheduleDate == today) {
+      return '今天 ${_formatTimeOfDay(dateTime)}';
+    } else if (scheduleDate == today.add(const Duration(days: 1))) {
+      return '明天 ${_formatTimeOfDay(dateTime)}';
+    } else if (scheduleDate == today.subtract(const Duration(days: 1))) {
+      return '昨天 ${_formatTimeOfDay(dateTime)}';
+    } else {
+      return '${dateTime.month}/${dateTime.day} ${_formatTimeOfDay(dateTime)}';
+    }
+  }
+
+  String _formatTimeOfDay(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showCreateScheduleDialog(BuildContext context) {
+    final model = context.read<ScheduleModel>();
+    
+    if (model.currentViewId != null) {
+      // 在数据库集成模式下，直接创建空行，用户可以在行详情页编辑
+      model.createSchedule(
+        title: '新日程',
+        description: '',
+        startTime: DateTime.now(),
+        endTime: DateTime.now().add(const Duration(hours: 1)),
+      );
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('已创建新日程，请在日历视图中编辑详细信息'),
+          duration: Duration(seconds: 2),
         ),
-        overflow: TextOverflow.ellipsis,
+      );
+    } else {
+      // 在本地模式下，显示创建对话框
+      _showLocalCreateDialog(context, model);
+    }
+  }
+
+  void _showLocalCreateDialog(BuildContext context, ScheduleModel model) {
+    // 这里可以实现一个简单的创建对话框
+    // 由于主要使用 AppFlowy 集成模式，这里简化处理
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('请连接到 AppFlowy 数据库以创建日程'),
+        duration: Duration(seconds: 2),
       ),
-      subtitle: Text(
-        schedule.timeText,
-        style: TextStyle(
-          fontSize: 11,
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
-        ),
-      ),
-      onTap: () => _showScheduleDetail(schedule),
     );
   }
 
-  void _showScheduleDetail(ScheduleItem schedule) {
+  void _showScheduleDetails(BuildContext context, ScheduleItem schedule) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(schedule.title),
+        title: Text(
+          schedule.title,
+          style: TextStyle(
+            color: Theme.of(context).textTheme.titleLarge?.color,
+          ),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('时间: ${schedule.timeText}'),
-            SizedBox(height: 8),
-            Text('状态: ${schedule.statusText}'),
-            SizedBox(height: 8),
-            Text('分类: ${schedule.category}'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// 新增：统一的日历内容组件
-class CalendarContent extends StatefulWidget {
-  final List<String> diaryItems;
-  final DateTime? selectedDate;
-  final String? viewId; // 添加视图ID参数
-
-  const CalendarContent({
-    Key? key, 
-    required this.diaryItems,
-    this.selectedDate,
-    this.viewId, // 添加视图ID参数
-  }) : super(key: key);
-
-  @override
-  State<CalendarContent> createState() => _CalendarContentState();
-}
-
-class _CalendarContentState extends State<CalendarContent> {
-  late ScheduleManager _scheduleManager;
-  
-  // 控制收起展开的状态
-  bool _isIncompleteExpanded = true;
-  bool _isCompletedExpanded = true;
-  
-  // 示例日记数据
-  final List<Map<String, dynamic>> _diaryEntries = [
-    {'title': '小马笔记教程', 'icon': '📚'},
-    {'title': '星月考研笔记汇总', 'icon': '⭐'},
-    {'title': '新东方考研日记', 'icon': '📖'},
-    {'title': '无口祐笔记', 'icon': '✏️'},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _scheduleManager = ScheduleManager();
-    
-    // 如果有视图ID，设置到ScheduleManager中
-    if (widget.viewId != null && widget.viewId!.isNotEmpty) {
-      _scheduleManager.setViewId(widget.viewId!);
-    } else {
-      // 如果没有视图ID，使用示例数据作为后备
-      // 注意：这里不能直接调用私有方法，ScheduleManager会自动处理
-    }
-    
-    _scheduleManager.addListener(_onScheduleChanged);
-  }
-
-  @override
-  void didUpdateWidget(CalendarContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    
-    // 如果视图ID发生变化，重新设置
-    if (oldWidget.viewId != widget.viewId && 
-        widget.viewId != null && 
-        widget.viewId!.isNotEmpty) {
-      _scheduleManager.setViewId(widget.viewId!);
-    }
-  }
-
-  @override
-  void dispose() {
-    _scheduleManager.removeListener(_onScheduleChanged);
-    super.dispose();
-  }
-
-  void _onScheduleChanged() {
-    if (mounted) setState(() {});
-  }
-
-  // 刷新数据
-  Future<void> _refreshData() async {
-    if (widget.viewId != null && widget.viewId!.isNotEmpty) {
-      await _scheduleManager.refreshEvents();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // 格式化选中的日期
-    String dateText;
-    if (widget.selectedDate != null) {
-      final date = widget.selectedDate!;
-      dateText = '${date.year}年${date.month}月${date.day}日';
-    } else {
-      final today = DateTime.now();
-      dateText = '${today.year}年${today.month}月${today.day}日';
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // 固定的日期标题（不滚动）
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  dateText,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+            if (schedule.description.isNotEmpty) ...[
+              Text(
+                '描述：${schedule.description}',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
-              // 添加刷新按钮
-              if (widget.viewId != null && widget.viewId!.isNotEmpty)
-                IconButton(
-                  icon: Icon(Icons.refresh, size: 18),
-                  onPressed: _refreshData,
-                  tooltip: '刷新日程',
-                ),
+              const SizedBox(height: 8),
             ],
-          ),
-        ),
-        // 滚动的内容区域，包含日记和日程
-        Expanded(
-          child: _scheduleManager.isLoading
-              ? _buildLoadingIndicator()
-              : SingleChildScrollView(
-                  padding: EdgeInsets.symmetric(horizontal: 8),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 日记条目
-                      ..._diaryEntries.map((entry) => _buildDiaryItem(entry)),
-                      // 添加日记页按钮
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        child: Row(
-                          children: [
-                            Icon(Icons.add, size: 16, color: Theme.of(context).colorScheme.primary),
-                            SizedBox(width: 8),
-                            Text(
-                              '添加日记页',
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: Theme.of(context).colorScheme.primary,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 16),
-                      // 日程条目
-                      _buildScheduleSubSection('未完成', _scheduleManager.incompleteSchedules, _isIncompleteExpanded, () {
-                        setState(() {
-                          _isIncompleteExpanded = !_isIncompleteExpanded;
-                        });
-                      }),
-                      SizedBox(height: 16),
-                      _buildScheduleSubSection('已完成', _scheduleManager.completedSchedules, _isCompletedExpanded, () {
-                        setState(() {
-                          _isCompletedExpanded = !_isCompletedExpanded;
-                        });
-                      }),
-                    ],
-                  ),
-                ),
-        ),
-      ],
-    );
-  }
-
-  // 加载指示器
-  Widget _buildLoadingIndicator() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text(
-            '正在加载日程...',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            Text(
+              '开始时间：${_formatFullTime(schedule.startTime)}',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDiaryItem(Map<String, dynamic> entry) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      leading: Text(entry['icon'], style: TextStyle(fontSize: 16)),
-      title: Text(
-        entry['title'],
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-      onTap: () => _showDiaryDetail(entry),
-    );
-  }
-
-  Widget _buildScheduleSubSection(String title, List<ScheduleItem> schedules, bool isExpanded, VoidCallback onToggle) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        GestureDetector(
-          onTap: onToggle,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-            child: Row(
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(width: 4),
-                AnimatedRotation(
-                  turns: isExpanded ? 0.0 : 0.5,
-                  duration: Duration(milliseconds: 200),
-                  child: Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+            Text(
+              '结束时间：${_formatFullTime(schedule.endTime)}',
+              style: TextStyle(
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+              ),
             ),
-          ),
-        ),
-        if (isExpanded) ...[
-          if (schedules.isEmpty)
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 16),
-              child: Center(
-                child: Text(
-                  '暂无内容',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6),
-                  ),
+            if (schedule.reminderOption != ReminderOption.none) ...[
+              const SizedBox(height: 8),
+              Text(
+                '提醒：${schedule.reminderOption.label}',
+                style: TextStyle(
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
                 ),
               ),
-            )
-          else
-            ...schedules.map((schedule) => _buildScheduleItem(schedule)),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildScheduleItem(ScheduleItem schedule) {
-    return ListTile(
-      dense: true,
-      contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      leading: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 3,
-            height: 24,
-            decoration: BoxDecoration(
-              color: schedule.color,
-              borderRadius: BorderRadius.circular(1.5),
-            ),
-          ),
-          SizedBox(width: 8),
-          Icon(
-            Icons.access_time,
-            size: 16,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
-        ],
-      ),
-      title: Text(
-        schedule.title,
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: schedule.isCompleted 
-            ? Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.6)
-            : null,
-          decoration: schedule.isCompleted ? TextDecoration.lineThrough : null,
-        ),
-        overflow: TextOverflow.ellipsis,
-      ),
-      subtitle: Text(
-        schedule.timeText,
-        style: TextStyle(
-          fontSize: 11,
-          color: Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8),
-        ),
-      ),
-      onTap: () => _showScheduleDetail(schedule),
-    );
-  }
-
-  void _showDiaryDetail(Map<String, dynamic> entry) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(entry['title']),
-        content: Text('这是${entry['title']}的详细内容'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text('关闭'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showScheduleDetail(ScheduleItem schedule) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(schedule.title),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('时间: ${schedule.timeText}'),
-            SizedBox(height: 8),
-            Text('状态: ${schedule.statusText}'),
-            SizedBox(height: 8),
-            Text('分类: ${schedule.category}'),
+            ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('关闭'),
+            child: Text(
+              '关闭',
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatFullTime(DateTime dateTime) {
+    return '${dateTime.year}/${dateTime.month}/${dateTime.day} ${_formatTimeOfDay(dateTime)}';
   }
 } 

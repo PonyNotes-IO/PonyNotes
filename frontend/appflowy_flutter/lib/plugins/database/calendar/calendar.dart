@@ -714,6 +714,68 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   }
 }
 
+// 统一的日记和日程展示组件
+class CalendarContent extends StatelessWidget {
+  final List<String> diaryItems;
+  final DateTime selectedDate;
+  final String? viewId;
+
+  const CalendarContent({
+    Key? key,
+    required this.diaryItems,
+    required this.selectedDate,
+    this.viewId,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 动态日期标题 - 根据选中的日期显示
+          Text(
+            '${selectedDate.year}年${selectedDate.month}月${selectedDate.day}日',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          
+          // 日记内容
+          if (diaryItems.isNotEmpty) ...[
+            ...diaryItems.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Text(
+                '• $item',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            )),
+            const SizedBox(height: 16),
+          ],
+          
+          // 日程集成部分
+          if (viewId != null) ...[
+            Expanded(
+              child: ScheduleSidebar(
+                databaseViewId: viewId,
+              ),
+            ),
+          ] else ...[
+            Text(
+              '暂无日程数据',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class CalendarPluginConfig implements PluginConfig {
   @override
   bool get creatable => true;

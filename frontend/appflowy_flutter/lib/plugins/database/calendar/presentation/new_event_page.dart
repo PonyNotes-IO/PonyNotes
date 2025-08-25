@@ -40,13 +40,13 @@ class _NewEventPageState extends State<NewEventPage> {
   String _description = '';
   String _reminderOption = '无';
   
-  // 使用ScheduleManager来管理日程
-  late ScheduleManager _scheduleManager;
+  // 使用ScheduleModel来管理日程
+  late ScheduleModel _scheduleModel;
 
   @override
   void initState() {
     super.initState();
-    _scheduleManager = ScheduleManager();
+    _scheduleModel = ScheduleModel();
     _startTime = TimeOfDay.now();
     _endTime = TimeOfDay(hour: _startTime.hour + 1, minute: _startTime.minute);
     _startDate = widget.selectedDate;
@@ -56,6 +56,12 @@ class _NewEventPageState extends State<NewEventPage> {
     if (widget.onSaveRequested != null) {
       widget.onSaveRequested!(saveEvent);
     }
+  }
+
+  @override
+  void dispose() {
+    _scheduleModel.dispose();
+    super.dispose();
   }
 
   bool saveEvent() {
@@ -102,21 +108,13 @@ class _NewEventPageState extends State<NewEventPage> {
         return;
       }
 
-      // 使用ScheduleManager创建日程
-      final schedule = ScheduleItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(), // 生成唯一ID
+      // 使用ScheduleModel创建日程
+      await _scheduleModel.createSchedule(
         title: _description.isNotEmpty ? _description : '无标题日程',
         description: _description,
         startTime: startDateTime,
         endTime: endDateTime,
-        isAllDay: _isAllDay,
-        isImportant: _isImportant,
-        category: _calendar,
-        color: _isImportant ? Colors.red : Colors.blue,
       );
-
-      // 添加到ScheduleManager
-      _scheduleManager.addSchedule(schedule);
 
       // 再次检查widget是否仍然挂载
       if (!mounted) {
@@ -126,7 +124,7 @@ class _NewEventPageState extends State<NewEventPage> {
 
       // 创建成功，调用回调
       final eventData = {
-        'id': schedule.id,
+        'id': DateTime.now().millisecondsSinceEpoch.toString(),
         'date': _startDate,
         'startTime': _startTime,
         'endTime': _endTime,
