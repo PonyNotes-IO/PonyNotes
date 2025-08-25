@@ -65,64 +65,7 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '日程管理',
-                style: TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).textTheme.titleMedium?.color ?? Colors.black87,
-                  fontSize: 16,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Consumer<ScheduleModel>(
-                builder: (context, model, child) {
-                  final isIntegrated = model.currentViewId != null;
-                  return Text(
-                    isIntegrated ? '已集成 AppFlowy 数据库' : '本地数据模式',
-                    style: TextStyle(
-                      color: isIntegrated ? Colors.green : Colors.orange,
-                      fontSize: 12,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          Row(
-            children: [
-              Consumer<ScheduleModel>(
-                builder: (context, model, child) {
-                  return IconButton(
-                    icon: Icon(
-                      Icons.refresh,
-                      color: Theme.of(context).iconTheme.color,
-                    ),
-                    onPressed: model.isLoading ? null : () => model.refresh(),
-                    tooltip: '刷新数据',
-                  );
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.add,
-                  color: Theme.of(context).iconTheme.color,
-                ),
-                onPressed: () => _showCreateScheduleDialog(context),
-                tooltip: '创建新日程',
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink(); // 移除标题和按钮，返回空组件
   }
 
   Widget _buildScheduleList(BuildContext context, ScheduleModel model) {
@@ -163,29 +106,26 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 未完成日程区域
-          if (incompleteSchedules.isNotEmpty) ...[
-            _buildSectionHeader(context, '未完成', incompleteSchedules.length),
-            const SizedBox(height: 8),
-            ...incompleteSchedules.map((schedule) => 
-              _buildScheduleCard(context, schedule, model)),
-            const SizedBox(height: 16),
-          ],
-          
-          // 已完成日程区域
-          if (completedSchedules.isNotEmpty) ...[
-            _buildSectionHeader(context, '已完成', completedSchedules.length),
-            const SizedBox(height: 8),
-            ...completedSchedules.map((schedule) => 
-              _buildScheduleCard(context, schedule, model)),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 未完成日程区域
+        if (incompleteSchedules.isNotEmpty) ...[
+          _buildSectionHeader(context, '未完成', incompleteSchedules.length),
+          const SizedBox(height: 8),
+          ...incompleteSchedules.map((schedule) => 
+            _buildScheduleCard(context, schedule, model)),
+          const SizedBox(height: 16),
         ],
-      ),
+        
+        // 已完成日程区域
+        if (completedSchedules.isNotEmpty) ...[
+          _buildSectionHeader(context, '已完成', completedSchedules.length),
+          const SizedBox(height: 8),
+          ...completedSchedules.map((schedule) => 
+            _buildScheduleCard(context, schedule, model)),
+        ],
+      ],
     );
   }
 
@@ -196,10 +136,8 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
         children: [
           Text(
             '$title ($count)',
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).textTheme.titleSmall?.color ?? Colors.black87,
-              fontSize: 14,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
