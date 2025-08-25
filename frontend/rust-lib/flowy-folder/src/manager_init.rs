@@ -72,20 +72,30 @@ impl FolderManager {
         } else {
           // 3. If the folder doesn't exist and create_if_not_exist is false, try to fetch the folder data from cloud/
           // This will happen user can't fetch the folder data when the user sign in.
-          let doc_state = self
+          match self
             .cloud_service()?
             .get_folder_doc_state(workspace_id, uid, CollabType::Folder, workspace_id)
-            .await?;
-
-          self
-            .make_folder(
-              uid,
-              workspace_id,
-              collab_db.clone(),
-              Some(DataSource::DocStateV1(doc_state)),
-              folder_notifier.clone(),
-            )
-            .await?
+            .await
+          {
+            Ok(doc_state) => {
+              self
+                .make_folder(
+                  uid,
+                  workspace_id,
+                  collab_db.clone(),
+                  Some(DataSource::DocStateV1(doc_state)),
+                  folder_notifier.clone(),
+                )
+                .await?
+            },
+            Err(err) => {
+              event!(Level::WARN, "Failed to fetch folder data from cloud: {}, falling back to create default folder", err);
+              // If we can't fetch from cloud, create a default folder as fallback
+              self
+                .create_default_folder(uid, workspace_id, collab_db, folder_notifier)
+                .await?
+            }
+          }
         }
       },
       FolderInitDataSource::Cloud(doc_state) => {

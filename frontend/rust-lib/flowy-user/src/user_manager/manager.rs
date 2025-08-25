@@ -40,15 +40,15 @@ impl UserAuthResponse for PhoneAuthResponse {
   }
 
   fn user_token(&self) -> Option<String> {
-    // Format token as JSON to be compatible with AppFlowy's token format
-    let token_json = serde_json::json!({
-      "access_token": self.gotrue_response.access_token,
-      "token_type": self.gotrue_response.token_type,
-      "expires_in": self.gotrue_response.expires_in,
-      "expires_at": self.gotrue_response.expires_at,
-      "refresh_token": self.gotrue_response.refresh_token
-    });
-    Some(token_json.to_string())
+    // Return the complete GotrueTokenResponse serialized as JSON
+    // This includes the user field which is required by client-api
+    match serde_json::to_string(&self.gotrue_response) {
+      Ok(token_str) => Some(token_str),
+      Err(err) => {
+        tracing::error!("Failed to serialize GotrueTokenResponse: {}", err);
+        None
+      }
+    }
   }
 
   fn user_email(&self) -> Option<String> {
@@ -884,6 +884,17 @@ impl UserManager {
     let user_profile = UserProfile::from((&phone_auth_response, &AuthType::AppFlowyCloud));
     
     self.save_auth_data(&phone_auth_response, AuthType::AppFlowyCloud, &session).await?;
+    
+    // Set the token in cloud service to enable authenticated requests
+    if let Some(token) = phone_auth_response.user_token() {
+      if let Err(err) = cloud_service.set_token(&token) {
+        error!("Failed to set token in cloud service: {}", err);
+      } else {
+        info!("Successfully set token in cloud service after SMS login");
+      }
+    } else {
+      error!("No token available from phone auth response");
+    }
 
     let _ = self
       .initial_user_awareness(

@@ -14,8 +14,9 @@ use client_api::entity::workspace_dto::{
 };
 use client_api::entity::{
   AFWorkspace, AFWorkspaceInvitation, AFWorkspaceSettings, AFWorkspaceSettingsChange, AuthProvider,
-  CollabParams, CreateCollabParams, GotrueTokenResponse, QueryWorkspaceMember,
+  CollabParams, CreateCollabParams, GotrueTokenResponse, QueryWorkspaceMember, User, Factor, Identity,
 };
+
 use client_api::entity::{QueryCollab, QueryCollabParams};
 use client_api::{Client, ClientConfiguration};
 use collab_entity::{CollabObject, CollabType};
@@ -29,6 +30,7 @@ use crate::af_cloud::impls::user::util::encryption_type_from_profile;
 use crate::af_cloud::impls::util::check_request_workspace_id_is_match;
 use crate::af_cloud::{AFCloudClient, AFServer};
 use flowy_error::{ErrorCode, FlowyError, FlowyResult};
+
 use serde_json::json;
 use flowy_user_pub::cloud::{UserCloudService, UserCollabParams, UserUpdate, UserUpdateReceiver};
 use flowy_user_pub::entities::{
@@ -177,6 +179,8 @@ where
     // Create HTTP client with SSL certificate verification disabled for development
     let http_client = reqwest::Client::builder()
       .danger_accept_invalid_certs(true)
+      .timeout(std::time::Duration::from_secs(30))
+      .connect_timeout(std::time::Duration::from_secs(10))
       .build()
       .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
     
@@ -202,26 +206,35 @@ where
     phone: &str,
     code: &str,
   ) -> Result<GotrueTokenResponse, FlowyError> {
+    tracing::info!("=== Starting phone SMS sign-in process ===");
+    tracing::info!("Phone: '{}'", phone);
+    tracing::info!("Code: '{}'", code);
+    
     let try_get_client = self.server.try_get_client();
     let client = try_get_client?;
     
     // Use custom SMS login API instead of GoTrue
     let base_url = client.base_url();
     let api_url = format!("{}/api/sms/phone-login", base_url);
+    tracing::info!("Using API URL: '{}'", api_url);
     
     // Prepare request body for custom SMS login service
     let body = serde_json::json!({
       "phone": phone,
       "code": code
     });
+    tracing::info!("Request body: {:?}", body);
     
     // Create HTTP client with SSL certificate verification disabled for development
     let http_client = reqwest::Client::builder()
       .danger_accept_invalid_certs(true)
+      .timeout(std::time::Duration::from_secs(30))
+      .connect_timeout(std::time::Duration::from_secs(10))
       .build()
       .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
     
     // Make request to custom SMS login service
+    tracing::info!("Sending POST request to SMS login service...");
     let response = http_client
       .post(&api_url)
       .header("Content-Type", "application/json")
@@ -230,8 +243,12 @@ where
       .await
       .map_err(|e| FlowyError::internal().with_context(format!("Failed to send SMS verification request: {}", e)))?;
     
-    if !response.status().is_success() {
+    let status = response.status();
+    tracing::info!("Received response with status: {}", status);
+    
+    if !status.is_success() {
       let error_text = response.text().await.unwrap_or_default();
+      tracing::error!("SMS verification failed with status {}: {}", status, error_text);
       return Err(FlowyError::internal().with_context(format!("SMS verification failed: {}", error_text)));
     }
     
@@ -239,28 +256,184 @@ where
     let response_text = response.text().await
       .map_err(|e| FlowyError::internal().with_context(format!("Failed to read response: {}", e)))?;
     
+    tracing::info!("Raw response text: '{}'", response_text);
+    
     let response_json: serde_json::Value = serde_json::from_str(&response_text)
       .map_err(|e| FlowyError::internal().with_context(format!("Failed to parse response: {}", e)))?;
     
+    // Debug: Print the actual response
+    tracing::info!("Phone login response: {:?}", response_json);
+    
     // Extract token information from response
-    if let Some(access_token) = response_json.get("access_token").and_then(|v| v.as_str()) {
-      Ok(GotrueTokenResponse {
-        access_token: access_token.to_string(),
-        token_type: response_json.get("token_type").and_then(|v| v.as_str()).unwrap_or("bearer").to_string(),
-        expires_in: response_json.get("expires_in").and_then(|v| v.as_i64()).unwrap_or(3600),
-        expires_at: response_json.get("expires_at").and_then(|v| v.as_i64()).unwrap_or(0),
-        refresh_token: response_json.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("").to_string(),
-        provider_access_token: response_json.get("provider_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        provider_refresh_token: response_json.get("provider_refresh_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
-        user: response_json.get("user")
-          .and_then(|v| serde_json::from_value(v.clone()).ok())
-          .unwrap_or_else(|| {
-            // Create an empty User if parsing fails - this should not happen in normal flow
-            serde_json::from_str(r#"{"id":"","email":"","created_at":"","updated_at":""}"#)
-              .expect("Failed to create default User")
-          }),
-      })
+    // Check if response has a "data" field (our custom API format)
+    let token_data = if let Some(data) = response_json.get("data") {
+      tracing::info!("Found 'data' field in response, using it as token_data");
+      data
     } else {
+      tracing::info!("No 'data' field found, using entire response as token_data");
+      &response_json
+    };
+    
+    // Debug: Print token_data structure
+    tracing::info!("Token data structure: {:?}", token_data);
+    
+    // Debug: Check for specific fields
+    tracing::info!("Checking for access_token field...");
+    if let Some(access_token_value) = token_data.get("access_token") {
+      tracing::info!("Found access_token field: {:?}", access_token_value);
+      if let Some(access_token_str) = access_token_value.as_str() {
+        tracing::info!("access_token as string: '{}'", access_token_str);
+      } else {
+        tracing::warn!("access_token field exists but is not a string: {:?}", access_token_value);
+      }
+    } else {
+      tracing::warn!("No access_token field found in token_data");
+      tracing::info!("Available fields in token_data: {:?}", 
+        token_data.as_object().map(|obj| obj.keys().collect::<Vec<_>>()));
+    }
+    
+    if let Some(access_token) = token_data.get("access_token").and_then(|v| v.as_str()) {
+      tracing::info!("Successfully extracted access_token: '{}'", access_token);
+      
+      // Debug: Check for user_uuid field
+      tracing::info!("Checking for user_uuid field...");
+      if let Some(user_uuid_value) = token_data.get("user_uuid") {
+        tracing::info!("Found user_uuid field: {:?}", user_uuid_value);
+      } else {
+        tracing::warn!("No user_uuid field found in token_data");
+      }
+      
+      // Create a minimal user object from the response data
+      let user_uuid = token_data.get("user_uuid").and_then(|v| v.as_str()).unwrap_or("");
+      tracing::info!("Using user_uuid: '{}'", user_uuid);
+      let user_json = serde_json::json!({
+        "id": user_uuid,
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": format!("phone_{}@temp.local", phone),
+        "phone": phone,
+        "email_confirmed_at": null,
+        "invited_at": null,
+        "phone_confirmed_at": chrono::Utc::now().to_rfc3339(),
+        "confirmation_sent_at": null,
+        "confirmed_at": chrono::Utc::now().to_rfc3339(),
+        "recovery_sent_at": null,
+        "new_email": null,
+        "email_change_sent_at": null,
+        "new_phone": null,
+        "phone_change_sent_at": null,
+        "reauthentication_sent_at": null,
+        "last_sign_in_at": chrono::Utc::now().to_rfc3339(),
+        "app_metadata": {},
+        "user_metadata": {
+          "phone_number": phone
+        },
+        "factors": null,
+        "identities": null,
+        "created_at": chrono::Utc::now().to_rfc3339(),
+        "updated_at": chrono::Utc::now().to_rfc3339(),
+        "banned_until": null,
+        "deleted_at": null
+      });
+      
+      // Debug: Check for other token fields
+      let token_type = token_data.get("token_type").and_then(|v| v.as_str()).unwrap_or("bearer");
+      let expires_in = token_data.get("expires_in").and_then(|v| v.as_i64()).unwrap_or(86400);
+      let refresh_token = token_data.get("refresh_token").and_then(|v| v.as_str()).unwrap_or("");
+      
+      tracing::info!("Token fields extracted:");
+      tracing::info!("  - token_type: '{}'", token_type);
+      tracing::info!("  - expires_in: {}", expires_in);
+      tracing::info!("  - refresh_token: '{}'", refresh_token);
+      
+      if let Some(provider_token) = token_data.get("provider_token") {
+        tracing::info!("  - provider_token: {:?}", provider_token);
+      }
+      if let Some(provider_refresh_token) = token_data.get("provider_refresh_token") {
+        tracing::info!("  - provider_refresh_token: {:?}", provider_refresh_token);
+      }
+      
+      tracing::info!("Creating user object from phone login data: {:?}", user_json);
+      
+      // Attempt to create User from the received data
+      let user = match serde_json::from_value(user_json.clone()) {
+        Ok(user) => {
+          tracing::info!("Successfully created User object from phone login data");
+          user
+        },
+        Err(err) => {
+          tracing::error!("Failed to deserialize User from phone login data: {}", err);
+          tracing::error!("User JSON was: {:?}", user_json);
+          
+          // Try to extract the essential fields manually as fallback
+          let user_id = user_json.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+          let email = user_json.get("email").and_then(|v| v.as_str()).unwrap_or("").to_string();
+          let phone = user_json.get("phone").and_then(|v| v.as_str()).unwrap_or("").to_string();
+          let aud = user_json.get("aud").and_then(|v| v.as_str()).unwrap_or("authenticated").to_string();
+          let role = user_json.get("role").and_then(|v| v.as_str()).unwrap_or("authenticated").to_string();
+          let created_at = user_json.get("created_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+          let updated_at = user_json.get("updated_at").and_then(|v| v.as_str()).unwrap_or("").to_string();
+          
+          tracing::info!("Creating User manually with extracted fields:");
+          tracing::info!("  - id: '{}'", user_id);
+          tracing::info!("  - email: '{}'", email);
+          tracing::info!("  - phone: '{}'", phone);
+          
+          User {
+            id: user_id,
+            aud,
+            role,
+            email,
+            email_confirmed_at: user_json.get("email_confirmed_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            invited_at: user_json.get("invited_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            phone,
+            phone_confirmed_at: user_json.get("phone_confirmed_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            confirmation_sent_at: user_json.get("confirmation_sent_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            confirmed_at: user_json.get("confirmed_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            recovery_sent_at: user_json.get("recovery_sent_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            new_email: user_json.get("new_email").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            email_change_sent_at: user_json.get("email_change_sent_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            new_phone: user_json.get("new_phone").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            phone_change_sent_at: user_json.get("phone_change_sent_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            reauthentication_sent_at: user_json.get("reauthentication_sent_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            last_sign_in_at: user_json.get("last_sign_in_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            app_metadata: user_json.get("app_metadata").cloned().unwrap_or(serde_json::Value::Object(serde_json::Map::new())),
+            user_metadata: user_json.get("user_metadata").cloned().unwrap_or(serde_json::Value::Object(serde_json::Map::new())),
+            factors: None, // user_json.get("factors") might be null, so we set to None
+            identities: None, // user_json.get("identities") might be null, so we set to None
+            created_at,
+            updated_at,
+            banned_until: user_json.get("banned_until").and_then(|v| v.as_str()).map(|s| s.to_string()),
+            deleted_at: user_json.get("deleted_at").and_then(|v| v.as_str()).map(|s| s.to_string()),
+          }
+        }
+      };
+      
+      let final_response = GotrueTokenResponse {
+        access_token: access_token.to_string(),
+        token_type: token_type.to_string(),
+        expires_in,
+        expires_at: chrono::Utc::now().timestamp() + expires_in,
+        refresh_token: refresh_token.to_string(),
+        provider_access_token: token_data.get("provider_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        provider_refresh_token: token_data.get("provider_refresh_token").and_then(|v| v.as_str()).map(|s| s.to_string()),
+        user,
+      };
+      
+      tracing::info!("Final GotrueTokenResponse created successfully:");
+      tracing::info!("  - access_token: '{}'", final_response.access_token);
+      tracing::info!("  - token_type: '{}'", final_response.token_type);
+      tracing::info!("  - expires_in: {}", final_response.expires_in);
+      tracing::info!("  - expires_at: {}", final_response.expires_at);
+      tracing::info!("  - refresh_token: '{}'", final_response.refresh_token);
+      tracing::info!("  - user.id: '{}'", final_response.user.id);
+      tracing::info!("  - user.email: {:?}", final_response.user.email);
+      
+      Ok(final_response)
+    } else {
+      tracing::error!("Failed to extract access_token from response");
+      tracing::error!("Full response was: {:?}", response_json);
+      tracing::error!("Token data was: {:?}", token_data);
       Err(FlowyError::internal().with_context("No access token in response"))
     }
   }
@@ -718,6 +891,8 @@ where
     // Create HTTP client with SSL certificate verification disabled for development
     let http_client = reqwest::Client::builder()
       .danger_accept_invalid_certs(true)
+      .timeout(std::time::Duration::from_secs(30))
+      .connect_timeout(std::time::Duration::from_secs(10))
       .build()
       .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
     
