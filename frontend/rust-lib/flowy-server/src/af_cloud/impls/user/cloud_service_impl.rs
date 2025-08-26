@@ -142,10 +142,42 @@ where
     let redirect_to = redirect_to.to_owned();
     let try_get_client = self.server.try_get_client();
     let client = try_get_client?;
-    client
-      .sign_in_with_magic_link(&email, Some(redirect_to))
-      .await?;
-    Ok(())
+    
+    // Send magic link request directly to custom API instead of using client-api
+    let base_url = client.base_url();
+    let api_url = format!("{}/magiclink", base_url);
+    
+    // Prepare request body
+    let body = json!({
+      "email": email,
+      "options": {
+        "redirect_to": redirect_to
+      }
+    });
+    
+    // Create HTTP client with SSL certificate verification disabled for development
+    let http_client = reqwest::Client::builder()
+      .danger_accept_invalid_certs(true)
+      .timeout(std::time::Duration::from_secs(30))
+      .connect_timeout(std::time::Duration::from_secs(10))
+      .build()
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to create HTTP client: {}", e)))?;
+    
+    // Send magic link request to custom API
+    let response = http_client
+      .post(&api_url)
+      .header("Content-Type", "application/json")
+      .json(&body)
+      .send()
+      .await
+      .map_err(|e| FlowyError::internal().with_context(format!("Failed to send magic link request: {}", e)))?;
+    
+    if response.status().is_success() {
+      Ok(())
+    } else {
+      let error_text = response.text().await.unwrap_or_else(|_| "Unknown error".to_string());
+      Err(FlowyError::internal().with_context(format!("Magic link request failed: {}", error_text)))
+    }
   }
 
   async fn sign_in_with_passcode(
@@ -326,7 +358,8 @@ where
         "last_sign_in_at": chrono::Utc::now().to_rfc3339(),
         "app_metadata": {},
         "user_metadata": {
-          "phone_number": phone
+          "phone_number": phone,
+          "latest_workspace_id": token_data.get("latest_workspace_id").and_then(|v| v.as_str()).unwrap_or("")
         },
         "factors": null,
         "identities": null,
@@ -408,6 +441,10 @@ where
           }
         }
       };
+      
+      // Check for latest_workspace_id in the response
+      let latest_workspace_id = token_data.get("latest_workspace_id").and_then(|v| v.as_str()).map(|s| s.to_string());
+      tracing::info!("Latest workspace ID from response: {:?}", latest_workspace_id);
       
       let final_response = GotrueTokenResponse {
         access_token: access_token.to_string(),
