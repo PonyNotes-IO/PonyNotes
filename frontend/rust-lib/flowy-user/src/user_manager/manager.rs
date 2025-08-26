@@ -879,13 +879,15 @@ impl UserManager {
     let session = Session::from(&phone_auth_response);
     self.prepare_user(&session).await;
 
-    // Get actual workspace information from server instead of using random workspace ID
-    let workspace_profile = cloud_service
+    // Get user workspaces from server
+    let user_workspaces = cloud_service
       .get_user_service()?
-      .get_user_workspace_info()
+      .get_all_workspace(session.user_id)
       .await?;
     
-    let latest_workspace = to_user_workspace(workspace_profile.visiting_workspace);
+    let latest_workspace = user_workspaces.first()
+      .ok_or_else(|| FlowyError::internal().with_context("No workspace found for user"))?
+      .clone();
     let workspace_id = uuid::Uuid::parse_str(&latest_workspace.id)?;
     let user_profile = UserProfile::from((&phone_auth_response, &AuthType::AppFlowyCloud));
     
