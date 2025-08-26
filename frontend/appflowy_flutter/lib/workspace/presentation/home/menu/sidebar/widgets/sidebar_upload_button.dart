@@ -1,4 +1,7 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/startup/plugin/plugin.dart';
+import 'package:appflowy/startup/startup.dart';
+import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 
@@ -19,10 +22,35 @@ class _SidebarUploadButtonState extends State<SidebarUploadButton> {
   Widget build(BuildContext context) {
     return _buildUploadIcon(
       context,
-      () {
-        // TODO: 实现上传功能
-        debugPrint('上传按钮被点击');
-      },
+      () => _openImportPage(context),
+    );
+  }
+
+  void _openImportPage(BuildContext context) {
+    try {
+      // 创建导入页面插件
+      final importPagePlugin = makePlugin(
+        pluginType: PluginType.importPage,
+        data: null,
+      );
+
+      // 在新标签页中打开导入页面
+      getIt<TabsBloc>().add(
+        TabsEvent.openPlugin(
+          plugin: importPagePlugin,
+        ),
+      );
+    } catch (e) {
+      _showMessage(context, '打开导入页面时发生错误: $e');
+    }
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
+      ),
     );
   }
 

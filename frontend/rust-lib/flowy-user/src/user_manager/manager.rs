@@ -5,6 +5,8 @@ struct PhoneAuthResponse {
   gotrue_response: GotrueTokenResponse,
   phone_number: String,
   metadata_with_phone: Option<serde_json::Value>,
+  latest_workspace_id: Option<String>,
+  cached_workspace: std::sync::OnceLock<UserWorkspace>,
 }
 
 impl UserAuthResponse for PhoneAuthResponse {
@@ -27,10 +29,12 @@ impl UserAuthResponse for PhoneAuthResponse {
   }
 
   fn latest_workspace(&self) -> &UserWorkspace {
-    // Create a default workspace - this will be overridden by cloud service
-    static DEFAULT_WORKSPACE: std::sync::OnceLock<UserWorkspace> = std::sync::OnceLock::new();
-    DEFAULT_WORKSPACE.get_or_init(|| {
-      UserWorkspace::new_local(uuid::Uuid::new_v4().to_string(), "My Workspace")
+    // Create a workspace using the latest_workspace_id from backend response
+    self.cached_workspace.get_or_init(|| {
+      let workspace_id = self.latest_workspace_id.clone()
+        .filter(|id| !id.is_empty() && uuid::Uuid::parse_str(id).is_ok())
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+      UserWorkspace::new_local(workspace_id, "My Workspace")
     })
   }
 
@@ -869,32 +873,48 @@ impl UserManager {
       });
     }
 
+    // Extract latest_workspace_id from user_metadata if available
+    let latest_workspace_id = gotrue_response.user.user_metadata
+      .get("latest_workspace_id")
+      .and_then(|v| v.as_str())
+      .map(|s| s.to_string());
+
     // Create a custom AuthResponse that includes phone number information
     let phone_auth_response = PhoneAuthResponse {
       gotrue_response,
       phone_number: phone.to_string(),
       metadata_with_phone: Some(metadata),
+      latest_workspace_id,
+      cached_workspace: std::sync::OnceLock::new(),
     };
 
     let session = Session::from(&phone_auth_response);
     self.prepare_user(&session).await;
 
-    let latest_workspace = phone_auth_response.latest_workspace().clone();
-    let workspace_id = uuid::Uuid::parse_str(&latest_workspace.id)?;
-    let user_profile = UserProfile::from((&phone_auth_response, &AuthType::AppFlowyCloud));
-    
-    self.save_auth_data(&phone_auth_response, AuthType::AppFlowyCloud, &session).await?;
-    
-    // Set the token in cloud service to enable authenticated requests
+    // Set the token in cloud service BEFORE making authenticated requests
     if let Some(token) = phone_auth_response.user_token() {
       if let Err(err) = cloud_service.set_token(&token) {
         error!("Failed to set token in cloud service: {}", err);
+        return Err(FlowyError::unauthorized().with_context("Failed to set authentication token"));
       } else {
         info!("Successfully set token in cloud service after SMS login");
       }
     } else {
       error!("No token available from phone auth response");
+      return Err(FlowyError::unauthorized().with_context("No authentication token available"));
     }
+
+    // Use the latest_workspace from the phone auth response instead of making API call
+    // This avoids the network error when fetching workspaces
+    let latest_workspace = phone_auth_response.latest_workspace().clone();
+    let workspace_id = uuid::Uuid::parse_str(&latest_workspace.id)
+      .map_err(|e| {
+        error!("Failed to parse workspace ID '{}': {}", latest_workspace.id, e);
+        FlowyError::internal().with_context(format!("Invalid workspace ID: {}", latest_workspace.id))
+      })?;
+    let user_profile = UserProfile::from((&phone_auth_response, &AuthType::AppFlowyCloud));
+    
+    self.save_auth_data(&phone_auth_response, AuthType::AppFlowyCloud, &session).await?;
 
     let _ = self
       .initial_user_awareness(

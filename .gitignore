@@ -52,3 +52,4 @@ frontend/appflowy_flutter/appflowy-editor/
 
 # ignore PonyNotes-Cloud independent project
 frontend/PonyNotes-Cloud/
+frontend/Makefile_commented.toml
