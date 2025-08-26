@@ -16,6 +16,7 @@ import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_integration_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_import_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -56,6 +57,9 @@ class SidebarFolder extends StatelessWidget {
             // integration button
             const VSpace(4.0),
             const SidebarIntegrationButton(),
+            // import button
+            const VSpace(4.0),
+            const SidebarImportButton(),
             // favorite
             const VSpace(4.0),
             BlocBuilder<FavoriteBloc, FavoriteState>(

@@ -11,6 +11,7 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/plugins/blank/blank.dart';
 import 'package:appflowy/plugins/document/document.dart';
 import 'package:appflowy/plugins/trash/trash.dart';
+import 'package:appflowy/plugins/import_page/import_page_plugin.dart';
 
 class PluginLoadTask extends LaunchTask {
   const PluginLoadTask();
@@ -54,6 +55,9 @@ class PluginLoadTask extends LaunchTask {
     registerPlugin(
       builder: NewEventPluginBuilder(),
       config: NewEventPluginConfig(),
+    );
+    registerPlugin(
+      builder: ImportPagePluginBuilder(),
     );
   }
 }
