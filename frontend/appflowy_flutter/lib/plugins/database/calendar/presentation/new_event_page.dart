@@ -47,6 +47,10 @@ class _NewEventPageState extends State<NewEventPage> {
   void initState() {
     super.initState();
     _scheduleModel = ScheduleModel();
+    
+    // 初始化日历视图
+    _initializeCalendarView();
+    
     _startTime = TimeOfDay.now();
     _endTime = TimeOfDay(hour: _startTime.hour + 1, minute: _startTime.minute);
     _startDate = widget.selectedDate;
@@ -55,6 +59,40 @@ class _NewEventPageState extends State<NewEventPage> {
     // 设置保存回调
     if (widget.onSaveRequested != null) {
       widget.onSaveRequested!(saveEvent);
+    }
+  }
+
+  // 初始化日历视图
+  Future<void> _initializeCalendarView() async {
+    print('NewEventPage: 开始初始化日历视图');
+    try {
+      final success = await _scheduleModel.initializeCalendarView();
+      if (success) {
+        print('NewEventPage: 日历视图初始化成功，viewId: ${_scheduleModel.currentViewId}');
+      } else {
+        print('NewEventPage: 日历视图初始化失败');
+        // 在界面上显示警告，但不阻止用户继续操作
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('⚠️ 数据库连接失败，日程将无法保存'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('NewEventPage: 初始化日历视图时发生异常: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('⚠️ 初始化失败: ${e.toString()}'),
+            backgroundColor: Colors.orange,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
     }
   }
 
@@ -84,6 +122,8 @@ class _NewEventPageState extends State<NewEventPage> {
   }
 
   Future<void> _saveEventAsync() async {
+    print('开始保存日程...');
+    
     try {
       // 构建开始和结束时间
       final startDateTime = DateTime(
@@ -102,19 +142,38 @@ class _NewEventPageState extends State<NewEventPage> {
         _endTime.minute,
       );
 
+      print('日程信息: 标题=${_description}, 开始时间=$startDateTime, 结束时间=$endDateTime');
+
       // 检查widget是否仍然挂载
       if (!mounted) {
         print('Widget已卸载，取消保存操作');
         return;
       }
 
+      // 检查ScheduleModel的状态
+      print('当前ScheduleModel状态: viewId=${_scheduleModel.currentViewId}');
+      
+      if (_scheduleModel.currentViewId == null) {
+        print('警告: ScheduleModel 没有设置 viewId，尝试初始化日历视图');
+        
+        // 尝试初始化日历视图
+        final initialized = await _scheduleModel.initializeCalendarView();
+        if (!initialized) {
+          throw Exception('无法初始化日历视图，请检查 AppFlowy 数据库连接');
+        }
+        print('日历视图初始化成功，viewId: ${_scheduleModel.currentViewId}');
+      }
+
       // 使用ScheduleModel创建日程
-      await _scheduleModel.createSchedule(
+      print('调用 createSchedule 方法...');
+      final resultId = await _scheduleModel.createSchedule(
         title: _description.isNotEmpty ? _description : '无标题日程',
         description: _description,
         startTime: startDateTime,
         endTime: endDateTime,
       );
+
+      print('createSchedule 结果: $resultId');
 
       // 再次检查widget是否仍然挂载
       if (!mounted) {
@@ -122,39 +181,143 @@ class _NewEventPageState extends State<NewEventPage> {
         return;
       }
 
-      // 创建成功，调用回调
-      final eventData = {
-        'id': DateTime.now().millisecondsSinceEpoch.toString(),
-        'date': _startDate,
-        'startTime': _startTime,
-        'endTime': _endTime,
-        'startDate': _startDate,
-        'endDate': _endDate,
-        'isAllDay': _isAllDay,
-        'isImportant': _isImportant,
-        'isRepeat': _isRepeat,
-        'calendar': _calendar,
-        'description': _description,
-      };
+      // 创建成功
+      if (resultId != null) {
+        print('日程创建成功，ID: $resultId');
+        
+        // 创建成功，调用回调
+        final eventData = {
+          'id': resultId,
+          'date': _startDate,
+          'startTime': _startTime,
+          'endTime': _endTime,
+          'startDate': _startDate,
+          'endDate': _endDate,
+          'isAllDay': _isAllDay,
+          'isImportant': _isImportant,
+          'isRepeat': _isRepeat,
+          'calendar': _calendar,
+          'description': _description,
+        };
 
-      widget.onEventCreated(eventData);
-      
-      // 显示成功消息
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('日程创建成功'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        widget.onEventCreated(eventData);
+        
+        // 显示成功消息
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ 日程创建成功！'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        throw Exception('创建日程失败：返回的ID为空');
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       // 异常处理
+      print('创建日程时发生异常: $e');
+      print('堆栈跟踪: $stackTrace');
+      
       if (mounted) {
+        String errorMessage = '创建日程失败';
+        String detailedError = e.toString();
+        
+        // 根据不同类型的错误提供不同的提示
+        if (e.toString().contains('数据库未连接')) {
+          errorMessage = '数据库连接失败';
+          detailedError = '请确保 AppFlowy 数据库正在运行';
+        } else if (e.toString().contains('初始化')) {
+          errorMessage = '日历视图初始化失败';
+          detailedError = '请检查数据库连接和权限设置';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('创建日程时发生错误: $e'),
+            content: Text('❌ $errorMessage'),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
+            action: SnackBarAction(
+              label: '详情',
+              textColor: Colors.white,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: Row(
+                      children: [
+                        Icon(Icons.error, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('错误详情'),
+                      ],
+                    ),
+                    content: SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            detailedError,
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            '故障排除建议:',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            '1. 检查 AppFlowy 应用是否正在运行\n'
+                            '2. 确认数据库服务状态正常\n'
+                            '3. 检查网络连接\n'
+                            '4. 重启应用程序\n'
+                            '5. 查看控制台日志了解详细信息',
+                            style: TextStyle(fontSize: 12),
+                          ),
+                          if (detailedError.length > 100) ...[
+                            SizedBox(height: 16),
+                            Text(
+                              '完整错误信息:',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 4),
+                            Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                e.toString(),
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: Text('关闭'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          // 可以在这里添加重试逻辑
+                          _saveEventAsync();
+                        },
+                        child: Text('重试'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         );
       }

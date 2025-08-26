@@ -10,6 +10,7 @@ import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/date
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
+import 'package:flowy_infra/uuid.dart';
 import 'presentation/new_event_page.dart';
 import 'widgets/schedule_sidebar.dart';
 
@@ -161,40 +162,60 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   // 初始化日历视图
   Future<void> _initializeCalendarView() async {
     try {
-      // 尝试创建一个新的日历视图
-      final result = await ViewBackendService.createView(
-        parentViewId: 'workspace', // 使用工作区作为父视图
-        name: '日历视图',
-        layoutType: ViewLayoutPB.Calendar,
-      );
+      // 使用与ScheduleModel相同的固定ViewId
+      final String fixedViewId = fixedUuid(12345, UuidType.privateSpace); // 使用与ScheduleModel相同的固定ID
       
-      result.fold(
-        (view) {
+      // 先检查视图是否已存在
+      final result = await ViewBackendService.getView(fixedViewId);
+      
+      await result.fold(
+        (view) async {
+          // 视图已存在，直接使用
           setState(() {
             _currentViewId = view.id;
           });
-          print('成功创建日历视图: ${view.id}');
-          
-          // 创建成功后，等待一下让数据库初始化完成，然后刷新数据
-          Future.delayed(Duration(milliseconds: 500), () {
-            if (mounted) {
-              setState(() {}); // 触发重建以加载真实数据
-            }
-          });
+          print('日历视图已存在: ${view.id}');
         },
-        (error) {
-          print('创建日历视图失败: ${error.msg}');
-          // 如果创建失败，尝试使用默认ID
-          setState(() {
-            _currentViewId = 'default_calendar_view';
-          });
+        (error) async {
+          // 视图不存在，创建新视图
+          print('视图不存在，开始创建新的日历视图...');
+          
+          final createResult = await ViewBackendService.createOrphanView(
+            viewId: fixedViewId,
+            name: '日历视图',
+            layoutType: ViewLayoutPB.Calendar,
+          );
+          
+          createResult.fold(
+            (view) {
+              setState(() {
+                _currentViewId = view.id;
+              });
+              print('成功创建日历视图: ${view.id}');
+            },
+            (createError) {
+              print('创建日历视图失败: $createError');
+              // 如果创建失败，使用固定ID作为后备
+              setState(() {
+                _currentViewId = fixedViewId;
+              });
+            },
+          );
         },
       );
+      
+      // 初始化完成后，等待一下让数据库初始化完成，然后刷新数据
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (mounted) {
+          setState(() {}); // 触发重建以加载真实数据
+        }
+      });
+      
     } catch (e) {
       print('初始化日历视图时发生错误: $e');
-      // 使用默认ID作为后备
+      // 使用固定ID作为后备
       setState(() {
-        _currentViewId = 'default_calendar_view';
+        _currentViewId = fixedUuid(12345, UuidType.privateSpace);
       });
     }
   }
@@ -729,7 +750,7 @@ class CalendarContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,10 +778,8 @@ class CalendarContent extends StatelessWidget {
           
           // 日程集成部分
           if (viewId != null) ...[
-            Expanded(
-              child: ScheduleSidebar(
-                databaseViewId: viewId,
-              ),
+            ScheduleSidebarContent(
+              databaseViewId: viewId,
             ),
           ] else ...[
             Text(
