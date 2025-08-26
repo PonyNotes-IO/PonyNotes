@@ -31,6 +31,7 @@ class ScheduleItem {
   final Color color;
   final String? reminderId; // AppFlowy 提醒ID
   final ReminderOption reminderOption; // 提醒选项
+  final DateTime? dueDate; // 截止日期
 
   ScheduleItem({
     required this.id,
@@ -44,6 +45,7 @@ class ScheduleItem {
     this.color = Colors.blue,
     this.reminderId,
     this.reminderOption = ReminderOption.none,
+    this.dueDate,
   });
 
   // 根据当前时间自动判断是否完成
@@ -73,6 +75,7 @@ class ScheduleItem {
       isImportant: false,
       category: '数据库',
       color: Colors.blue,
+      dueDate: endTime, // 使用结束时间作为截止日期
     );
   }
 
@@ -87,6 +90,7 @@ class ScheduleItem {
     Color? color,
     String? reminderId,
     ReminderOption? reminderOption,
+    DateTime? dueDate,
   }) {
     return ScheduleItem(
       id: id,
@@ -100,6 +104,7 @@ class ScheduleItem {
       color: color ?? this.color,
       reminderId: reminderId ?? this.reminderId,
       reminderOption: reminderOption ?? this.reminderOption,
+      dueDate: dueDate ?? this.dueDate,
     );
   }
 }
@@ -199,6 +204,7 @@ class ScheduleModel extends ChangeNotifier {
         startTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 2, 0),
         endTime: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 3, 0),
         color: Colors.blue,
+        dueDate: DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 3, 0),
       ),
       ScheduleItem(
         id: 'sample_2',
@@ -207,6 +213,7 @@ class ScheduleModel extends ChangeNotifier {
         startTime: DateTime(yesterday.year, yesterday.month, yesterday.day, 2, 0),
         endTime: DateTime(yesterday.year, yesterday.month, yesterday.day, 3, 0),
         color: Colors.green,
+        dueDate: DateTime(yesterday.year, yesterday.month, yesterday.day, 3, 0),
       ),
     ]);
   }
@@ -272,6 +279,7 @@ class ScheduleModel extends ChangeNotifier {
     String category = '默认',
     Color color = Colors.blue,
     ReminderOption reminderOption = ReminderOption.none,
+    DateTime? dueDate,
   }) async {
     print('ScheduleModel.createSchedule 开始执行');
     print('参数: title=$title, description=$description, startTime=$startTime, endTime=$endTime');
@@ -357,6 +365,7 @@ class ScheduleModel extends ChangeNotifier {
             category: category,
             color: color,
             reminderOption: reminderOption,
+            dueDate: dueDate ?? endTime, // 如果没有指定截止日期，使用结束时间
           );
           
           // 添加到本地列表
