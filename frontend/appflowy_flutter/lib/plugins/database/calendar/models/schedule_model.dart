@@ -57,13 +57,26 @@ class ScheduleItem {
   // 从CalendarEventPB创建ScheduleItem
   factory ScheduleItem.fromCalendarEventPB(CalendarEventPB eventPB) {
     final timestamp = eventPB.timestamp;
-    final date = timestamp != null 
-        ? DateTime.fromMillisecondsSinceEpoch(timestamp.toInt() * 1000)
-        : DateTime.now();
+    final endTimestamp = eventPB.endTimestamp;
     
-    // 默认设置为1小时的事件
-    final startTime = date;
-    final endTime = date.add(Duration(hours: 1));
+    DateTime startTime;
+    DateTime endTime;
+    
+    if (timestamp != null) {
+      startTime = DateTime.fromMillisecondsSinceEpoch(timestamp.toInt() * 1000);
+      
+      if (endTimestamp != null) {
+        // 如果有结束时间戳，使用它
+        endTime = DateTime.fromMillisecondsSinceEpoch(endTimestamp.toInt() * 1000);
+      } else {
+        // 如果没有结束时间戳，默认设置为开始时间后1小时
+        endTime = startTime.add(Duration(hours: 1));
+      }
+    } else {
+      // 如果没有开始时间戳，使用当前时间
+      startTime = DateTime.now();
+      endTime = startTime.add(Duration(hours: 1));
+    }
     
     return ScheduleItem(
       id: eventPB.rowMeta.id,
@@ -112,6 +125,7 @@ class ScheduleItem {
 // 日程管理模型 - 基于 AppFlowy 数据库
 class ScheduleModel extends ChangeNotifier {
   final List<ScheduleItem> _schedules = [];
+  String? _selectedScheduleId; // 当前选中的日程ID
   bool _isLoading = false;
   bool _isDisposed = false; // 跟踪对象是否已被销毁
   String? _currentViewId; // 当前使用的视图ID
@@ -120,6 +134,22 @@ class ScheduleModel extends ChangeNotifier {
   
   List<ScheduleItem> get schedules => List.unmodifiable(_schedules);
   bool get isLoading => _isLoading;
+  
+  // 获取当前选中的日程ID
+  String? get selectedScheduleId => _selectedScheduleId;
+  
+  // 检查指定日程是否被选中
+  bool isScheduleSelected(String scheduleId) => _selectedScheduleId == scheduleId;
+  
+  // 设置选中的日程
+  void selectSchedule(String? scheduleId) {
+    if (_selectedScheduleId != scheduleId) {
+      _selectedScheduleId = scheduleId;
+      if (!_isDisposed) {
+        notifyListeners();
+      }
+    }
+  }
   
   // 获取当前视图ID
   String? get currentViewId => _currentViewId;
@@ -292,7 +322,12 @@ class ScheduleModel extends ChangeNotifier {
       // 确保数据库控制器已初始化
       if (_databaseController == null) {
         print('⚠️ 数据库控制器未初始化，尝试初始化...');
-        await _initializeDatabaseListener(viewId);
+        try {
+          await _initializeDatabaseListener(viewId);
+        } catch (e) {
+          print('❌ 数据库监听器初始化失败: $e');
+          throw Exception('数据库监听器初始化失败: $e');
+        }
         
         if (_databaseController == null) {
           print('❌ 数据库控制器初始化失败');
@@ -306,7 +341,18 @@ class ScheduleModel extends ChangeNotifier {
       final databaseController = _databaseController!;
       print('✅ 数据库控制器已准备就绪');
       
-      final fieldInfos = databaseController.fieldController.fieldInfos;
+      final fieldController = databaseController.fieldController;
+      if (fieldController == null) {
+        print('❌ 字段控制器为空');
+        throw Exception('字段控制器未初始化');
+      }
+      
+      final fieldInfos = fieldController.fieldInfos;
+      if (fieldInfos.isEmpty) {
+        print('⚠️ 没有可用的字段');
+        throw Exception('数据库中没有可用的字段');
+      }
+      
       print('可用字段数量: ${fieldInfos.length}');
       for (var field in fieldInfos) {
         print('字段: ${field.name} (${field.fieldType}) - Primary: ${field.isPrimary}');
@@ -324,23 +370,70 @@ class ScheduleModel extends ChangeNotifier {
             orElse: () => fieldInfos.first,
           );
           
+          if (primaryField == null) {
+            print('❌ 无法找到主字段');
+            throw Exception('无法找到主字段');
+          }
+          
           // 设置标题
           if (primaryField.fieldType == FieldType.RichText) {
             builder.insertText(primaryField, title);
             print('设置标题字段: ${primaryField.name} = $title');
+          } else {
+            print('⚠️ 主字段不是文本类型，尝试设置到第一个文本字段');
+            // 尝试找到第一个文本字段
+            final textField = fieldInfos.firstWhere(
+              (field) => field.fieldType == FieldType.RichText,
+              orElse: () => primaryField,
+            );
+            builder.insertText(textField, title);
+            print('设置标题到字段: ${textField.name} = $title');
           }
           
-          // 查找日期字段
-          final dateFields = fieldInfos.where((field) => 
-            field.fieldType == FieldType.DateTime ||
-            field.fieldType == FieldType.CreatedTime ||
-            field.fieldType == FieldType.LastEditedTime
-          ).toList();
-          
-          if (dateFields.isNotEmpty) {
-            final dateField = dateFields.first;
-            // TODO: 这里需要根据实际的日期字段格式来设置
-            print('找到日期字段: ${dateField.name}');
+          // 查找并设置日期时间字段
+          for (var field in fieldInfos) {
+            print('处理字段: ${field.name} (${field.fieldType})');
+            
+            if (field.fieldType == FieldType.DateTime) {
+              // 根据字段名称判断是开始时间还是结束时间
+              final fieldName = field.name.toLowerCase();
+              if (fieldName.contains('start') || fieldName.contains('开始') || fieldName.contains('begin')) {
+                // 开始时间字段
+                builder.insertDate(field, startTime);
+                print('设置开始时间字段: ${field.name} = $startTime');
+              } else if (fieldName.contains('end') || fieldName.contains('结束') || fieldName.contains('finish')) {
+                // 结束时间字段
+                builder.insertDate(field, endTime);
+                print('设置结束时间字段: ${field.name} = $title');
+              } else {
+                // 其他日期时间字段（如 Date 字段）
+                // 对于单个日期时间字段，我们先设置开始时间
+                // 然后在创建行成功后，使用 DateCellBackendService 设置结束时间
+                builder.insertDate(field, startTime);
+                print('设置日期时间字段: ${field.name} = $startTime (开始时间)');
+              }
+            } else if (field.fieldType == FieldType.RichText && field.name.toLowerCase().contains('description')) {
+              // 描述字段
+              builder.insertText(field, description);
+              print('设置描述字段: ${field.name} = $description');
+            } else if (field.fieldType == FieldType.Checkbox) {
+              // 复选框字段 - 暂时跳过，因为 RowDataBuilder 不支持直接设置复选框值
+              if (field.name.toLowerCase().contains('all') || field.name.toLowerCase().contains('全天')) {
+                print('⚠️ 跳过 Checkbox 字段: ${field.name}，RowDataBuilder 不支持直接设置复选框值');
+              } else if (field.name.toLowerCase().contains('important') || field.name.toLowerCase().contains('重要')) {
+                print('⚠️ 跳过 Checkbox 字段: ${field.name}，RowDataBuilder 不支持直接设置复选框值');
+              }
+            } else if (field.fieldType == FieldType.SingleSelect) {
+              // 单选字段 - 暂时跳过，因为 RowDataBuilder 不支持直接设置选项
+              if (field.name.toLowerCase().contains('category') || field.name.toLowerCase().contains('分类')) {
+                print('⚠️ 跳过 SingleSelect 字段: ${field.name}，RowDataBuilder 不支持直接设置选项');
+              }
+            } else if (field.fieldType == FieldType.MultiSelect) {
+              // 多选字段 - 暂时跳过，因为 RowDataBuilder 不支持直接设置选项
+              if (field.name.toLowerCase().contains('tag') || field.name.toLowerCase().contains('标签')) {
+                print('⚠️ 跳过 MultiSelect 字段: ${field.name}，RowDataBuilder 不支持直接设置选项');
+              }
+            }
           }
           
           print('单元格数据构建完成');
@@ -352,6 +445,37 @@ class ScheduleModel extends ChangeNotifier {
       return result.fold(
         (rowMeta) async {
           print('数据库行创建成功，行ID: ${rowMeta.id}');
+          
+          // 现在需要设置结束时间到日期字段
+          // 查找日期时间字段
+          final dateField = fieldInfos.where(
+            (field) => field.fieldType == FieldType.DateTime,
+          ).firstOrNull;
+          
+          if (dateField != null) {
+            try {
+              print('设置结束时间到日期字段: ${dateField.name}');
+              // 使用 DateCellBackendService 设置结束时间
+              final dateService = DateCellBackendService(
+                viewId: viewId,
+                fieldId: dateField.field.id,
+                rowId: rowMeta.id,
+              );
+              
+              final updateResult = await dateService.update(
+                date: startTime,
+                endDate: endTime,
+                isRange: true, // 设置为时间范围
+              );
+              
+              updateResult.fold(
+                (_) => print('✅ 结束时间设置成功'),
+                (error) => print('⚠️ 设置结束时间失败: $error'),
+              );
+            } catch (e) {
+              print('⚠️ 设置结束时间时发生错误: $e');
+            }
+          }
           
           // 创建对应的本地 ScheduleItem
           final newSchedule = ScheduleItem(
@@ -440,18 +564,29 @@ class ScheduleModel extends ChangeNotifier {
   // 删除日程
   Future<bool> deleteSchedule(String scheduleId) async {
     try {
+      print('开始删除日程: $scheduleId');
+      
       // 使用当前视图ID，如果没有设置则使用默认的新建日程视图ID
       final viewId = _currentViewId ?? _newScheduleViewId;
+      
+      // 先查找要删除的日程（用于处理提醒）
+      final scheduleToDelete = _schedules.where((s) => s.id == scheduleId).firstOrNull;
+      
       // 从数据库删除
       await RowBackendService.deleteRows(viewId, [scheduleId]);
 
-      // 从本地列表删除
-      final schedule = _schedules.firstWhere((s) => s.id == scheduleId);
-      if (schedule.reminderId != null) {
-        _removeReminder(schedule.reminderId!);
+      // 如果找到了日程并且有提醒，则移除提醒
+      if (scheduleToDelete?.reminderId != null) {
+        _removeReminder(scheduleToDelete!.reminderId!);
       }
 
+      // 从本地列表删除（使用removeWhere更安全）
+      final removedCount = _schedules.length;
       _schedules.removeWhere((s) => s.id == scheduleId);
+      final newCount = _schedules.length;
+      
+      print('删除日程完成: 删除前${removedCount}个，删除后${newCount}个');
+      
       if (!_isDisposed) {
         notifyListeners();
       }
@@ -459,7 +594,13 @@ class ScheduleModel extends ChangeNotifier {
       return true;
     } catch (e) {
       print('删除日程时发生错误: $e');
-      return false;
+      // 即使本地操作失败，如果数据库删除成功，我们仍然应该刷新数据
+      if (e.toString().contains('Bad state: No element')) {
+        print('本地列表中未找到要删除的日程，可能已被其他操作删除，刷新数据...');
+        refresh(); // 刷新数据以保持同步
+        return true; // 数据库删除可能已经成功了
+      }
+      throw Exception('删除日程失败');
     }
   }
 
@@ -583,8 +724,16 @@ class ScheduleModel extends ChangeNotifier {
       final viewResult = await ViewBackendService.getView(viewId);
       await viewResult.fold(
         (view) async {
+          print('📋 获取到视图: ${view.name} (${view.id})');
+          
           // 创建数据库控制器
-          _databaseController = DatabaseController(view: view);
+          try {
+            _databaseController = DatabaseController(view: view);
+            print('✅ 数据库控制器创建成功');
+          } catch (e) {
+            print('❌ 创建数据库控制器失败: $e');
+            throw Exception('创建数据库控制器失败: $e');
+          }
           
           // 设置数据库回调
           _databaseCallbacks = DatabaseCallbacks(
@@ -609,31 +758,53 @@ class ScheduleModel extends ChangeNotifier {
           );
           
           // 添加监听器
-          _databaseController?.addListener(onDatabaseChanged: _databaseCallbacks);
+          if (_databaseController != null) {
+            _databaseController!.addListener(onDatabaseChanged: _databaseCallbacks);
+          }
           
           // 打开数据库连接
+          print('🔓 正在打开数据库连接...');
           final openResult = await _databaseController!.open();
           await openResult.fold(
             (success) {
               print('✅ 数据库连接已打开，监听器初始化成功，viewId: $viewId');
-              // 打印字段信息
-              final fieldInfos = _databaseController!.fieldController.fieldInfos;
-              print('📋 可用字段信息:');
-              for (var field in fieldInfos) {
-                print('  - ${field.name} (${field.fieldType}) Primary: ${field.isPrimary}');
-              }
+              
+              // 等待一下让字段控制器初始化
+              Future.delayed(Duration(milliseconds: 100), () async {
+                try {
+                  // 打印字段信息 - 安全地访问字段控制器
+                  final fieldController = _databaseController?.fieldController;
+                  if (fieldController != null) {
+                    final fieldInfos = fieldController.fieldInfos;
+                    print('📋 可用字段信息:');
+                    for (var field in fieldInfos) {
+                      print('  - ${field.name} (${field.fieldType}) Primary: ${field.isPrimary}');
+                    }
+                  } else {
+                    print('⚠️ 字段控制器尚未初始化，跳过字段信息打印');
+                  }
+                } catch (e) {
+                  print('⚠️ 获取字段信息时出错: $e');
+                }
+              });
             },
             (error) {
               print('❌ 打开数据库连接失败: $error');
+              throw Exception('无法打开数据库连接: $error');
             },
           );
         },
         (error) {
           print('获取视图失败: $error');
+          throw Exception('无法获取视图: $error');
         },
       );
     } catch (e) {
       print('初始化数据库监听器失败: $e');
+      // 清理失败的状态
+      _databaseController = null;
+      _databaseCallbacks = null;
+      rethrow; // 重新抛出异常，让调用者知道初始化失败
     }
   }
 

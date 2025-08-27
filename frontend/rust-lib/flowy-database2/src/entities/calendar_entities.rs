@@ -110,6 +110,9 @@ pub struct CalendarEventPB {
 
   #[pb(index = 4, one_of)]
   pub timestamp: Option<i64>,
+
+  #[pb(index = 5, one_of)]
+  pub end_timestamp: Option<i64>,
 }
 
 #[derive(Debug, Clone, Default, ProtoBuf)]

@@ -12,7 +12,9 @@ import 'package:flowy_infra_ui/style_widget/text.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:flowy_infra/uuid.dart';
 import 'presentation/new_event_page.dart';
+import 'presentation/edit_event_page.dart';
 import 'widgets/schedule_sidebar.dart';
+import 'models/schedule_model.dart';
 
 // 添加日历事件类
 class CalendarEvent {
@@ -124,6 +126,8 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   late int _currentYear;
   late List<CalendarEvent> _events;
   late bool _showNewEventPage;
+  late bool _showEditEventPage; // 显示编辑日程页面
+  late ScheduleItem? _editingSchedule; // 正在编辑的日程
   late Function()? _saveEventCallback;
   late String? _currentViewId; // 添加当前视图ID
   late bool _isSidebarExpanded;
@@ -142,6 +146,8 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     _currentYear = DateTime.now().year;
     _events = [];
     _showNewEventPage = false;
+    _showEditEventPage = false;
+    _editingSchedule = null;
     _saveEventCallback = null;
     _currentViewId = null;
     _isSidebarExpanded = true;
@@ -272,6 +278,22 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     });
   }
 
+  // 处理点击日程
+  void _onScheduleTap(ScheduleItem schedule) {
+    setState(() {
+      _showEditEventPage = true;
+      _editingSchedule = schedule;
+      _showNewEventPage = false; // 确保新建页面关闭
+    });
+  }
+
+  void _hideEditEventPage() {
+    setState(() {
+      _showEditEventPage = false;
+      _editingSchedule = null;
+    });
+  }
+
   void _onEventCreated(Map<String, dynamic> eventData) {
     // TODO: 保存日程到数据库或状态管理
     // 创建日程逻辑将在后续实现
@@ -291,6 +313,34 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     
     // 隐藏新建日程界面
     _hideNewEventPage();
+  }
+
+  void _onEventUpdated(Map<String, dynamic> eventData) {
+    final description = eventData['description'] as String;
+    
+    // 显示成功提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('日程更新成功: $description'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    
+    // 隐藏编辑日程界面
+    _hideEditEventPage();
+  }
+
+  void _onEventDeleted(String scheduleId) {
+    // 显示成功提示
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('日程已删除'),
+        backgroundColor: Colors.green,
+      ),
+    );
+    
+    // 隐藏编辑日程界面
+    _hideEditEventPage();
   }
 
   Widget _buildAddMenu() {
@@ -561,7 +611,9 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                 color: Theme.of(context).colorScheme.surface,
                 child: _showNewEventPage 
                   ? _buildNewEventView()
-                  : _buildDefaultView(),
+                  : _showEditEventPage && _editingSchedule != null
+                    ? _buildEditEventView()
+                    : _buildDefaultView(),
               ),
             ),
         ],
@@ -609,6 +661,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
             diaryItems: _diaryItems,
             selectedDate: _selectedDay ?? _focusedDay,
             viewId: _currentViewId, // 传递视图ID
+            onScheduleTap: _onScheduleTap, // 传递点击回调
           ),
         ),
       ],
@@ -733,6 +786,85 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
       ),
     );
   }
+
+  Widget _buildEditEventView() {
+    if (_editingSchedule == null) return _buildDefaultView();
+    
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        children: [
+          // 编辑日程顶部工具栏
+          Container(
+            height: 56,
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: Theme.of(context).dividerColor,
+                  width: 0.5,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '编辑日程',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                // 取消按钮
+                TextButton(
+                  onPressed: _hideEditEventPage,
+                  child: Text(
+                    '取消',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8),
+                // 保存按钮
+                ElevatedButton(
+                  onPressed: () {
+                    // 调用保存回调函数
+                    if (_saveEventCallback != null && _saveEventCallback!()) {
+                      _hideEditEventPage();
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  child: Text(
+                    '保存',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // 编辑日程内容
+          Expanded(
+            child: EditEventPage(
+              schedule: _editingSchedule!,
+              onEventUpdated: _onEventUpdated,
+              onEventDeleted: _onEventDeleted,
+              onCancel: _hideEditEventPage,
+              onSaveRequested: (saveCallback) {
+                _saveEventCallback = saveCallback;
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // 统一的日记和日程展示组件
@@ -740,12 +872,14 @@ class CalendarContent extends StatelessWidget {
   final List<String> diaryItems;
   final DateTime selectedDate;
   final String? viewId;
+  final Function(ScheduleItem)? onScheduleTap; // 点击日程的回调
 
   const CalendarContent({
     Key? key,
     required this.diaryItems,
     required this.selectedDate,
     this.viewId,
+    this.onScheduleTap,
   }) : super(key: key);
 
   @override
@@ -780,6 +914,7 @@ class CalendarContent extends StatelessWidget {
           if (viewId != null) ...[
             ScheduleSidebarContent(
               databaseViewId: viewId,
+              onScheduleTap: onScheduleTap,
             ),
           ] else ...[
             Text(

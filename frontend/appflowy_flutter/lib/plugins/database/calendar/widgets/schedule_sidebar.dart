@@ -5,10 +5,12 @@ import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/remi
 
 class ScheduleSidebar extends StatefulWidget {
   final String? databaseViewId; // 传入数据库视图ID以集成AppFlowy数据库
+  final Function(ScheduleItem)? onScheduleTap; // 点击日程的回调
 
   const ScheduleSidebar({
     Key? key,
     this.databaseViewId,
+    this.onScheduleTap,
   }) : super(key: key);
 
   @override
@@ -17,11 +19,13 @@ class ScheduleSidebar extends StatefulWidget {
 
 class _ScheduleSidebarState extends State<ScheduleSidebar> {
   late ScheduleModel _scheduleModel;
+  Function(ScheduleItem)? _onScheduleTap;
 
   @override
   void initState() {
     super.initState();
     _scheduleModel = ScheduleModel();
+    _onScheduleTap = widget.onScheduleTap;
     
     // 如果提供了数据库视图ID，设置为数据库集成模式
     if (widget.databaseViewId != null && widget.databaseViewId!.isNotEmpty) {
@@ -145,62 +149,168 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
   }
 
   Widget _buildScheduleCard(BuildContext context, ScheduleItem schedule, ScheduleModel model) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          // 完成状态指示器（基于时间自动判断）
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: Checkbox(
-              value: schedule.isCompleted,
-              onChanged: null, // 禁用手动切换，因为状态基于时间自动计算
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              activeColor: schedule.isCompleted ? Colors.green : Theme.of(context).colorScheme.primary,
-              checkColor: Theme.of(context).colorScheme.onPrimary,
+    // 计算持续时间显示
+    final duration = schedule.endTime.difference(schedule.startTime);
+    final durationText = _formatDuration(duration);
+    
+    // 格式化时间范围
+    final timeRangeText = '${_formatDateTime(schedule.startTime)} - ${_formatDateTime(schedule.endTime)}';
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          // 设置选中状态
+          model.selectSchedule(schedule.id);
+          // 调用外部回调
+          _onScheduleTap?.call(schedule);
+        },
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.3),
+              width: 1,
             ),
           ),
-          const SizedBox(width: 12),
-          // 内容区域
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    decoration: schedule.isCompleted ? TextDecoration.lineThrough : null,
-                    color: schedule.isCompleted 
-                        ? Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6) ?? Colors.grey.withOpacity(0.6)
-                        : Theme.of(context).textTheme.bodyMedium?.color ?? Colors.black87,
-                    fontSize: 14,
+          child: Row(
+            children: [
+              // 左侧彩色长条指示器
+              Container(
+                width: 4,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: model.isScheduleSelected(schedule.id) 
+                    ? Colors.green 
+                    : schedule.isCompleted 
+                      ? Colors.blue 
+                      : Colors.grey.shade400,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-                if (schedule.description.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    schedule.description,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      decoration: schedule.isCompleted ? TextDecoration.lineThrough : null,
-                      color: schedule.isCompleted 
-                          ? Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5) ?? Colors.grey.withOpacity(0.5)
-                          : Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7) ?? Colors.grey.withOpacity(0.7),
-                    ),
+              ),
+              
+              // 内容区域
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 日程标题/描述
+                      Text(
+                        schedule.title.isNotEmpty ? schedule.title : schedule.description,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                      const SizedBox(height: 4),
+                      
+                      // 时间范围和持续时间
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              timeRangeText,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (duration.inMinutes > 0) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: schedule.isCompleted 
+                                  ? Colors.green.withOpacity(0.1) 
+                                  : Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                durationText,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: schedule.isCompleted ? Colors.green : Colors.grey.shade600,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ],
-            ),
+                ),
+              ),
+              
+              // 右侧箭头指示器
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+  }
+
+  // 格式化持续时间
+  String _formatDuration(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}天';
+    } else if (duration.inHours > 0) {
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes % 60;
+      if (minutes > 0) {
+        return '${hours}h${minutes}m';
+      } else {
+        return '${hours}小时';
+      }
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}分钟';
+    } else {
+      return '< 1分钟';
+    }
+  }
+
+  // 格式化日期时间，处理无效时间
+  String _formatDateTime(DateTime dateTime) {
+    // 检查是否是无效的时间戳（1970年或很早的时间）
+    if (dateTime.year < 2000) {
+      // 如果时间戳无效，使用当前时间
+      dateTime = DateTime.now();
+    }
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduleDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (scheduleDate == today) {
+      return '今天 ${_formatTimeOfDay(dateTime)}';
+    } else if (scheduleDate == today.add(const Duration(days: 1))) {
+      return '明天 ${_formatTimeOfDay(dateTime)}';
+    } else if (scheduleDate == today.subtract(const Duration(days: 1))) {
+      return '昨天 ${_formatTimeOfDay(dateTime)}';
+    } else {
+      return '${dateTime.month}月${dateTime.day}日 ${_formatTimeOfDay(dateTime)}';
+    }
   }
 
   String _formatTime(DateTime dateTime) {
@@ -327,10 +437,12 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
 // 不带滚动条的日程内容组件，用于嵌入到外部的统一滚动视图中
 class ScheduleSidebarContent extends StatefulWidget {
   final String? databaseViewId;
+  final Function(ScheduleItem)? onScheduleTap; // 点击日程的回调
 
   const ScheduleSidebarContent({
     Key? key,
     this.databaseViewId,
+    this.onScheduleTap,
   }) : super(key: key);
 
   @override
@@ -339,11 +451,13 @@ class ScheduleSidebarContent extends StatefulWidget {
 
 class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
   late ScheduleModel _scheduleModel;
+  Function(ScheduleItem)? _onScheduleTap;
 
   @override
   void initState() {
     super.initState();
     _scheduleModel = ScheduleModel();
+    _onScheduleTap = widget.onScheduleTap;
     
     if (widget.databaseViewId != null && widget.databaseViewId!.isNotEmpty) {
       _scheduleModel.setViewId(widget.databaseViewId!);
@@ -447,97 +561,168 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
   }
 
   Widget _buildScheduleCard(BuildContext context, ScheduleItem schedule, ScheduleModel model) {
+    // 计算持续时间显示
+    final duration = schedule.endTime.difference(schedule.startTime);
+    final durationText = _formatDuration(duration);
+    
+    // 格式化时间范围
+    final timeRangeText = '${_formatDateTime(schedule.startTime)} - ${_formatDateTime(schedule.endTime)}';
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+      child: InkWell(
+        onTap: () {
+          // 设置选中状态
+          model.selectSchedule(schedule.id);
+          // 调用外部回调
+          _onScheduleTap?.call(schedule);
+        },
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Theme.of(context).dividerColor,
-          width: 1,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: Theme.of(context).dividerColor.withOpacity(0.3),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              // 左侧彩色长条指示器
+              Container(
+                width: 4,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: model.isScheduleSelected(schedule.id) 
+                    ? Colors.green 
+                    : schedule.isCompleted 
+                      ? Colors.blue 
+                      : Colors.grey.shade400,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                ),
+              ),
+              
+              // 内容区域
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 日程标题/描述
+                      Text(
+                        schedule.title.isNotEmpty ? schedule.title : schedule.description,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      
+                      const SizedBox(height: 4),
+                      
+                      // 时间范围和持续时间
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              timeRangeText,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (duration.inMinutes > 0) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: schedule.isCompleted 
+                                  ? Colors.green.withOpacity(0.1) 
+                                  : Colors.grey.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                durationText,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: schedule.isCompleted ? Colors.green : Colors.grey.shade600,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // 右侧箭头指示器
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: Icon(
+                  Icons.chevron_right,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 完成状态复选框
-          GestureDetector(
-            onTap: () {
-              model.toggleScheduleCompletion(schedule.id);
-            },
-            child: Container(
-              width: 20,
-              height: 20,
-              margin: const EdgeInsets.only(right: 12, top: 2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: schedule.isCompleted 
-                    ? Colors.green 
-                    : Theme.of(context).dividerColor,
-                  width: 2,
-                ),
-                color: schedule.isCompleted 
-                  ? Colors.green 
-                  : Colors.transparent,
-              ),
-              child: schedule.isCompleted
-                ? const Icon(
-                    Icons.check,
-                    size: 14,
-                    color: Colors.white,
-                  )
-                : null,
-            ),
-          ),
-          
-          // 日程内容
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    decoration: schedule.isCompleted 
-                      ? TextDecoration.lineThrough 
-                      : null,
-                    color: schedule.isCompleted 
-                      ? Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6)
-                      : null,
-                  ),
-                ),
-                if (schedule.description.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    schedule.description,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                      decoration: schedule.isCompleted 
-                        ? TextDecoration.lineThrough 
-                        : null,
-                    ),
-                  ),
-                ],
-                if (schedule.dueDate != null) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    _formatFullTime(schedule.dueDate!),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: _getDueDateColor(schedule.dueDate!),
-                      decoration: schedule.isCompleted 
-                        ? TextDecoration.lineThrough 
-                        : null,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
     );
+  }
+
+  // 格式化持续时间
+  String _formatDuration(Duration duration) {
+    if (duration.inDays > 0) {
+      return '${duration.inDays}天';
+    } else if (duration.inHours > 0) {
+      final hours = duration.inHours;
+      final minutes = duration.inMinutes % 60;
+      if (minutes > 0) {
+        return '${hours}h${minutes}m';
+      } else {
+        return '${hours}小时';
+      }
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}分钟';
+    } else {
+      return '< 1分钟';
+    }
+  }
+
+  // 格式化日期时间，处理无效时间
+  String _formatDateTime(DateTime dateTime) {
+    // 检查是否是无效的时间戳（1970年或很早的时间）
+    if (dateTime.year < 2000) {
+      // 如果时间戳无效，使用当前时间
+      dateTime = DateTime.now();
+    }
+    
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final scheduleDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+
+    if (scheduleDate == today) {
+      return '今天 ${_formatTimeOfDay(dateTime)}';
+    } else if (scheduleDate == today.add(const Duration(days: 1))) {
+      return '明天 ${_formatTimeOfDay(dateTime)}';
+    } else if (scheduleDate == today.subtract(const Duration(days: 1))) {
+      return '昨天 ${_formatTimeOfDay(dateTime)}';
+    } else {
+      return '${dateTime.month}月${dateTime.day}日 ${_formatTimeOfDay(dateTime)}';
+    }
   }
 
   Color _getDueDateColor(DateTime dueDate) {

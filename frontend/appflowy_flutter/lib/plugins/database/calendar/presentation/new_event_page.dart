@@ -116,6 +116,75 @@ class _NewEventPageState extends State<NewEventPage> {
       return false;
     }
 
+    // 构建开始和结束时间进行验证
+    final startDateTime = DateTime(
+      _startDate.year,
+      _startDate.month,
+      _startDate.day,
+      _startTime.hour,
+      _startTime.minute,
+    );
+    
+    final endDateTime = DateTime(
+      _endDate.year,
+      _endDate.month,
+      _endDate.day,
+      _endTime.hour,
+      _endTime.minute,
+    );
+
+    // 验证时间合法性
+    final now = DateTime.now();
+    
+    // 检查时间是否在1970年之后
+    if (startDateTime.year < 1970 || endDateTime.year < 1970) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ 时间设置无效，请选择有效的时间'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return false;
+    }
+
+    // 检查开始时间是否在过去（允许用户设置过去的日程，但给出警告）
+    if (startDateTime.isBefore(now.subtract(Duration(days: 1)))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ 开始时间在过去，请确认时间设置'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      // 不阻止保存，但给出警告
+    }
+
+    // 检查结束时间是否在开始时间之后
+    if (endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ 结束时间必须在开始时间之后'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return false;
+    }
+
+    // 检查日程时长是否合理（不能超过30天）
+    final duration = endDateTime.difference(startDateTime);
+    if (duration.inDays > 30) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('⚠️ 日程时长超过30天，请确认时间设置'),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
+      // 不阻止保存，但给出警告
+    }
+
     // 异步保存日程
     _saveEventAsync();
     return true;

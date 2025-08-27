@@ -1126,10 +1126,11 @@ impl DatabaseViewEditor {
       .unwrap_or_default()
       .into();
 
-    let timestamp = date_cell
+    let date_cell_data = date_cell
       .into_date_field_cell_data()
-      .unwrap_or_default()
-      .timestamp;
+      .unwrap_or_default();
+    let timestamp = date_cell_data.timestamp;
+    let end_timestamp = date_cell_data.end_timestamp;
 
     let (_, row_detail) = self.delegate.get_row_detail(&self.view_id, &row_id).await?;
 
@@ -1138,6 +1139,7 @@ impl DatabaseViewEditor {
       date_field_id: date_field.id.clone(),
       title,
       timestamp,
+      end_timestamp,
     })
   }
 
@@ -1166,9 +1168,10 @@ impl DatabaseViewEditor {
       let timestamp_cell =
         get_cell_for_row(self.delegate.clone(), &calendar_setting.field_id, &row.id).await;
 
-      let timestamp = timestamp_cell
-        .and_then(|cell| cell.into_date_field_cell_data())
-        .and_then(|cell_data| cell_data.timestamp);
+      let date_cell_data = timestamp_cell
+        .and_then(|cell| cell.into_date_field_cell_data());
+      let timestamp = date_cell_data.as_ref().and_then(|cell_data| cell_data.timestamp);
+      let end_timestamp = date_cell_data.as_ref().and_then(|cell_data| cell_data.end_timestamp);
 
       let title = primary_cell
         .and_then(|cell| cell.into_text_field_cell_data())
@@ -1181,6 +1184,7 @@ impl DatabaseViewEditor {
         date_field_id: calendar_setting.field_id.clone(),
         title,
         timestamp,
+        end_timestamp,
       };
 
       events.push(event);
