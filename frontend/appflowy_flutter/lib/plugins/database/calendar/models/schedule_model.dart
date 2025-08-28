@@ -132,6 +132,10 @@ class ScheduleModel extends ChangeNotifier {
   DatabaseController? _databaseController; // 数据库控制器
   DatabaseCallbacks? _databaseCallbacks; // 数据库回调
   
+  // 展开/收起状态管理
+  bool _isIncompleteExpanded = true; // 未完成区域是否展开
+  bool _isCompletedExpanded = true; // 已完成区域是否展开
+  
   List<ScheduleItem> get schedules => List.unmodifiable(_schedules);
   bool get isLoading => _isLoading;
   
@@ -153,6 +157,26 @@ class ScheduleModel extends ChangeNotifier {
   
   // 获取当前视图ID
   String? get currentViewId => _currentViewId;
+  
+  // 展开/收起状态的getter
+  bool get isIncompleteExpanded => _isIncompleteExpanded;
+  bool get isCompletedExpanded => _isCompletedExpanded;
+  
+  // 切换未完成区域的展开状态
+  void toggleIncompleteExpanded() {
+    _isIncompleteExpanded = !_isIncompleteExpanded;
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
+  
+  // 切换已完成区域的展开状态
+  void toggleCompletedExpanded() {
+    _isCompletedExpanded = !_isCompletedExpanded;
+    if (!_isDisposed) {
+      notifyListeners();
+    }
+  }
   
   // 设置视图ID
   void setViewId(String viewId) {

@@ -110,19 +110,27 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
         children: [
           // 未完成日程区域
           if (incompleteSchedules.isNotEmpty) ...[
-            _buildSectionHeader(context, '未完成', incompleteSchedules.length),
-            const SizedBox(height: 8),
-            ...incompleteSchedules.map((schedule) => 
-              _buildScheduleCard(context, schedule, model)),
+            _buildSectionHeader(context, '未完成', incompleteSchedules.length, model.isIncompleteExpanded, () {
+              model.toggleIncompleteExpanded();
+            }),
+            if (model.isIncompleteExpanded) ...[
+              const SizedBox(height: 8),
+              ...incompleteSchedules.map((schedule) => 
+                _buildScheduleCard(context, schedule, model)),
+            ],
             const SizedBox(height: 16),
           ],
           
           // 已完成日程区域
           if (completedSchedules.isNotEmpty) ...[
-            _buildSectionHeader(context, '已完成', completedSchedules.length),
-            const SizedBox(height: 8),
-            ...completedSchedules.map((schedule) => 
-              _buildScheduleCard(context, schedule, model)),
+            _buildSectionHeader(context, '已完成', completedSchedules.length, model.isCompletedExpanded, () {
+              model.toggleCompletedExpanded();
+            }),
+            if (model.isCompletedExpanded) ...[
+              const SizedBox(height: 8),
+              ...completedSchedules.map((schedule) => 
+                _buildScheduleCard(context, schedule, model)),
+            ],
           ],
           
           // 底部留白，避免最后一个项目贴边
@@ -132,18 +140,31 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, int count) {
+  Widget _buildSectionHeader(BuildContext context, String title, int count, bool isExpanded, VoidCallback onToggle) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            '$title ($count)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -184,9 +205,7 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
                 decoration: BoxDecoration(
                   color: model.isScheduleSelected(schedule.id) 
                     ? Colors.green 
-                    : schedule.isCompleted 
-                      ? Colors.blue 
-                      : Colors.grey.shade400,
+                    : Colors.grey.shade400,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(8),
                     bottomLeft: Radius.circular(8),
@@ -523,19 +542,27 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
       children: [
         // 未完成日程区域
         if (incompleteSchedules.isNotEmpty) ...[
-          _buildSectionHeader(context, '未完成', incompleteSchedules.length),
-          const SizedBox(height: 8),
-          ...incompleteSchedules.map((schedule) => 
-            _buildScheduleCard(context, schedule, model)),
+          _buildSectionHeader(context, '未完成', incompleteSchedules.length, model.isIncompleteExpanded, () {
+            model.toggleIncompleteExpanded();
+          }),
+          if (model.isIncompleteExpanded) ...[
+            const SizedBox(height: 8),
+            ...incompleteSchedules.map((schedule) => 
+              _buildScheduleCard(context, schedule, model)),
+          ],
           const SizedBox(height: 16),
         ],
         
         // 已完成日程区域
         if (completedSchedules.isNotEmpty) ...[
-          _buildSectionHeader(context, '已完成', completedSchedules.length),
-          const SizedBox(height: 8),
-          ...completedSchedules.map((schedule) => 
-            _buildScheduleCard(context, schedule, model)),
+          _buildSectionHeader(context, '已完成', completedSchedules.length, model.isCompletedExpanded, () {
+            model.toggleCompletedExpanded();
+          }),
+          if (model.isCompletedExpanded) ...[
+            const SizedBox(height: 8),
+            ...completedSchedules.map((schedule) => 
+              _buildScheduleCard(context, schedule, model)),
+          ],
         ],
         
         // 底部留白，避免最后一个项目贴边
@@ -544,18 +571,31 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title, int count) {
+  Widget _buildSectionHeader(BuildContext context, String title, int count, bool isExpanded, VoidCallback onToggle) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Text(
-            '$title ($count)',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+      child: InkWell(
+        onTap: onToggle,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                size: 20,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -596,9 +636,7 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
                 decoration: BoxDecoration(
                   color: model.isScheduleSelected(schedule.id) 
                     ? Colors.green 
-                    : schedule.isCompleted 
-                      ? Colors.blue 
-                      : Colors.grey.shade400,
+                    : Colors.grey.shade400,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(8),
                     bottomLeft: Radius.circular(8),
