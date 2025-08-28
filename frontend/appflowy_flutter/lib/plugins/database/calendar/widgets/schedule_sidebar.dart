@@ -178,7 +178,7 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
     final timeRangeText = '${_formatDateTime(schedule.startTime)} - ${_formatDateTime(schedule.endTime)}';
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       child: InkWell(
         onTap: () {
           // 设置选中状态
@@ -186,11 +186,11 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
           // 调用外部回调
           _onScheduleTap?.call(schedule);
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: Theme.of(context).dividerColor.withOpacity(0.3),
               width: 1,
@@ -201,14 +201,14 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
               // 左侧彩色长条指示器
               Container(
                 width: 4,
-                height: 60,
+                height: 45,
                 decoration: BoxDecoration(
                   color: model.isScheduleSelected(schedule.id) 
                     ? Colors.green 
                     : Colors.grey.shade400,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
+                    topLeft: Radius.circular(6),
+                    bottomLeft: Radius.circular(6),
                   ),
                 ),
               ),
@@ -216,9 +216,10 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
               // 内容区域
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // 日程标题/描述
                       Text(
@@ -227,11 +228,11 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       
                       // 时间范围和持续时间
                       Row(
@@ -241,7 +242,7 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
                               timeRangeText,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -609,7 +610,7 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
     final timeRangeText = '${_formatDateTime(schedule.startTime)} - ${_formatDateTime(schedule.endTime)}';
     
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: 6),
       child: InkWell(
         onTap: () {
           // 设置选中状态
@@ -617,11 +618,11 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
           // 调用外部回调
           _onScheduleTap?.call(schedule);
         },
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(6),
         child: Container(
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
             border: Border.all(
               color: Theme.of(context).dividerColor.withOpacity(0.3),
               width: 1,
@@ -632,14 +633,14 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
               // 左侧彩色长条指示器
               Container(
                 width: 4,
-                height: 60,
+                height: 45,
                 decoration: BoxDecoration(
                   color: model.isScheduleSelected(schedule.id) 
                     ? Colors.green 
                     : Colors.grey.shade400,
                   borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(8),
-                    bottomLeft: Radius.circular(8),
+                    topLeft: Radius.circular(6),
+                    bottomLeft: Radius.circular(6),
                   ),
                 ),
               ),
@@ -647,9 +648,10 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
               // 内容区域
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // 日程标题/描述
                       Text(
@@ -658,11 +660,11 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
                           fontWeight: FontWeight.w500,
                           fontSize: 14,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       
                       // 时间范围和持续时间
                       Row(
@@ -672,7 +674,7 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
                               timeRangeText,
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                                fontSize: 12,
+                                fontSize: 11,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
