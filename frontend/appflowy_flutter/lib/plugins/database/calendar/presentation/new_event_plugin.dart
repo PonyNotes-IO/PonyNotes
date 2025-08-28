@@ -76,11 +76,10 @@ class NewEventPluginWidgetBuilder extends PluginWidgetBuilder with NavigationIte
       selectedDate: selectedDate,
       onEventCreated: (Map<String, dynamic> eventData) {
         // 处理事件创建逻辑
-        print('事件创建: $eventData');
+
       },
       onCancel: () {
         // 处理取消逻辑
-        print('取消创建事件');
       },
     );
   }

@@ -114,9 +114,9 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
               model.toggleIncompleteExpanded();
             }),
             if (model.isIncompleteExpanded) ...[
-              const SizedBox(height: 8),
-              ...incompleteSchedules.map((schedule) => 
-                _buildScheduleCard(context, schedule, model)),
+            const SizedBox(height: 8),
+            ...incompleteSchedules.map((schedule) => 
+              _buildScheduleCard(context, schedule, model)),
             ],
             const SizedBox(height: 16),
           ],
@@ -127,9 +127,9 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
               model.toggleCompletedExpanded();
             }),
             if (model.isCompletedExpanded) ...[
-              const SizedBox(height: 8),
-              ...completedSchedules.map((schedule) => 
-                _buildScheduleCard(context, schedule, model)),
+            const SizedBox(height: 8),
+            ...completedSchedules.map((schedule) => 
+              _buildScheduleCard(context, schedule, model)),
             ],
           ],
           
@@ -148,14 +148,14 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Text(
+      child: Row(
+        children: [
+          Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
               const Spacer(),
               Icon(
                 isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
@@ -205,7 +205,7 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
                 decoration: BoxDecoration(
                   color: model.isScheduleSelected(schedule.id) 
                     ? Colors.green 
-                    : Colors.grey.shade400,
+                      : Colors.grey.shade400,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(6),
                     bottomLeft: Radius.circular(6),
@@ -547,9 +547,9 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
             model.toggleIncompleteExpanded();
           }),
           if (model.isIncompleteExpanded) ...[
-            const SizedBox(height: 8),
-            ...incompleteSchedules.map((schedule) => 
-              _buildScheduleCard(context, schedule, model)),
+          const SizedBox(height: 8),
+          ...incompleteSchedules.map((schedule) => 
+            _buildScheduleCard(context, schedule, model)),
           ],
           const SizedBox(height: 16),
         ],
@@ -560,9 +560,9 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
             model.toggleCompletedExpanded();
           }),
           if (model.isCompletedExpanded) ...[
-            const SizedBox(height: 8),
-            ...completedSchedules.map((schedule) => 
-              _buildScheduleCard(context, schedule, model)),
+          const SizedBox(height: 8),
+          ...completedSchedules.map((schedule) => 
+            _buildScheduleCard(context, schedule, model)),
           ],
         ],
         
@@ -580,14 +580,14 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              Text(
+      child: Row(
+        children: [
+          Text(
                 title,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
               const Spacer(),
               Icon(
                 isExpanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
@@ -637,7 +637,7 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
                 decoration: BoxDecoration(
                   color: model.isScheduleSelected(schedule.id) 
                     ? Colors.green 
-                    : Colors.grey.shade400,
+                      : Colors.grey.shade400,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(6),
                     bottomLeft: Radius.circular(6),

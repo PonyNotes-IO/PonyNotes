@@ -180,11 +180,10 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
           setState(() {
             _currentViewId = view.id;
           });
-          print('日历视图已存在: ${view.id}');
+  
         },
         (error) async {
           // 视图不存在，创建新视图
-          print('视图不存在，开始创建新的日历视图...');
           
           final createResult = await ViewBackendService.createOrphanView(
             viewId: fixedViewId,
@@ -197,10 +196,8 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
               setState(() {
                 _currentViewId = view.id;
               });
-              print('成功创建日历视图: ${view.id}');
             },
             (createError) {
-              print('创建日历视图失败: $createError');
               // 如果创建失败，使用固定ID作为后备
               setState(() {
                 _currentViewId = fixedViewId;
@@ -218,7 +215,6 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
       });
       
     } catch (e) {
-      print('初始化日历视图时发生错误: $e');
       // 使用固定ID作为后备
       setState(() {
         _currentViewId = fixedUuid(12345, UuidType.privateSpace);

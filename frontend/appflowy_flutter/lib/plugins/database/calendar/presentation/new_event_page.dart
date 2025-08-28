@@ -64,13 +64,10 @@ class _NewEventPageState extends State<NewEventPage> {
 
   // 初始化日历视图
   Future<void> _initializeCalendarView() async {
-    print('NewEventPage: 开始初始化日历视图');
     try {
       final success = await _scheduleModel.initializeCalendarView();
       if (success) {
-        print('NewEventPage: 日历视图初始化成功，viewId: ${_scheduleModel.currentViewId}');
       } else {
-        print('NewEventPage: 日历视图初始化失败');
         // 在界面上显示警告，但不阻止用户继续操作
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -83,7 +80,6 @@ class _NewEventPageState extends State<NewEventPage> {
         }
       }
     } catch (e) {
-      print('NewEventPage: 初始化日历视图时发生异常: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -148,17 +144,7 @@ class _NewEventPageState extends State<NewEventPage> {
       return false;
     }
 
-    // 检查开始时间是否在过去（允许用户设置过去的日程，但给出警告）
-    if (startDateTime.isBefore(now.subtract(Duration(days: 1)))) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('⚠️ 开始时间在过去，请确认时间设置'),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-        ),
-      );
-      // 不阻止保存，但给出警告
-    }
+    // 移除过去时间检查 - 允许用户自由设置任何时间
 
     // 检查结束时间是否在开始时间之后
     if (endDateTime.isBefore(startDateTime) || endDateTime.isAtSameMomentAs(startDateTime)) {
@@ -191,7 +177,6 @@ class _NewEventPageState extends State<NewEventPage> {
   }
 
   Future<void> _saveEventAsync() async {
-    print('开始保存日程...');
     
     try {
       // 构建开始和结束时间
@@ -211,30 +196,23 @@ class _NewEventPageState extends State<NewEventPage> {
         _endTime.minute,
       );
 
-      print('日程信息: 标题=${_description}, 开始时间=$startDateTime, 结束时间=$endDateTime');
-
       // 检查widget是否仍然挂载
       if (!mounted) {
-        print('Widget已卸载，取消保存操作');
         return;
       }
 
       // 检查ScheduleModel的状态
-      print('当前ScheduleModel状态: viewId=${_scheduleModel.currentViewId}');
       
       if (_scheduleModel.currentViewId == null) {
-        print('警告: ScheduleModel 没有设置 viewId，尝试初始化日历视图');
         
         // 尝试初始化日历视图
         final initialized = await _scheduleModel.initializeCalendarView();
         if (!initialized) {
           throw Exception('无法初始化日历视图，请检查 AppFlowy 数据库连接');
         }
-        print('日历视图初始化成功，viewId: ${_scheduleModel.currentViewId}');
       }
 
       // 使用ScheduleModel创建日程
-      print('调用 createSchedule 方法...');
       final resultId = await _scheduleModel.createSchedule(
         title: _description.isNotEmpty ? _description : '无标题日程',
         description: _description,
@@ -242,17 +220,13 @@ class _NewEventPageState extends State<NewEventPage> {
         endTime: endDateTime,
       );
 
-      print('createSchedule 结果: $resultId');
-
       // 再次检查widget是否仍然挂载
       if (!mounted) {
-        print('Widget已卸载，取消处理结果');
         return;
       }
 
       // 创建成功
       if (resultId != null) {
-        print('日程创建成功，ID: $resultId');
         
         // 创建成功，调用回调
         final eventData = {
@@ -286,8 +260,6 @@ class _NewEventPageState extends State<NewEventPage> {
       }
     } catch (e, stackTrace) {
       // 异常处理
-      print('创建日程时发生异常: $e');
-      print('堆栈跟踪: $stackTrace');
       
       if (mounted) {
         String errorMessage = '创建日程失败';
