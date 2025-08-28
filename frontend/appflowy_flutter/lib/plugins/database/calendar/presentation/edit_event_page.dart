@@ -893,6 +893,7 @@ class _EditEventPageState extends State<EditEventPage> {
                   ),
                   filled: true,
                   fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  hoverColor: Colors.transparent, // 禁用悬停时的背景颜色变化
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,

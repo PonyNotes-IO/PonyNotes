@@ -1192,6 +1192,9 @@ class _CustomTimePickerBottomSheetState extends State<CustomTimePickerBottomShee
                         color: isDark ? Colors.white : Colors.black87,
                         size: 20,
                       ),
+                      splashColor: Colors.transparent, // 禁用点击波纹效果
+                      highlightColor: Colors.transparent, // 禁用高亮效果
+                      hoverColor: Colors.transparent, // 禁用悬停效果
                       style: IconButton.styleFrom(
                         padding: const EdgeInsets.all(8),
                         minimumSize: Size.zero,
@@ -1199,6 +1202,7 @@ class _CustomTimePickerBottomSheetState extends State<CustomTimePickerBottomShee
                     ),
                   ),
                 ),
+                
                 // 右侧的确认按钮
                 Positioned(
                   right: 0,
@@ -1447,20 +1451,7 @@ class _ReminderSelectionDialogState extends State<ReminderSelectionDialog> {
                     ),
                   ),
                 ),
-                // 关闭按钮
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: Icon(
-                    Icons.close,
-                    color: Theme.of(context).textTheme.bodyMedium?.color,
-                    size: 20,
-                  ),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(
-                    minWidth: 32,
-                    minHeight: 32,
-                  ),
-                ),
+
               ],
             ),
             
