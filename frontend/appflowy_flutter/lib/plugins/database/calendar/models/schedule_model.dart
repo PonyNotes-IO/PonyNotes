@@ -9,6 +9,8 @@ import 'package:appflowy_result/appflowy_result.dart';
 import 'package:appflowy/plugins/database/application/row/row_service.dart';
 import 'package:appflowy/plugins/database/application/field/field_info.dart';
 import 'package:appflowy/plugins/database/domain/date_cell_service.dart';
+import 'package:appflowy/plugins/database/domain/cell_service.dart';
+import 'package:appflowy/plugins/database/application/cell/cell_controller.dart';
 import 'package:appflowy/user/application/reminder/reminder_bloc.dart';
 import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/reminder_selector.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
@@ -558,31 +560,193 @@ class ScheduleModel extends ChangeNotifier {
   // 更新日程
   Future<bool> updateSchedule(ScheduleItem schedule) async {
     try {
-      // 更新数据库中的数据
-      // 这里需要根据实际需求更新特定字段
+      print('开始更新日程到数据库: ${schedule.id}');
       
-      // 更新本地列表
-      final index = _schedules.indexWhere((s) => s.id == schedule.id);
-      if (index != -1) {
-        _schedules[index] = schedule;
-        if (!_isDisposed) {
-          notifyListeners();
+      // 使用当前视图ID，如果没有设置则使用默认的新建日程视图ID
+      final viewId = _currentViewId ?? _newScheduleViewId;
+      
+      // 确保数据库控制器已初始化
+      if (_databaseController == null) {
+        print('⚠️ 数据库控制器未初始化，尝试初始化...');
+        try {
+          await _initializeDatabaseListener(viewId);
+        } catch (e) {
+          print('❌ 数据库监听器初始化失败: $e');
+          return false;
         }
-
-        // 更新提醒
-        if (schedule.reminderOption != ReminderOption.none) {
-          _setReminder(schedule);
-        } else if (schedule.reminderId != null) {
-          _removeReminder(schedule.reminderId!);
+        
+        if (_databaseController == null) {
+          print('❌ 数据库控制器初始化失败');
+          return false;
         }
+      }
+      
+      // 获取字段信息
+      final databaseController = _databaseController!;
+      final fieldController = databaseController.fieldController;
+      if (fieldController == null) {
+        print('❌ 字段控制器为空');
+        return false;
+      }
+      
+      final fieldInfos = fieldController.fieldInfos;
+      if (fieldInfos.isEmpty) {
+        print('⚠️ 没有可用的字段');
+        return false;
+      }
+      
+      bool hasErrors = false;
+      
+      // 查找主字段（标题字段）
+      final primaryField = fieldInfos.firstWhere(
+        (field) => field.field.isPrimary,
+        orElse: () => fieldInfos.first,
+      );
+      
+      // 更新标题
+      if (primaryField.fieldType == FieldType.RichText) {
+        final title = schedule.title.isNotEmpty ? schedule.title : schedule.description;
+        final result = await CellBackendService.updateCell(
+          viewId: viewId,
+          cellContext: CellContext(
+            fieldId: primaryField.field.id,
+            rowId: schedule.id,
+          ),
+          data: title,
+        );
+        
+        result.fold(
+          (_) => print('✅ 标题更新成功'),
+          (error) {
+            print('⚠️ 标题更新失败: $error');
+            hasErrors = true;
+          },
+        );
+      }
+      
+      // 查找并更新日期时间字段
+      for (var field in fieldInfos) {
+        if (field.fieldType == FieldType.DateTime) {
+          try {
+            print('更新日期时间字段: ${field.name}');
+            final dateService = DateCellBackendService(
+              viewId: viewId,
+              fieldId: field.field.id,
+              rowId: schedule.id,
+            );
+            
+            final updateResult = await dateService.update(
+              date: schedule.startTime,
+              endDate: schedule.endTime,
+              isRange: true,
+            );
+            
+            updateResult.fold(
+              (_) => print('✅ 日期时间字段更新成功: ${field.name}'),
+              (error) {
+                print('⚠️ 日期时间字段更新失败: ${field.name}, $error');
+                hasErrors = true;
+              },
+            );
+          } catch (e) {
+            print('⚠️ 更新日期时间字段时发生错误: ${field.name}, $e');
+            hasErrors = true;
+          }
+        }
+        // 更新描述字段
+        else if (field.fieldType == FieldType.RichText && 
+                 field.name.toLowerCase().contains('description')) {
+          final result = await CellBackendService.updateCell(
+            viewId: viewId,
+            cellContext: CellContext(
+              fieldId: field.field.id,
+              rowId: schedule.id,
+            ),
+            data: schedule.description,
+          );
+          
+          result.fold(
+            (_) => print('✅ 描述字段更新成功'),
+            (error) {
+              print('⚠️ 描述字段更新失败: $error');
+              hasErrors = true;
+            },
+          );
+        }
+        // 更新全天字段
+        else if (field.fieldType == FieldType.Checkbox && 
+                 (field.name.toLowerCase().contains('all') || 
+                  field.name.toLowerCase().contains('全天'))) {
+          final result = await CellBackendService.updateCell(
+            viewId: viewId,
+            cellContext: CellContext(
+              fieldId: field.field.id,
+              rowId: schedule.id,
+            ),
+            data: schedule.isAllDay ? "Yes" : "No",
+          );
+          
+          result.fold(
+            (_) => print('✅ 全天字段更新成功'),
+            (error) {
+              print('⚠️ 全天字段更新失败: $error');
+              hasErrors = true;
+            },
+          );
+        }
+        // 更新重要字段
+        else if (field.fieldType == FieldType.Checkbox && 
+                 (field.name.toLowerCase().contains('important') || 
+                  field.name.toLowerCase().contains('重要'))) {
+          final result = await CellBackendService.updateCell(
+            viewId: viewId,
+            cellContext: CellContext(
+              fieldId: field.field.id,
+              rowId: schedule.id,
+            ),
+            data: schedule.isImportant ? "Yes" : "No",
+          );
+          
+          result.fold(
+            (_) => print('✅ 重要字段更新成功'),
+            (error) {
+              print('⚠️ 重要字段更新失败: $error');
+              hasErrors = true;
+            },
+          );
+        }
+      }
+      
+      // 如果没有严重错误，更新本地列表
+      if (!hasErrors) {
+        final index = _schedules.indexWhere((s) => s.id == schedule.id);
+        if (index != -1) {
+          _schedules[index] = schedule;
+          if (!_isDisposed) {
+            notifyListeners();
+          }
 
-        return true;
+          // 更新提醒
+          if (schedule.reminderOption != ReminderOption.none) {
+            _setReminder(schedule);
+          } else if (schedule.reminderId != null) {
+            _removeReminder(schedule.reminderId!);
+          }
+
+          print('✅ 日程更新完成');
+          return true;
+        } else {
+          print('⚠️ 在本地列表中找不到要更新的日程');
+          return false;
+        }
+      } else {
+        print('⚠️ 更新过程中发生错误，但部分字段可能已更新');
+        return false;
       }
     } catch (e) {
       print('更新日程时发生错误: $e');
+      return false;
     }
-    
-    return false;
   }
 
   // 删除日程
