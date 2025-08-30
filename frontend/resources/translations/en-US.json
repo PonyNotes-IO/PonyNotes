@@ -2529,8 +2529,10 @@
     "emptyTitle": "All caught up!",
     "emptyBody": "No pending notifications or actions. Enjoy the calm.",
     "tabs": {
-      "inbox": "Inbox",
-      "upcoming": "Upcoming"
+      "mention": "@Mention Notifications",
+      "clip": "Clip Notifications",
+      "reminder": "Reminder Notifications",
+      "system": "System Notifications"
     },
     "actions": {
       "markAllRead": "Mark all as read",

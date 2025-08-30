@@ -1,0 +1,13 @@
+{
+    "Lingma.localMachineModel": true,
+    "Lingma.aI Chat.webToolsInAsk/AgentMode": "Auto-execute",
+    "Lingma.DisplayLanguage": "简体中文",
+    "http.proxy": "http://127.0.0.1:7890",
+    "http.proxyStrictSSL": false,
+    "http.proxySupport": "override",
+    "http.noProxy": [],
+    "cursor.general.disableHttp2": true,
+    "git.confirmSync": false,
+    "diffEditor.ignoreTrimWhitespace": false,
+    "java.configuration.updateBuildConfiguration": "disabled",
+}

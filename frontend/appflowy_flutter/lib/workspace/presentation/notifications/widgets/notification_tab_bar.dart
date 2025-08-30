@@ -4,18 +4,21 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
 enum NotificationTabType {
-  inbox,
-  unread,
-  archive;
+  mention,
+  clip,
+  reminder,
+  system;
 
   String get tr {
     switch (this) {
-      case NotificationTabType.inbox:
-        return LocaleKeys.settings_notifications_tabs_inbox.tr();
-      case NotificationTabType.unread:
-        return LocaleKeys.settings_notifications_tabs_unread.tr();
-      case NotificationTabType.archive:
-        return LocaleKeys.settings_notifications_tabs_archived.tr();
+      case NotificationTabType.mention:
+        return LocaleKeys.notificationHub_tabs_mention.tr();
+      case NotificationTabType.clip:
+        return LocaleKeys.notificationHub_tabs_clip.tr();
+      case NotificationTabType.reminder:
+        return LocaleKeys.notificationHub_tabs_reminder.tr();
+      case NotificationTabType.system:
+        return LocaleKeys.notificationHub_tabs_system.tr();
     }
   }
 }

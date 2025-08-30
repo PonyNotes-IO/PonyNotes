@@ -72,6 +72,7 @@ class HomeSettingBloc extends Bloc<HomeSettingEvent, HomeSettingState> {
               ),
             );
           },
+
           checkScreenSize: (_CheckScreenSize e) {
             final bool isScreenSmall =
                 e.screenWidthPx < PageBreaks.tabletLandscape;
@@ -164,6 +165,8 @@ class HomeSettingEvent with _$HomeSettingEvent {
 
   const factory HomeSettingEvent.collapseNotificationPanel() =
       _CollapseNotificationPanel;
+
+
 
   const factory HomeSettingEvent.checkScreenSize(double screenWidthPx) =
       _CheckScreenSize;
