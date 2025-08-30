@@ -1,4 +1,45 @@
 use client_api::entity::GotrueTokenResponse;
+use flowy_user_pub::entities::{UserAuthResponse, UserWorkspace, EncryptionType};
+use collab_integrate::collab_builder::AppFlowyCollabBuilder;
+use collab_integrate::CollabKVDB;
+use flowy_error::FlowyResult;
+use std::str::FromStr;
+use collab::lock::RwLock;
+use collab_user::core::UserAwareness;
+use dashmap::DashMap;
+use flowy_sqlite::kv::KVStorePreferences;
+use flowy_sqlite::schema::user_table;
+use flowy_sqlite::ConnectionPool;
+use flowy_sqlite::{query_dsl::*, DBConnection, ExpressionMethods};
+use flowy_user_pub::cloud::{UserCloudServiceProvider, UserUpdate};
+use flowy_user_pub::entities::*;
+use flowy_user_pub::workspace_service::UserWorkspaceService;
+use lib_infra::box_any::BoxAny;
+use semver::Version;
+use serde_json::Value;
+use std::string::ToString;
+use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::{Arc, Weak};
+use tokio_stream::StreamExt;
+use tracing::{debug, error, event, info, instrument, warn};
+use uuid::Uuid;
+
+use crate::entities::{AuthStateChangedPB, AuthStatePB, UserProfilePB, UserSettingPB};
+use crate::event_map::{AppLifeCycle, DefaultUserStatusCallback};
+use crate::migrations::document_empty_content::HistoricalEmptyDocumentMigration;
+use crate::migrations::migration::{
+  save_migration_record, UserDataMigration, UserLocalDataMigration, FIRST_TIME_INSTALL_VERSION,
+};
+use crate::migrations::workspace_and_favorite_v1::FavoriteV1AndWorkspaceArrayMigration;
+use crate::migrations::workspace_trash_v1::WorkspaceTrashMapToSectionMigration;
+use crate::services::authenticate_user::AuthenticateUser;
+use crate::services::cloud_config::get_cloud_config;
+use crate::services::collab_interact::{DefaultCollabInteract, UserReminder};
+use crate::migrations::anon_user_workspace::AnonUserWorkspaceTableMigration;
+use crate::migrations::doc_key_with_workspace::CollabDocKeyWithWorkspaceIdMigration;
+use crate::{errors::FlowyError, notification::*};
+use flowy_user_pub::session::Session;
+use flowy_user_pub::sql::*;
 
 /// Wrapper for GoTrue response that includes phone number information
 struct PhoneAuthResponse {
@@ -75,48 +116,6 @@ impl UserAuthResponse for PhoneAuthResponse {
     chrono::Utc::now().timestamp()
   }
 }
-use collab_integrate::collab_builder::AppFlowyCollabBuilder;
-use collab_integrate::CollabKVDB;
-use flowy_error::FlowyResult;
-use std::str::FromStr;
-
-use collab::lock::RwLock;
-use collab_user::core::UserAwareness;
-use dashmap::DashMap;
-use flowy_sqlite::kv::KVStorePreferences;
-use flowy_sqlite::schema::user_table;
-use flowy_sqlite::ConnectionPool;
-use flowy_sqlite::{query_dsl::*, DBConnection, ExpressionMethods};
-use flowy_user_pub::cloud::{UserCloudServiceProvider, UserUpdate};
-use flowy_user_pub::entities::*;
-use flowy_user_pub::workspace_service::UserWorkspaceService;
-use lib_infra::box_any::BoxAny;
-use semver::Version;
-use serde_json::Value;
-use std::string::ToString;
-use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Weak};
-use tokio_stream::StreamExt;
-use tracing::{debug, error, event, info, instrument, warn};
-use uuid::Uuid;
-
-use crate::entities::{AuthStateChangedPB, AuthStatePB, UserProfilePB, UserSettingPB};
-use crate::event_map::{AppLifeCycle, DefaultUserStatusCallback};
-use crate::migrations::document_empty_content::HistoricalEmptyDocumentMigration;
-use crate::migrations::migration::{
-  save_migration_record, UserDataMigration, UserLocalDataMigration, FIRST_TIME_INSTALL_VERSION,
-};
-use crate::migrations::workspace_and_favorite_v1::FavoriteV1AndWorkspaceArrayMigration;
-use crate::migrations::workspace_trash_v1::WorkspaceTrashMapToSectionMigration;
-use crate::services::authenticate_user::AuthenticateUser;
-use crate::services::cloud_config::get_cloud_config;
-use crate::services::collab_interact::{DefaultCollabInteract, UserReminder};
-
-use crate::migrations::anon_user_workspace::AnonUserWorkspaceTableMigration;
-use crate::migrations::doc_key_with_workspace::CollabDocKeyWithWorkspaceIdMigration;
-use crate::{errors::FlowyError, notification::*};
-use flowy_user_pub::session::Session;
-use flowy_user_pub::sql::*;
 
 pub struct UserManager {
   pub(crate) cloud_service: Weak<dyn UserCloudServiceProvider>,
@@ -916,7 +915,8 @@ impl UserManager {
     
     self.save_auth_data(&phone_auth_response, AuthType::AppFlowyCloud, &session).await?;
 
-    let _ = self
+    // 尝试初始化用户感知，如果失败则记录错误但不阻止登录
+    let awareness_result = self
       .initial_user_awareness(
         session.user_id,
         &session.user_uuid,
@@ -925,7 +925,12 @@ impl UserManager {
       )
       .await;
     
-    self
+    if let Err(err) = awareness_result {
+      warn!("Failed to initialize user awareness: {}, continuing with login", err);
+    }
+    
+    // 尝试初始化应用生命周期，如果失败则记录错误但不阻止登录
+    let lifecycle_result = self
       .app_life_cycle
       .read()
       .await
@@ -936,7 +941,11 @@ impl UserManager {
         &self.authenticate_user.user_paths,
         &user_profile.workspace_type,
       )
-      .await?;
+      .await;
+    
+    if let Err(err) = lifecycle_result {
+      warn!("Failed to initialize app lifecycle: {}, continuing with login", err);
+    }
     
     send_auth_state_notification(AuthStateChangedPB {
       state: AuthStatePB::AuthStateSignIn,
@@ -1070,7 +1079,7 @@ fn mark_all_migrations_as_applied(sqlite_pool: &Arc<ConnectionPool>) {
   }
 }
 
-pub(crate) fn run_data_migration(
+pub fn run_data_migration(
   session: &Session,
   user_auth_type: &AuthType,
   collab_db: Weak<CollabKVDB>,

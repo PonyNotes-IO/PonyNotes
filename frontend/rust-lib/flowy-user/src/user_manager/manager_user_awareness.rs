@@ -13,7 +13,7 @@ use collab_user::core::{UserAwareness, UserAwarenessNotifier};
 use dashmap::try_result::TryResult;
 use flowy_error::{ErrorCode, FlowyError, FlowyResult};
 use flowy_user_pub::entities::{user_awareness_object_id, WorkspaceType};
-use tracing::{error, info, instrument, trace};
+use tracing::{error, info, instrument, trace, warn};
 use uuid::Uuid;
 
 use crate::entities::ReminderPB;
@@ -283,7 +283,20 @@ impl UserManager {
               )
               .await
             } else {
-              Err(err)
+              // 对于其他错误，也尝试创建新的用户感知而不是失败
+              warn!("Failed to fetch user awareness from server: {}, creating new", err);
+              let doc_state =
+                CollabPersistenceImpl::new(collab_db.clone(), uid, workspace_id).into_data_source();
+              Self::collab_for_user_awareness(
+                &weak_builder,
+                &workspace_id,
+                uid,
+                &object_id,
+                collab_db,
+                doc_state,
+                None,
+              )
+              .await
             }
           },
         }

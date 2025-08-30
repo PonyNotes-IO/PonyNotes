@@ -1,4 +1,4 @@
-mod manager;
+pub mod manager;
 pub(crate) mod manager_history_user;
 pub(crate) mod manager_user_awareness;
 pub(crate) mod manager_user_encryption;
