@@ -26,7 +26,7 @@ class TrashCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.fromLTRB(8.0, 8.0, 0.0, 8.0), // 调整右边距对齐到红色竖线位置
       child: Row(
         children: [
           Expanded(
@@ -51,20 +51,20 @@ class TrashCell extends StatelessWidget {
               ],
             ),
           ),
-          const HSpace(8),
+          const HSpace(2),
           FlowyIconButton(
             iconColorOnHover: Theme.of(context).colorScheme.onSurface,
             width: TrashSizes.actionIconWidth,
             onPressed: onRestore,
-            iconPadding: const EdgeInsets.all(5),
+            iconPadding: const EdgeInsets.all(3),
             icon: const FlowySvg(FlowySvgs.restore_s),
           ),
-          const HSpace(8),
+          const HSpace(2),
           FlowyIconButton(
             iconColorOnHover: Theme.of(context).colorScheme.onSurface,
             width: TrashSizes.actionIconWidth,
             onPressed: onDelete,
-            iconPadding: const EdgeInsets.all(5),
+            iconPadding: const EdgeInsets.all(3),
             icon: const FlowySvg(FlowySvgs.delete_s),
           ),
         ],

@@ -35,7 +35,7 @@ extension AppFlowyTestBase on WidgetTester {
     String? pathExtension,
     // use to specify the application data directory, if not specified, a temporary directory will be used.
     String? dataDirectory,
-    Size windowSize = const Size(1600, 1200),
+    Size windowSize = const Size(1920, 1080),
     String? email,
     AuthenticatorType? cloudType,
     AIRepository Function()? aiRepositoryBuilder,

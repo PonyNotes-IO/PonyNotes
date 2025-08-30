@@ -99,91 +99,80 @@ class TrashMainPanel extends StatefulWidget {
 }
 
 class _TrashMainPanelState extends State<TrashMainPanel> {
-  bool _isSidebarExpanded = true;
   TrashPB? _selectedObject;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      child: Row(
+    return BlocProvider(
+      create: (context) => getIt<TrashBloc>()..add(const TrashEvent.initial()),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        child: Row(
         children: [
           // 左侧回收站侧边栏
-          AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            width: _isSidebarExpanded ? 300 : 60,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          Container(
+            width: 360,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
             clipBehavior: Clip.hardEdge,
-            child: OverflowBox(
-              alignment: Alignment.topLeft,
-              minWidth: 0,
-              maxWidth: _isSidebarExpanded ? 300 : 60,
-              child: Column(
-                children: [
-                  // 顶部工具栏，包含收起/展开按钮
-                  Container(
-                    height: 50,
-                    padding: EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Theme.of(context).dividerColor,
-                          width: 0.5,
-                        ),
+            child: Column(
+              children: [
+                // 顶部工具栏
+                Container(
+                  height: 50,
+                  padding: EdgeInsets.zero,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Theme.of(context).dividerColor,
+                        width: 0.5,
                       ),
                     ),
-                    child: ClipRect(
-                      child: _isSidebarExpanded 
-                        ? Row(
-                            children: [
-                              SizedBox(width: 16), // 增加左边距
-                              Expanded(
-                                child: FlowyText.medium(
-                                  '回收站',
-                                  fontSize: FontSizes.s18, // 增大字体
-                                  color: Theme.of(context).colorScheme.onSurface,
-                                ),
+                  ),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 24), // 调整为24px左边距，与列表项保持一致
+                      Expanded(
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 0), // 确保没有额外的左边距
+                              child: FlowyText.medium(
+                                '回收站',
+                                fontSize: FontSizes.s18, // 增大字体
+                                color: Theme.of(context).colorScheme.onSurface,
                               ),
-                              SizedBox(width: 4),
-                              // 收起/展开按钮 (使用双箭头图标)
-                              SizedBox(
-                                width: 32,
-                                height: 32,
-                                child: IconButton(
-                                  icon: Icon(Icons.keyboard_double_arrow_left, size: 18),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isSidebarExpanded = !_isSidebarExpanded;
-                                    });
-                                  },
-                                  tooltip: '收起侧边栏',
-                                  padding: EdgeInsets.zero,
-                                  constraints: BoxConstraints.tightFor(width: 32, height: 32),
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                            ],
-                          )
-                        : Center(
-                            child: IconButton(
-                              icon: Icon(Icons.keyboard_double_arrow_right, size: 22),
-                              onPressed: () {
-                                setState(() {
-                                  _isSidebarExpanded = !_isSidebarExpanded;
-                                });
-                              },
-                              tooltip: '展开侧边栏',
                             ),
-                          ),
-                    ),
+                            const Spacer(),
+                            // 当有内容时显示提示文字
+                            BlocBuilder<TrashBloc, TrashState>(
+                              builder: (context, state) {
+                                if (state.objects.isNotEmpty) {
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 16), // 统一右边距为16px
+                                    child: FlowyText.regular(
+                                      '回收站的笔记将在7天后永久删除',
+                                      fontSize: FontSizes.s12,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                                    ),
+                                  );
+                                }
+                                return SizedBox.shrink();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  // 侧边栏内容
-                  Expanded(
-                    child: _isSidebarExpanded ? _buildExpandedSidebar() : _buildCollapsedSidebar(),
-                  ),
-                ],
-              ),
+                ),
+                // 侧边栏内容
+                Expanded(
+                  child: _buildExpandedSidebar(),
+                ),
+              ],
             ),
           ),
           // 右侧主界面区域
@@ -196,6 +185,7 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -211,42 +201,24 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
     );
   }
 
-  Widget _buildCollapsedSidebar() {
-    return Column(
-      children: [
-        const VSpace(16),
-        Expanded(
-          child: Center(
-            child: Icon(
-              Icons.delete_outline,
-              size: 24,
-              color: Colors.grey[600],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+
 
   Widget _buildMainContent() {
-    return BlocProvider(
-      create: (context) => getIt<TrashBloc>()..add(const TrashEvent.initial()),
-      child: BlocBuilder<TrashBloc, TrashState>(
-        builder: (context, state) {
-          // 如果回收站为空，显示空白
-          if (state.objects.isEmpty) {
-            return const SizedBox.shrink();
-          }
-          
-          // 如果没有选中项，显示空白
-          if (_selectedObject == null) {
-            return const SizedBox.shrink();
-          }
-          
-          // 如果选中了项目，显示其内容
-          return _buildSelectedObjectContent(context, _selectedObject!);
-        },
-      ),
+    return BlocBuilder<TrashBloc, TrashState>(
+      builder: (context, state) {
+        // 如果回收站为空，显示空白
+        if (state.objects.isEmpty) {
+          return const SizedBox.shrink();
+        }
+        
+        // 如果没有选中项，显示空白
+        if (_selectedObject == null) {
+          return const SizedBox.shrink();
+        }
+        
+        // 如果选中了项目，显示其内容
+        return _buildSelectedObjectContent(context, _selectedObject!);
+      },
     );
   }
   
@@ -357,27 +329,24 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => getIt<TrashBloc>()..add(const TrashEvent.initial()),
-      child: BlocBuilder<TrashBloc, TrashState>(
-        builder: (context, state) {
-          return Column(
-            children: [
-              Expanded(
-                child: state.objects.isEmpty
-                    ? _buildEmptyState(context)
-                    : _buildTrashList(context, state),
-              ),
-            ],
-          );
-        },
-      ),
+    return BlocBuilder<TrashBloc, TrashState>(
+      builder: (context, state) {
+        return Column(
+          children: [
+            Expanded(
+              child: state.objects.isEmpty
+                  ? _buildEmptyState(context)
+                  : _buildTrashList(context, state),
+            ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildEmptyState(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0), // 统一左右边距为16px
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -414,14 +383,14 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
       barSize: 6.0,
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), // 统一左右边距为16px
         itemCount: state.objects.length,
         itemBuilder: (context, index) {
           final object = state.objects[index];
           final isSelected = widget.selectedObject?.id == object.id;
           
           return Container(
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: 4),
             decoration: BoxDecoration(
               color: isSelected 
                   ? Theme.of(context).colorScheme.primaryContainer

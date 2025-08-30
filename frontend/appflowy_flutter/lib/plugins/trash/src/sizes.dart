@@ -6,7 +6,7 @@ class TrashSizes {
   static double get createTimeWidth => 230 * scale;
   // padding between createTime and action icon
   static double get padding => 40 * scale;
-  static double get actionIconWidth => 40 * scale;
+  static double get actionIconWidth => 28 * scale;
   static double get totalWidth =>
       TrashSizes.fileNameWidth +
       TrashSizes.lashModifyWidth +
