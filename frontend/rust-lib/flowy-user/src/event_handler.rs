@@ -97,7 +97,7 @@ pub async fn get_user_profile_handler(
     .get_user_profile_from_disk(session.user_id, &session.workspace_id)
     .await?;
 
-  let weak_manager = Arc::downgrade(&manager);
+  let weak_manager: Weak<UserManager> = Arc::downgrade(&manager);
   let cloned_user_profile = user_profile.clone();
   let workspace_id = session.workspace_id.clone();
 

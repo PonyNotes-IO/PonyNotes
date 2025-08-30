@@ -458,7 +458,7 @@ impl UserManager {
       let auth_copy = auth_type;
       tokio::spawn(async move {
         // fetch remote list
-        let new_ws = match service.get_all_workspace(uid).await {
+        let new_ws: Vec<UserWorkspace> = match service.get_all_workspace(uid).await {
           Ok(ws) => ws,
           Err(e) => {
             trace!("failed to fetch remote workspaces for {}: {:?}", uid, e);
