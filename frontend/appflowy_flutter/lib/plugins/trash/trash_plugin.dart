@@ -218,30 +218,43 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
   }
 
   Widget _buildMainContent() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.delete_outline,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '回收站',
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Colors.grey[600],
+    return BlocProvider(
+      create: (context) => getIt<TrashBloc>()..add(const TrashEvent.initial()),
+      child: BlocBuilder<TrashBloc, TrashState>(
+        builder: (context, state) {
+          // 如果回收站为空，显示空白
+          if (state.objects.isEmpty) {
+            return const SizedBox.shrink();
+          }
+          
+          // 如果有内容，显示回收站图标和文字
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.delete_outline,
+                  size: 64,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '回收站',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '删除的页面将显示在左侧侧边栏中',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '删除的页面将显示在左侧侧边栏中',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
