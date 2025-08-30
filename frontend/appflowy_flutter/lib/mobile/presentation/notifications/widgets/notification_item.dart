@@ -131,16 +131,21 @@ class _SlidableNotificationItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<NotificationPaneActionType> actions = switch (tabType) {
-      NotificationTabType.inbox => [
+      NotificationTabType.mention => [
           NotificationPaneActionType.more,
           if (!reminder.isRead) NotificationPaneActionType.markAsRead,
         ],
-      NotificationTabType.unread => [
+      NotificationTabType.clip => [
           NotificationPaneActionType.more,
-          NotificationPaneActionType.markAsRead,
+          if (!reminder.isRead) NotificationPaneActionType.markAsRead,
         ],
-      NotificationTabType.archive => [
-          if (kDebugMode) NotificationPaneActionType.unArchive,
+      NotificationTabType.reminder => [
+          NotificationPaneActionType.more,
+          if (!reminder.isRead) NotificationPaneActionType.markAsRead,
+        ],
+      NotificationTabType.system => [
+          NotificationPaneActionType.more,
+          if (!reminder.isRead) NotificationPaneActionType.markAsRead,
         ],
     };
 

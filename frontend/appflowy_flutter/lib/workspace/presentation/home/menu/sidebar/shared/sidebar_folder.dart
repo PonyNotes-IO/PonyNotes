@@ -12,6 +12,12 @@ import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_home_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_settings_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_template_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_favorite_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_my_space_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_my_team_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_share_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_publish_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_template_new_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
@@ -59,29 +65,29 @@ class SidebarFolder extends StatelessWidget {
             const SidebarIntegrationButton(),
             // favorite
             const VSpace(4.0),
-            BlocBuilder<FavoriteBloc, FavoriteState>(
-              builder: (context, state) {
-                if (state.views.isEmpty) {
-                  return const SizedBox.shrink();
-                }
-                return FavoriteFolder(
-                  views: state.views.map((e) => e.item).toList(),
-                );
-              },
-            ),
-            // template
+            const SidebarFavoriteButton(),
+            // 我的空间
             const VSpace(4.0),
-            const SidebarTemplateButton(),
-            // folder
+            const SidebarMySpaceButton(),
+            // 我的团队
             const VSpace(4.0),
-            const SidebarFolderButton(),
-            // file library
+            const SidebarMyTeamButton(),
+            // 共享
+            const VSpace(4.0),
+            const SidebarShareButton(),
+            // 发布
+            const VSpace(4.0),
+            const SidebarPublishButton(),
+            // 文件库
             const VSpace(4.0),
             const SidebarFileLibraryButton(),
-            // trash
+            // 模版
+            const VSpace(4.0),
+            const SidebarTemplateNewButton(),
+            // 回收站
             const VSpace(4.0),
             const SidebarTrashItem(),
-            // settings
+            // 设置
             const VSpace(4.0),
             const SidebarSettingsButton(),
             // public or private

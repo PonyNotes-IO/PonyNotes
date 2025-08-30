@@ -16,20 +16,24 @@ class EmptyNotification extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final title = switch (type) {
-      NotificationTabType.inbox =>
-        LocaleKeys.settings_notifications_emptyInbox_title.tr(),
-      NotificationTabType.archive =>
-        LocaleKeys.settings_notifications_emptyArchived_title.tr(),
-      NotificationTabType.unread =>
-        LocaleKeys.settings_notifications_emptyUnread_title.tr(),
+      NotificationTabType.mention =>
+        "暂无@提及通知",
+      NotificationTabType.clip =>
+        "暂无剪藏通知",
+      NotificationTabType.reminder =>
+        "暂无提醒通知",
+      NotificationTabType.system =>
+        "暂无系统通知",
     };
     final desc = switch (type) {
-      NotificationTabType.inbox =>
-        LocaleKeys.settings_notifications_emptyInbox_description.tr(),
-      NotificationTabType.archive =>
-        LocaleKeys.settings_notifications_emptyArchived_description.tr(),
-      NotificationTabType.unread =>
-        LocaleKeys.settings_notifications_emptyUnread_description.tr(),
+      NotificationTabType.mention =>
+        "当有人@提及您时，通知将显示在此处。",
+      NotificationTabType.clip =>
+        "当您剪藏内容时，通知将显示在此处。",
+      NotificationTabType.reminder =>
+        "当您设置提醒时，通知将显示在此处。",
+      NotificationTabType.system =>
+        "系统相关的通知将显示在此处。",
     };
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,

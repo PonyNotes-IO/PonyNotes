@@ -920,3 +920,92 @@
     margin: 10px 10px 0 0;
   }
   
+  /* 新增的层级结构样式 */
+  
+  /* 笔记本项目样式 */
+  .notebook-item {
+    margin-left: 35px;
+    border-left: 2px solid rgba(233, 233, 233, 0.5);
+    padding-left: 10px;
+  }
+  
+  /* 文件夹项目样式 */
+  .folder-item {
+    margin-left: 35px;
+    border-left: 2px solid rgba(233, 233, 233, 0.5);
+    padding-left: 10px;
+  }
+  
+  /* 子文件夹项目样式 */
+  .sub-folder-item {
+    margin-left: 55px;
+    border-left: 2px solid rgba(233, 233, 233, 0.3);
+    padding-left: 10px;
+    opacity: 0.9;
+  }
+  
+  /* 文件夹下的笔记本样式 */
+  .sub-notebook-item {
+    margin-left: 55px;
+    border-left: 2px solid rgba(233, 233, 233, 0.3);
+    padding-left: 10px;
+    opacity: 0.9;
+  }
+  
+  /* 文件夹下的笔记样式 */
+  .sub-note-item {
+    margin-left: 55px;
+    border-left: 2px solid rgba(233, 233, 233, 0.3);
+    padding-left: 10px;
+    opacity: 0.8;
+  }
+  
+  /* 笔记本下的笔记样式 */
+  .note-item {
+    margin-left: 55px;
+    border-left: 2px solid rgba(233, 233, 233, 0.3);
+    padding-left: 10px;
+    opacity: 0.8;
+  }
+  
+  /* 悬停效果 */
+  .notebook-item:hover,
+  .folder-item:hover,
+  .sub-folder-item:hover,
+  .sub-notebook-item:hover,
+  .sub-note-item:hover,
+  .note-item:hover {
+    background-color: rgba(240, 240, 240, 0.5);
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+  }
+  
+  /* 层级指示器 */
+  .notebook-item::before,
+  .folder-item::before,
+  .sub-folder-item::before,
+  .sub-notebook-item::before,
+  .sub-note-item::before,
+  .note-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 2px;
+    height: 100%;
+    background-color: transparent;
+  }
+  
+  /* 笔记本和文件夹的左侧边框 */
+  .notebook-item,
+  .folder-item {
+    position: relative;
+  }
+  
+  /* 子项目的左侧边框 */
+  .sub-folder-item,
+  .sub-notebook-item,
+  .sub-note-item,
+  .note-item {
+    position: relative;
+  }
+  

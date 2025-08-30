@@ -35,6 +35,7 @@ import 'package:sized_context/sized_context.dart';
 import 'package:styled_widget/styled_widget.dart';
 
 import '../notifications/notification_panel.dart';
+import '../notifications/notification_page.dart';
 import '../widgets/edit_panel/edit_panel.dart';
 import '../widgets/sidebar_resizer.dart';
 import 'home_layout.dart';
@@ -200,7 +201,17 @@ class DesktopHomeScreen extends StatelessWidget {
       userProfile: userProfile,
       workspaceSetting: workspaceSetting,
     );
-    final notificationPanel = NotificationPanel();
+    final notificationPanel = BlocBuilder<HomeSettingBloc, HomeSettingState>(
+      buildWhen: (previous, current) =>
+          previous.isNotificationPanelCollapsed != current.isNotificationPanelCollapsed,
+      builder: (context, state) {
+        // 如果通知面板被折叠，显示通知页面
+        if (state.isNotificationPanelCollapsed) {
+          return const NotificationPage();
+        }
+        return const NotificationPanel();
+      },
+    );
     final sliderHoverTrigger = SliderMenuHoverTrigger();
 
     final homeMenuResizer =

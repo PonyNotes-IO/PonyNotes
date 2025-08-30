@@ -123,19 +123,25 @@ class _NotificationTabState extends State<NotificationTab>
 
   List<ReminderPB> _filterReminders(List<ReminderPB> reminders) {
     switch (widget.tabType) {
-      case NotificationTabType.inbox:
+      case NotificationTabType.mention:
         return reminders.reversed
-            .where((reminder) => !reminder.isArchived)
+            .where((reminder) => !reminder.isArchived && reminder.message.contains('@'))
             .toList()
             .unique((reminder) => reminder.id);
-      case NotificationTabType.archive:
+      case NotificationTabType.clip:
         return reminders.reversed
-            .where((reminder) => reminder.isArchived)
+            .where((reminder) => !reminder.isArchived && reminder.message.contains('剪藏'))
             .toList()
             .unique((reminder) => reminder.id);
-      case NotificationTabType.unread:
+      case NotificationTabType.reminder:
         return reminders.reversed
-            .where((reminder) => !reminder.isRead)
+            .where((reminder) => !reminder.isArchived && reminder.message.contains('提醒'))
+            .toList()
+            .unique((reminder) => reminder.id);
+      case NotificationTabType.system:
+        return reminders.reversed
+            .where((reminder) => !reminder.isArchived && !reminder.message.contains('@') && 
+                                 !reminder.message.contains('剪藏') && !reminder.message.contains('提醒'))
             .toList()
             .unique((reminder) => reminder.id);
     }

@@ -28,15 +28,16 @@ class _NotificationPanelState extends State<NotificationPanel>
   final PopoverController moreActionController = PopoverController();
 
   final tabs = [
-    NotificationTabType.inbox,
-    NotificationTabType.unread,
-    NotificationTabType.archive,
+    NotificationTabType.mention,
+    NotificationTabType.clip,
+    NotificationTabType.reminder,
+    NotificationTabType.system,
   ];
 
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 4, vsync: this);
   }
 
   @override
