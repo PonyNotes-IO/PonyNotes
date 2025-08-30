@@ -20,7 +20,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widget/styled_widget.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
+import 'package:appflowy_backend/protobuf/flowy-folder/trash.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
+import 'package:fixnum/fixnum.dart' as $fixnum;
 
 class TrashPluginBuilder extends PluginBuilder {
   @override
@@ -98,6 +100,7 @@ class TrashMainPanel extends StatefulWidget {
 
 class _TrashMainPanelState extends State<TrashMainPanel> {
   bool _isSidebarExpanded = true;
+  TrashPB? _selectedObject;
 
   @override
   Widget build(BuildContext context) {
@@ -134,10 +137,11 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
                       child: _isSidebarExpanded 
                         ? Row(
                             children: [
+                              SizedBox(width: 16), // 增加左边距
                               Expanded(
                                 child: FlowyText.medium(
                                   '回收站',
-                                  fontSize: FontSizes.s16,
+                                  fontSize: FontSizes.s18, // 增大字体
                                   color: Theme.of(context).colorScheme.onSurface,
                                 ),
                               ),
@@ -197,7 +201,14 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
   }
 
   Widget _buildExpandedSidebar() {
-    return TrashSidebarContent();
+    return TrashSidebarContent(
+      selectedObject: _selectedObject,
+      onObjectSelected: (object) {
+        setState(() {
+          _selectedObject = object;
+        });
+      },
+    );
   }
 
   Widget _buildCollapsedSidebar() {
@@ -227,42 +238,109 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
             return const SizedBox.shrink();
           }
           
-          // 如果有内容，显示回收站图标和文字
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.delete_outline,
-                  size: 64,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '回收站',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '删除的页面将显示在左侧侧边栏中',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
-            ),
-          );
+          // 如果没有选中项，显示空白
+          if (_selectedObject == null) {
+            return const SizedBox.shrink();
+          }
+          
+          // 如果选中了项目，显示其内容
+          return _buildSelectedObjectContent(context, _selectedObject!);
         },
       ),
     );
+  }
+  
+  Widget _buildSelectedObjectContent(BuildContext context, TrashPB object) {
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 面包屑导航
+          Row(
+            children: [
+              Icon(
+                Icons.folder_outlined,
+                size: 16,
+                color: Colors.grey[600],
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '小马笔记教程 / 小马笔记教程',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // 标题
+          Text(
+            object.name.isEmpty 
+                ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
+                : object.name,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 内容区域（这里可以根据实际需要显示更多内容）
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '页面内容将在这里显示',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '创建时间: ${_formatDate(object.createTime)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  Text(
+                    '修改时间: ${_formatDate(object.modifiedTime)}',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatDate($fixnum.Int64 timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp.toInt() * 1000);
+    return DateFormat('yyyy/MM/dd').format(date);
   }
 }
 
 // 回收站侧边栏内容组件
 class TrashSidebarContent extends StatefulWidget {
-  const TrashSidebarContent({super.key});
+  const TrashSidebarContent({
+    super.key,
+    this.selectedObject,
+    this.onObjectSelected,
+  });
+
+  final TrashPB? selectedObject;
+  final Function(TrashPB)? onObjectSelected;
 
   @override
   State<TrashSidebarContent> createState() => _TrashSidebarContentState();
@@ -340,32 +418,48 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
         itemCount: state.objects.length,
         itemBuilder: (context, index) {
           final object = state.objects[index];
+          final isSelected = widget.selectedObject?.id == object.id;
+          
           return Container(
             margin: const EdgeInsets.only(bottom: 8),
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: isSelected 
+                  ? Theme.of(context).colorScheme.primaryContainer
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
+              border: isSelected 
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    )
+                  : null,
             ),
-            child: TrashCell(
-              object: object,
-              onRestore: () => showCancelAndConfirmDialog(
-                context: context,
-                title: LocaleKeys.trash_restorePage_title.tr(args: [object.name]),
-                description: LocaleKeys.trash_restorePage_caption.tr(),
-                confirmLabel: LocaleKeys.trash_restore.tr(),
-                onConfirm: (_) => context
-                    .read<TrashBloc>()
-                    .add(TrashEvent.putback(object.id)),
-              ),
-              onDelete: () => showConfirmDeletionDialog(
-                context: context,
-                name: object.name.trim().isEmpty
-                    ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
-                    : object.name,
-                description:
-                    LocaleKeys.deletePagePrompt_deletePermanentDescription.tr(),
-                onConfirm: () =>
-                    context.read<TrashBloc>().add(TrashEvent.delete(object)),
+            child: InkWell(
+              onTap: () {
+                widget.onObjectSelected?.call(object);
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: TrashCell(
+                object: object,
+                onRestore: () => showCancelAndConfirmDialog(
+                  context: context,
+                  title: LocaleKeys.trash_restorePage_title.tr(args: [object.name]),
+                  description: LocaleKeys.trash_restorePage_caption.tr(),
+                  confirmLabel: LocaleKeys.trash_restore.tr(),
+                  onConfirm: (_) => context
+                      .read<TrashBloc>()
+                      .add(TrashEvent.putback(object.id)),
+                ),
+                onDelete: () => showConfirmDeletionDialog(
+                  context: context,
+                  name: object.name.trim().isEmpty
+                      ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
+                      : object.name,
+                  description:
+                      LocaleKeys.deletePagePrompt_deletePermanentDescription.tr(),
+                  onConfirm: () =>
+                      context.read<TrashBloc>().add(TrashEvent.delete(object)),
+                ),
               ),
             ),
           );
