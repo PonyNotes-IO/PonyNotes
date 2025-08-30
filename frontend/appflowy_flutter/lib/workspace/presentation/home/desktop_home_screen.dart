@@ -31,6 +31,7 @@ import 'package:collection/collection.dart';
 import 'package:flowy_infra_ui/style_widget/container.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:sized_context/sized_context.dart';
 import 'package:styled_widget/styled_widget.dart';
 
@@ -41,6 +42,7 @@ import '../widgets/sidebar_resizer.dart';
 import 'home_layout.dart';
 import 'home_stack.dart';
 import 'menu/sidebar/slider_menu_hover_trigger.dart';
+import 'menu/sidebar/shared/sidebar_manager.dart';
 
 class DesktopHomeScreen extends StatelessWidget {
   const DesktopHomeScreen({super.key});
@@ -97,6 +99,9 @@ class DesktopHomeScreen extends StatelessWidget {
               BlocProvider<FavoriteBloc>(
                 create: (context) =>
                     FavoriteBloc()..add(const FavoriteEvent.initial()),
+              ),
+              ChangeNotifierProvider<SidebarManager>.value(
+                value: getIt<SidebarManager>(),
               ),
             ],
             child: Scaffold(
@@ -282,59 +287,65 @@ class DesktopHomeScreen extends StatelessWidget {
     required Widget sliderHoverTrigger,
   }) {
     final isSliderbarShowing = layout.showMenu;
-    return Stack(
-      children: [
-        homeStack
-            .constrained(minWidth: 500)
-            .positioned(
-              left: layout.homePageLOffset,
-              right: layout.homePageROffset,
-              bottom: 0,
-              top: 0,
-              animate: true,
-            )
-            .animate(layout.animDuration, Curves.easeOutQuad),
-        bubble
-            .positioned(right: 20, bottom: 16, animate: true)
-            .animate(layout.animDuration, Curves.easeOut),
-        editPanel
-            .animatedPanelX(
-              duration: layout.animDuration.inMilliseconds * 0.001,
-              closeX: layout.editPanelWidth,
-              isClosed: !layout.showEditPanel,
-              curve: Curves.easeOutQuad,
-            )
-            .positioned(
-              top: 0,
-              right: 0,
-              bottom: 0,
-              width: layout.editPanelWidth,
-            ),
-        notificationPanel
-            .animatedPanelX(
-              closeX: -layout.notificationPanelWidth,
-              isClosed: !layout.showNotificationPanel,
-              curve: Curves.easeOutQuad,
-              duration: layout.animDuration.inMilliseconds * 0.001,
-            )
-            .positioned(
-              left: isSliderbarShowing ? layout.menuWidth : 0,
-              top: isSliderbarShowing ? 0 : 52,
-              width: layout.notificationPanelWidth,
-              bottom: 0,
-            ),
-        sidebar
-            .animatedPanelX(
-              closeX: -layout.menuWidth,
-              isClosed: !isSliderbarShowing,
-              curve: Curves.easeOutQuad,
-              duration: layout.animDuration.inMilliseconds * 0.001,
-            )
-            .positioned(left: 0, top: 0, width: layout.menuWidth, bottom: 0),
-        homeMenuResizer
-            .positioned(left: layout.menuWidth)
-            .animate(layout.animDuration, Curves.easeOutQuad),
-      ],
+    return Consumer<SidebarManager>(
+      builder: (context, sidebarManager, child) {
+        print('DesktopHomeScreen: 重建界面 - 侧边栏可见: ${sidebarManager.isSidebarVisible}');
+        return Stack(
+          children: [
+            homeStack
+                .constrained(minWidth: 500)
+                .positioned(
+                  left: layout.homePageLOffset,
+                  right: layout.homePageROffset,
+                  bottom: 0,
+                  top: 0,
+                  animate: true,
+                )
+                .animate(layout.animDuration, Curves.easeOutQuad),
+            bubble
+                .positioned(right: 20, bottom: 16, animate: true)
+                .animate(layout.animDuration, Curves.easeOut),
+            editPanel
+                .animatedPanelX(
+                  duration: layout.animDuration.inMilliseconds * 0.001,
+                  closeX: layout.editPanelWidth,
+                  isClosed: !layout.showEditPanel,
+                  curve: Curves.easeOutQuad,
+                )
+                .positioned(
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  width: layout.editPanelWidth,
+                ),
+            notificationPanel
+                .animatedPanelX(
+                  closeX: -layout.notificationPanelWidth,
+                  isClosed: !layout.showNotificationPanel,
+                  curve: Curves.easeOutQuad,
+                  duration: layout.animDuration.inMilliseconds * 0.001,
+                )
+                .positioned(
+                  left: isSliderbarShowing ? layout.menuWidth : 0,
+                  top: isSliderbarShowing ? 0 : 52,
+                  width: layout.notificationPanelWidth,
+                  bottom: 0,
+                ),
+            sidebar
+                .animatedPanelX(
+                  closeX: -layout.menuWidth,
+                  isClosed: !isSliderbarShowing,
+                  curve: Curves.easeOutQuad,
+                  duration: layout.animDuration.inMilliseconds * 0.001,
+                )
+                .positioned(left: 0, top: 0, width: layout.menuWidth, bottom: 0),
+            homeMenuResizer
+                .positioned(left: layout.menuWidth)
+                .animate(layout.animDuration, Curves.easeOutQuad),
+
+          ],
+        );
+      },
     );
   }
 

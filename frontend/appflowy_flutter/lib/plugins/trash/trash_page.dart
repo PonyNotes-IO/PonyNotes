@@ -46,7 +46,6 @@ class _TrashPageState extends State<TrashPage> {
             child: Column(
               children: [
                 _renderTopBar(context, state),
-                const VSpace(32),
                 _renderTrashList(context, state),
               ],
             ).padding(horizontal: horizontalPadding, vertical: 48),

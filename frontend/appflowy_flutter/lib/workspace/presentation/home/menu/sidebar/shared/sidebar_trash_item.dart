@@ -22,14 +22,7 @@ class SidebarTrashItem extends StatelessWidget {
         text: LocaleKeys.trash_text.tr(),
         mainAxisAlignment: MainAxisAlignment.start,
         size: AFButtonSize.l,
-        onTap: () {
-          getIt<MenuSharedState>().latestOpenView = null;
-          getIt<TabsBloc>().add(
-            TabsEvent.openPlugin(
-              plugin: makePlugin(pluginType: PluginType.trash),
-            ),
-          );
-        },
+        onTap: () => _openTrash(context),
         padding: EdgeInsets.symmetric(
           horizontal: 8,
           vertical: 10,
@@ -42,5 +35,22 @@ class SidebarTrashItem extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _openTrash(BuildContext context) async {
+    try {
+      // 创建回收站插件
+      final trashPlugin = makePlugin(
+        pluginType: PluginType.trash,
+        data: null,
+      );
+
+      // 在新标签页中打开回收站
+      context.read<TabsBloc>().add(
+        TabsEvent.openPlugin(plugin: trashPlugin),
+      );
+    } catch (e) {
+      // 静默处理错误，不显示用户
+    }
   }
 }

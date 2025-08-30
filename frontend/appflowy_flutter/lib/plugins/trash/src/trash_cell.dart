@@ -7,6 +7,7 @@ import 'package:flowy_infra_ui/widget/spacing.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/trash.pb.dart';
 import 'package:flutter/material.dart';
 import 'package:fixnum/fixnum.dart' as $fixnum;
+import 'package:flowy_infra/size.dart';
 
 import 'sizes.dart';
 
@@ -24,46 +25,55 @@ class TrashCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: TrashSizes.fileNameWidth,
-          child: FlowyText(
-            object.name.isEmpty
-                ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
-                : object.name,
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FlowyText(
+                  object.name.isEmpty
+                      ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
+                      : object.name,
+                  fontSize: FontSizes.s14,
+                  fontWeight: FontWeight.w500,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const VSpace(4),
+                FlowyText(
+                  dateFormatter(object.modifiedTime),
+                  fontSize: FontSizes.s12,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
-        ),
-        SizedBox(
-          width: TrashSizes.lashModifyWidth,
-          child: FlowyText(dateFormatter(object.modifiedTime)),
-        ),
-        SizedBox(
-          width: TrashSizes.createTimeWidth,
-          child: FlowyText(dateFormatter(object.createTime)),
-        ),
-        const Spacer(),
-        FlowyIconButton(
-          iconColorOnHover: Theme.of(context).colorScheme.onSurface,
-          width: TrashSizes.actionIconWidth,
-          onPressed: onRestore,
-          iconPadding: const EdgeInsets.all(5),
-          icon: const FlowySvg(FlowySvgs.restore_s),
-        ),
-        const HSpace(20),
-        FlowyIconButton(
-          iconColorOnHover: Theme.of(context).colorScheme.onSurface,
-          width: TrashSizes.actionIconWidth,
-          onPressed: onDelete,
-          iconPadding: const EdgeInsets.all(5),
-          icon: const FlowySvg(FlowySvgs.delete_s),
-        ),
-      ],
+          const HSpace(8),
+          FlowyIconButton(
+            iconColorOnHover: Theme.of(context).colorScheme.onSurface,
+            width: TrashSizes.actionIconWidth,
+            onPressed: onRestore,
+            iconPadding: const EdgeInsets.all(5),
+            icon: const FlowySvg(FlowySvgs.restore_s),
+          ),
+          const HSpace(8),
+          FlowyIconButton(
+            iconColorOnHover: Theme.of(context).colorScheme.onSurface,
+            width: TrashSizes.actionIconWidth,
+            onPressed: onDelete,
+            iconPadding: const EdgeInsets.all(5),
+            icon: const FlowySvg(FlowySvgs.delete_s),
+          ),
+        ],
+      ),
     );
   }
 
   String dateFormatter($fixnum.Int64 inputTimestamps) {
-    final outputFormat = DateFormat('MM/dd/yyyy hh:mm a');
+    final outputFormat = DateFormat('yyyy/MM/dd');
     final date =
         DateTime.fromMillisecondsSinceEpoch(inputTimestamps.toInt() * 1000);
     final outputDate = outputFormat.format(date);
