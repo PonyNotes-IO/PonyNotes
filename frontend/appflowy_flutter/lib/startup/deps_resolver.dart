@@ -32,6 +32,7 @@ import 'package:appflowy/workspace/application/user/prelude.dart';
 import 'package:appflowy/workspace/application/view/prelude.dart';
 import 'package:appflowy/workspace/application/workspace/prelude.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_manager.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
@@ -143,6 +144,7 @@ void _resolveHomeDeps(GetIt getIt) {
   getIt.registerSingleton(FToast());
 
   getIt.registerSingleton(MenuSharedState());
+  getIt.registerSingleton(SidebarManager());
 
   getIt.registerFactoryParam<UserListener, UserProfilePB, void>(
     (user, _) => UserListener(userProfile: user),
