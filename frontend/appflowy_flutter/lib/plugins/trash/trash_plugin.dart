@@ -15,6 +15,7 @@ import 'package:flowy_infra_ui/style_widget/scrolling/styled_scroll_bar.dart';
 import 'package:flowy_infra_ui/style_widget/scrolling/styled_scrollview.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
 import 'package:flowy_infra_ui/widget/spacing.dart';
+import 'package:flowy_infra_ui/widget/flowy_tooltip.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:styled_widget/styled_widget.dart';
@@ -23,6 +24,23 @@ import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/trash.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:fixnum/fixnum.dart' as $fixnum;
+import 'package:appflowy/plugins/document/application/document_bloc.dart';
+import 'package:appflowy/plugins/document/presentation/editor_page.dart';
+import 'package:appflowy/plugins/document/presentation/editor_style.dart';
+import 'package:appflowy/plugins/document/presentation/editor_plugins/plugins.dart';
+import 'package:appflowy/plugins/document/presentation/editor_configuration.dart';
+import 'package:appflowy/plugins/document/presentation/editor_plugins/shared_context/shared_context.dart';
+import 'package:appflowy/plugins/document/presentation/editor_plugins/transaction_handler/editor_transaction_service.dart';
+import 'package:appflowy/workspace/application/view/view_bloc.dart';
+import 'package:appflowy_editor/appflowy_editor.dart';
+import 'package:appflowy_backend/protobuf/flowy-error/protobuf.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
+import 'package:appflowy/workspace/application/view/view_ext.dart';
+import 'package:appflowy/plugins/document/presentation/editor_plugins/header/emoji_icon_widget.dart';
+import 'package:appflowy/shared/icon_emoji_picker/flowy_icon_emoji_picker.dart';
+import 'dart:ui' as ui;
+
 
 class TrashPluginBuilder extends PluginBuilder {
   @override
@@ -151,7 +169,7 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
                               builder: (context, state) {
                                 if (state.objects.isNotEmpty) {
                                   return Padding(
-                                    padding: const EdgeInsets.only(right: 16), // 统一右边距为16px
+                                    padding: const EdgeInsets.only(right: 24), // 调整为24px右边距
                                     child: FlowyText.regular(
                                       '回收站的笔记将在7天后永久删除',
                                       fontSize: FontSizes.s12,
@@ -223,78 +241,17 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
   }
   
   Widget _buildSelectedObjectContent(BuildContext context, TrashPB object) {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 面包屑导航
-          Row(
-            children: [
-              Icon(
-                Icons.folder_outlined,
-                size: 16,
-                color: Colors.grey[600],
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '小马笔记教程 / 小马笔记教程',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // 标题
-          Text(
-            object.name.isEmpty 
-                ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
-                : object.name,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 16),
-          // 内容区域（这里可以根据实际需要显示更多内容）
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '页面内容将在这里显示',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '创建时间: ${_formatDate(object.createTime)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                  Text(
-                    '修改时间: ${_formatDate(object.modifiedTime)}',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    // 创建一个临时的 ViewPB 来显示文档内容
+    final tempView = ViewPB.create()
+      ..id = object.id
+      ..name = object.name.isEmpty 
+          ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
+          : object.name
+      ..layout = ViewLayoutPB.Document
+      ..createTime = object.createTime
+      ..lastEdited = object.modifiedTime;
+
+    return TrashDocumentView(view: tempView);
   }
   
   String _formatDate($fixnum.Int64 timestamp) {
@@ -393,13 +350,13 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
             margin: const EdgeInsets.only(bottom: 4),
             decoration: BoxDecoration(
               color: isSelected 
-                  ? Theme.of(context).colorScheme.primaryContainer
+                  ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
                   : Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(8),
               border: isSelected 
                   ? Border.all(
                       color: Theme.of(context).colorScheme.primary,
-                      width: 2,
+                      width: 1.5,
                     )
                   : null,
             ),
@@ -441,4 +398,493 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
 class TrashPluginConfig implements PluginConfig {
   @override
   bool get creatable => false;
+}
+
+// 回收站文档视图组件
+class TrashDocumentView extends StatelessWidget {
+  const TrashDocumentView({
+    super.key,
+    required this.view,
+  });
+
+  final ViewPB view;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => DocumentBloc(documentId: view.id)
+            ..add(const DocumentEvent.initial()),
+        ),
+        BlocProvider(
+          create: (context) => ViewBloc(view: view)..add(const ViewEvent.initial()),
+        ),
+      ],
+      child: BlocBuilder<DocumentBloc, DocumentState>(
+        builder: (context, state) {
+          if (state.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator.adaptive(),
+            );
+          }
+
+          final editorState = state.editorState;
+          final error = state.error;
+          if (error != null || editorState == null) {
+            return _buildErrorView(context, error);
+          }
+
+          return _buildDocumentView(context, editorState);
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, FlowyError? error) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+          const SizedBox(height: 24),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '无法加载文档内容',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '此文档可能已被永久删除',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '错误信息: ${error.msg}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentView(BuildContext context, EditorState editorState) {
+    // 设置编辑器为只读状态
+    editorState.editable = false;
+    
+    return Column(
+      children: [
+        _buildHeader(context),
+        const SizedBox(height: 16),
+        Expanded(
+          child: _buildReadOnlyEditor(context, editorState),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReadOnlyEditor(BuildContext context, EditorState editorState) {
+    final isRTL = context.read<AppearanceSettingsCubit>().state.layoutDirection ==
+        LayoutDirection.rtlLayout;
+    final textDirection = isRTL ? ui.TextDirection.rtl : ui.TextDirection.ltr;
+
+    return Directionality(
+      textDirection: textDirection,
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: const EdgeInsets.all(24.0),
+        child: SingleChildScrollView(
+          child: _buildReadOnlyContent(context, editorState),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyContent(BuildContext context, EditorState editorState) {
+    // 获取文档内容并转换为只读显示
+    final document = editorState.document;
+    final nodes = document.root.children;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: nodes.map((node) {
+        return _buildReadOnlyNode(context, node);
+      }).toList(),
+    );
+  }
+
+  Widget _buildReadOnlyNode(BuildContext context, Node node) {
+    if (node.type == 'paragraph') {
+      return _buildReadOnlyParagraph(context, node);
+    } else if (node.type == 'heading') {
+      return _buildReadOnlyHeading(context, node);
+    } else if (node.type == 'bulleted_list') {
+      return _buildReadOnlyBulletedList(context, node);
+    } else if (node.type == 'numbered_list') {
+      return _buildReadOnlyNumberedList(context, node);
+    } else if (node.type == 'quote') {
+      return _buildReadOnlyQuote(context, node);
+    } else if (node.type == 'code') {
+      return _buildReadOnlyCode(context, node);
+    } else if (node.type == 'divider') {
+      return _buildReadOnlyDivider(context);
+    } else if (node.type == 'image') {
+      return _buildReadOnlyImage(context, node);
+    } else {
+      // 默认段落处理
+      return _buildReadOnlyParagraph(context, node);
+    }
+  }
+
+  Widget _buildReadOnlyParagraph(BuildContext context, Node node) {
+    final text = _extractTextFromNode(node);
+    if (text.isEmpty) {
+      return const SizedBox(height: 16);
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          height: 1.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyHeading(BuildContext context, Node node) {
+    final text = _extractTextFromNode(node);
+    final level = node.attributes['level'] ?? 1;
+    
+    TextStyle? headingStyle;
+    switch (level) {
+      case 1:
+        headingStyle = Theme.of(context).textTheme.headlineLarge;
+        break;
+      case 2:
+        headingStyle = Theme.of(context).textTheme.headlineMedium;
+        break;
+      case 3:
+        headingStyle = Theme.of(context).textTheme.headlineSmall;
+        break;
+      default:
+        headingStyle = Theme.of(context).textTheme.titleLarge;
+    }
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0, top: 8.0),
+      child: Text(
+        text,
+        style: headingStyle?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyBulletedList(BuildContext context, Node node) {
+    final text = _extractTextFromNode(node);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, left: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '• ',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyNumberedList(BuildContext context, Node node) {
+    final text = _extractTextFromNode(node);
+    final index = node.attributes['number'] ?? 1;
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8.0, left: 16.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$index. ',
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: Theme.of(context).colorScheme.onSurface,
+                height: 1.6,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyQuote(BuildContext context, Node node) {
+    final text = _extractTextFromNode(node);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 4,
+          ),
+        ),
+        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontStyle: FontStyle.italic,
+          height: 1.6,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyCode(BuildContext context, Node node) {
+    final text = _extractTextFromNode(node);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurface,
+          fontFamily: 'monospace',
+          height: 1.4,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReadOnlyDivider(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 16.0),
+      height: 1,
+      color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
+    );
+  }
+
+  Widget _buildReadOnlyImage(BuildContext context, Node node) {
+    final url = node.attributes['url'] ?? '';
+    if (url.isEmpty) return const SizedBox.shrink();
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceVariant,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Icon(
+                  Icons.broken_image,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _extractTextFromNode(Node node) {
+    // 使用 delta 来获取文本内容
+    final text = node.delta?.toPlainText() ?? '';
+    if (text.isNotEmpty) {
+      return text;
+    }
+    
+    // 如果有子节点，递归处理
+    if (node.children.isNotEmpty) {
+      return node.children.map((child) => _extractTextFromNode(child)).join('');
+    }
+    
+    return '';
+  }
+
+  Future<List<ViewPB>> _getViewAncestors(String viewId) async {
+    try {
+      // 使用 ViewBackendService 获取视图祖先
+      final result = await ViewBackendService.getViewAncestors(viewId);
+      return result.fold(
+        (ancestors) => ancestors.items,
+        (error) => <ViewPB>[],
+      );
+    } catch (e) {
+      return <ViewPB>[];
+    }
+  }
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 面包屑导航 - 显示原始路径
+          FutureBuilder<List<ViewPB>>(
+            future: _getViewAncestors(view.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return SizedBox(
+                  height: 32,
+                  child: Row(
+                    children: [
+                      const FlowySvg(FlowySvgs.icon_folder_s, size: Size.square(14)),
+                      const HSpace(4.0),
+                      FlowyText.regular(
+                        '加载中...',
+                        fontSize: 14.0,
+                        figmaLineHeight: 18.0,
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              final ancestors = snapshot.data ?? [];
+              if (ancestors.isEmpty) {
+                // 如果没有祖先路径，显示回收站
+                return SizedBox(
+                  height: 32,
+                  child: Row(
+                    children: [
+                      const FlowySvg(FlowySvgs.trash_s, size: Size.square(14)),
+                      const HSpace(4.0),
+                      FlowyText.regular(
+                        LocaleKeys.trash_text.tr(),
+                        fontSize: 14.0,
+                        figmaLineHeight: 18.0,
+                      ),
+                    ],
+                  ),
+                );
+              }
+              
+              // 显示原始路径 - 跳过第一个（workspace），从第二个开始显示
+              return SizedBox(
+                height: 32,
+                child: Row(
+                  children: [
+                    for (int i = 1; i < ancestors.length; i++) ...[
+                      if (i > 1) ...[
+                        const FlowySvg(FlowySvgs.title_bar_divider_s),
+                        const HSpace(4.0),
+                      ],
+                      Container(
+                        height: 32,
+                        margin: const EdgeInsets.symmetric(horizontal: 6.0),
+                        child: Row(
+                          children: [
+                            if (ancestors[i].icon.value.isNotEmpty) ...[
+                              RawEmojiIconWidget(
+                                emoji: ancestors[i].icon.toEmojiIconData(),
+                                emojiSize: 14.0,
+                              ),
+                              const HSpace(4.0),
+                            ],
+                            FlowyText.regular(
+                              ancestors[i].name.isEmpty 
+                                  ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
+                                  : ancestors[i].name,
+                              fontSize: 14.0,
+                              overflow: TextOverflow.ellipsis,
+                              figmaLineHeight: 18.0,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          // 标题
+          Text(
+            view.name,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+        ],
+      ),
+    );
+  }
 } 
