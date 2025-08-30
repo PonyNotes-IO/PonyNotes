@@ -26,7 +26,7 @@ class TrashCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(8.0, 8.0, 0.0, 8.0), // 调整右边距对齐到红色竖线位置
+      padding: const EdgeInsets.fromLTRB(8.0, 8.0, 8.0, 8.0), // 为右侧操作按钮添加8px右边距
       child: Row(
         children: [
           Expanded(
@@ -57,7 +57,7 @@ class TrashCell extends StatelessWidget {
             width: TrashSizes.actionIconWidth,
             onPressed: onRestore,
             iconPadding: const EdgeInsets.all(3),
-            icon: const FlowySvg(FlowySvgs.restore_s),
+            icon: const FlowySvg(FlowySvgs.reset_m),
           ),
           const HSpace(2),
           FlowyIconButton(
@@ -65,7 +65,7 @@ class TrashCell extends StatelessWidget {
             width: TrashSizes.actionIconWidth,
             onPressed: onDelete,
             iconPadding: const EdgeInsets.all(3),
-            icon: const FlowySvg(FlowySvgs.delete_s),
+            icon: const FlowySvg(FlowySvgs.delete_m),
           ),
         ],
       ),

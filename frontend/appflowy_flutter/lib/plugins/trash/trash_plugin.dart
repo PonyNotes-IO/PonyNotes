@@ -303,7 +303,7 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
 
   Widget _buildEmptyState(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 0), // 统一左右边距为16px
+      padding: const EdgeInsets.fromLTRB(16.0, 0, 0, 0), // 左边距16px，右边距8px
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -340,7 +340,7 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
       barSize: 6.0,
       child: ListView.builder(
         controller: _scrollController,
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0), // 统一左右边距为16px
+        padding: const EdgeInsets.fromLTRB(16, 0, 0, 0), // 左边距16px，右边距8px
         itemCount: state.objects.length,
         itemBuilder: (context, index) {
           final object = state.objects[index];
