@@ -9,7 +9,7 @@
           // It supports both the desktop and mobile version.
           "name": "AF: Build Dart Only",
           "request": "launch",
-          "program": "./frontend/appflowy_flutter/lib/main.dart",
+          "program": "./lib/main.dart",
           "type": "dart",
           "env": {
               "RUST_LOG": "debug",
@@ -20,50 +20,50 @@
           // "flutterMode": "profile",
           "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
       },
-      {
-          // This task builds the Rust and Dart code of AppFlowy.
-          "name": "AF-desktop: Build All",
-          "request": "launch",
-          "program": "./frontend/lib/main.dart",
-          "type": "dart",
-          "preLaunchTask": "AF: Build Appflowy Core",
-          "env": {
-              "RUST_LOG": "trace",
-              "RUST_BACKTRACE": "1",
-              "NO_PROXY": "localhost,127.0.0.1,::1",
-              "no_proxy": "localhost,127.0.0.1,::1"
-          },
-          "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
-      },
-      {
-          // This task builds will:
-          // - call the clean task,
-          // - rebuild all the generated Files (including freeze and language files)
-          // - rebuild the the Rust and Dart code of AppFlowy.
-          "name": "AF-desktop: Clean + Rebuild All",
-          "request": "launch",
-          "program": "./frontend/lib/main.dart",
-          "type": "dart",
-          "preLaunchTask": "AF: Clean + Rebuild All",
-          "env": {
-              "RUST_LOG": "trace",
-              "RUST_BACKTRACE": "1",
-              "NO_PROXY": "localhost,127.0.0.1,::1",
-              "no_proxy": "localhost,127.0.0.1,::1"
-          },
-          "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
-      },
-      {
-          "name": "AF-iOS: Build All",
-          "request": "launch",
-          "program": "./frontend/lib/main.dart",
-          "type": "dart",
-          "preLaunchTask": "AF: Build Appflowy Core For iOS",
-          "env": {
-              "RUST_LOG": "trace"
-          },
-          "cwd": "${workspaceRoot}/frontend/appflowy_flutter"
-      },
+              {
+            // This task builds the Rust and Dart code of AppFlowy.
+            "name": "AF-desktop: Build All",
+            "request": "launch",
+            "program": "./lib/main.dart",
+            "type": "dart",
+            "preLaunchTask": "AF: Build Appflowy Core",
+            "env": {
+                "RUST_LOG": "trace",
+                "RUST_BACKTRACE": "1",
+                "NO_PROXY": "localhost,127.0.0.1,::1",
+                "no_proxy": "localhost,127.0.0.1,::1"
+            },
+            "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
+        },
+              {
+            // This task builds will:
+            // - call the clean task,
+            // - rebuild all the generated Files (including freeze and language files)
+            // - rebuild the the Rust and Dart code of AppFlowy.
+            "name": "AF-desktop: Clean + Rebuild All",
+            "request": "launch",
+            "program": "./lib/main.dart",
+            "type": "dart",
+            "preLaunchTask": "AF: Clean + Rebuild All",
+            "env": {
+                "RUST_LOG": "trace",
+                "RUST_BACKTRACE": "1",
+                "NO_PROXY": "localhost,127.0.0.1,::1",
+                "no_proxy": "localhost,127.0.0.1,::1"
+            },
+            "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
+        },
+              {
+            "name": "AF-iOS: Build All",
+            "request": "launch",
+            "program": "./lib/main.dart",
+            "type": "dart",
+            "preLaunchTask": "AF: Build Appflowy Core For iOS",
+            "env": {
+                "RUST_LOG": "trace"
+            },
+            "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
+        },
       {
           "name": "AF-iOS: Clean + Rebuild All",
           "request": "launch",
