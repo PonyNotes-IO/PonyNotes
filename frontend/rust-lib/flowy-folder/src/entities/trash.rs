@@ -14,6 +14,9 @@ pub struct TrashPB {
 
   #[pb(index = 4)]
   pub create_time: i64,
+
+  #[pb(index = 5)]
+  pub deleted_at: i64,
 }
 
 impl std::convert::From<TrashInfo> for TrashPB {
@@ -23,6 +26,7 @@ impl std::convert::From<TrashInfo> for TrashPB {
       name: trash_info.name,
       modified_time: trash_info.created_at,
       create_time: trash_info.created_at,
+      deleted_at: trash_info.created_at, // 使用created_at作为deleted_at，因为这是项目被删除的时间
     }
   }
 }

@@ -10,6 +10,7 @@ import 'package:appflowy/plugins/database/tab_bar/tab_bar_view.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra/size.dart';
 import 'package:flowy_infra_ui/style_widget/button.dart';
+import 'package:flowy_infra_ui/style_widget/icon_button.dart';
 import 'package:flowy_infra_ui/style_widget/scrolling/styled_list.dart';
 import 'package:flowy_infra_ui/style_widget/scrolling/styled_scroll_bar.dart';
 import 'package:flowy_infra_ui/style_widget/scrolling/styled_scrollview.dart';
@@ -229,13 +230,19 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
           return const SizedBox.shrink();
         }
         
-        // 如果没有选中项，显示空白
-        if (_selectedObject == null) {
-          return const SizedBox.shrink();
-        }
-        
-        // 如果选中了项目，显示其内容
-        return _buildSelectedObjectContent(context, _selectedObject!);
+        // 构建主界面内容
+        return Column(
+          children: [
+            // 工具栏 - 只在有内容时显示
+            TrashToolbar(),
+            // 主内容区域
+            Expanded(
+              child: _selectedObject == null 
+                  ? const SizedBox.shrink() // 没有选中项目时显示空白
+                  : _buildSelectedObjectContent(context, _selectedObject!),
+            ),
+          ],
+        );
       },
     );
   }
@@ -398,6 +405,227 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
 class TrashPluginConfig implements PluginConfig {
   @override
   bool get creatable => false;
+}
+
+// 回收站工具栏组件
+class TrashToolbar extends StatelessWidget {
+  const TrashToolbar({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Spacer(),
+          // 恢复所有按钮
+          FlowyIconButton(
+            iconColorOnHover: Theme.of(context).colorScheme.primary,
+            width: 32,
+            onPressed: () => _showRestoreAllDialog(context),
+            iconPadding: const EdgeInsets.all(4),
+            icon: const FlowySvg(FlowySvgs.reset_m),
+            tooltipText: LocaleKeys.trash_restoreAll.tr(),
+          ),
+          const HSpace(16),
+          // 删除所有按钮
+          FlowyIconButton(
+            iconColorOnHover: Theme.of(context).colorScheme.error,
+            width: 32,
+            onPressed: () => _showDeleteAllDialog(context),
+            iconPadding: const EdgeInsets.all(4),
+            icon: const FlowySvg(FlowySvgs.delete_m),
+            tooltipText: LocaleKeys.trash_deleteAll.tr(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRestoreAllDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Container(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 提示信息区域
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                child: Text(
+                  '确定一键恢复回收站内容?',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // 分割线
+              Container(
+                width: double.infinity,
+                height: 1,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              ),
+              // 底部操作区域
+              Container(
+                width: double.infinity,
+                height: 56,
+                child: Row(
+                  children: [
+                    // 取消区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '取消',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 垂直分割线
+                    Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    ),
+                    // 恢复区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          context.read<TrashBloc>().add(const TrashEvent.restoreAll());
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '恢复',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF4CAF50), // 绿色文字
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteAllDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Container(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 提示信息区域
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                child: Text(
+                  '确定一键清空回收站内容?',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // 分割线
+              Container(
+                width: double.infinity,
+                height: 1,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              ),
+              // 底部操作区域
+              Container(
+                width: double.infinity,
+                height: 56,
+                child: Row(
+                  children: [
+                    // 取消区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '取消',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 垂直分割线
+                    Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    ),
+                    // 清空区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          context.read<TrashBloc>().add(const TrashEvent.deleteAll());
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '清空',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFFFF6B35), // 橙色文字
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 // 回收站文档视图组件

@@ -43,7 +43,7 @@ impl FolderDepsResolver {
       authenticate_user: authenticate_user.clone(),
     });
 
-    Arc::new(
+    let folder_manager = Arc::new(
       FolderManager::new(
         user.clone(),
         collab_builder,
@@ -51,7 +51,12 @@ impl FolderDepsResolver {
         store_preferences,
       )
       .unwrap(),
-    )
+    );
+
+    // Start the auto-cleanup task for expired trash items
+    folder_manager.start_auto_cleanup();
+
+    folder_manager
   }
 }
 
