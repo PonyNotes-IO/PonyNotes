@@ -1,5 +1,8 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
+import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
+import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/home/toast.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
@@ -1074,7 +1077,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     
     // 如果是笔记类型，创建真实的文档
     if (type == MySpaceItemType.note) {
-      _createRealDocument(defaultName);
+      _createRealDocumentWithParent(defaultName, parentItem.id);
     } else {
       // 其他类型保持原有逻辑
       final newItem = MySpaceMenuItem(
@@ -1116,18 +1119,75 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     );
   }
 
+  /// 创建真实的文档并指定父级视图
+  void _createRealDocumentWithParent(String name, String parentViewId) async {
+    try {
+      // 首先检查parentViewId是否对应一个真实的ViewPB
+      final parentViewResult = await ViewBackendService.getView(parentViewId);
+      
+      await parentViewResult.fold(
+        (parentView) async {
+          // 父视图存在，在其下创建子文档
+          final result = await ViewBackendService.createView(
+            layoutType: ViewLayoutPB.Document,
+            parentViewId: parentViewId,
+            name: name,
+            openAfterCreate: false,
+          );
+          
+          result.fold(
+            (newView) {
+              // 创建成功，显示提示并同步菜单
+              showMessageToast('已在"${parentView.name}"下创建笔记: $name', context: context);
+              _syncMenuItemsFromBloc();
+            },
+            (error) {
+              showMessageToast('创建笔记失败: ${error.msg}', context: context);
+            },
+          );
+        },
+        (error) {
+          // 父视图不存在（可能是UI-only的文件夹/笔记本），回退到根级创建
+          showMessageToast('父级项目不存在，将在根目录创建笔记', context: context);
+          _createRealDocument(name);
+        },
+      );
+    } catch (e) {
+      showMessageToast('创建笔记失败: $e', context: context);
+      _createRealDocument(name); // 回退方案
+    }
+  }
+
   /// 打开已存在的文档 - 复用"个人的"主菜单的打开逻辑
-  void _openExistingDocument(MySpaceMenuItem item) {
-    // 这里需要根据item.id找到对应的ViewPB并打开
-    // 由于当前MySpaceMenuItem只是UI模型，需要映射到实际的ViewPB
-    // 暂时先显示提示，后续可以通过ViewBackendService.getView来获取实际文档
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('正在打开笔记: ${item.name}')),
-    );
-    
-    // TODO: 实现真实的文档打开逻辑
-    // 需要将MySpaceMenuItem的id映射到实际的ViewPB.id
-    // 然后使用TabsBloc.openPlugin来打开文档
+  void _openExistingDocument(MySpaceMenuItem item) async {
+    try {
+      // 获取实际的ViewPB对象
+      final viewResult = await ViewBackendService.getView(item.id);
+      
+      await viewResult.fold(
+        (view) async {
+          // 成功获取到ViewPB，打开文档
+          final plugin = view.plugin();
+          
+          // 使用TabsBloc打开插件
+          getIt<TabsBloc>().add(
+            TabsEvent.openPlugin(
+              plugin: plugin,
+              view: view,
+              setLatest: true,
+            ),
+          );
+          
+          showMessageToast('已打开笔记: ${item.name}', context: context);
+        },
+        (error) {
+          // 获取ViewPB失败，可能是UI-only项目或已删除的文档
+          showMessageToast('无法打开笔记: ${item.name} - ${error.msg}', context: context);
+        },
+      );
+    } catch (e) {
+      showMessageToast('打开笔记失败: $e', context: context);
+    }
   }
 
   /// 从SidebarSectionsBloc同步菜单项（智能合并，保持UI状态）
@@ -1172,8 +1232,9 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
           // 保持 isExpanded, children 等UI状态不变
         ));
       } else {
-        // 如果本地不存在，创建新项目
-        result.add(_convertViewToMenuItem(view));
+        // 如果本地不存在，创建新项目并构建层级关系
+        final menuItem = _convertViewToMenuItem(view);
+        result.add(_buildHierarchicalItem(menuItem, validBackendViews));
       }
     }
 
@@ -1185,7 +1246,43 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       }
     }
 
-    return result;
+    // 3. 过滤掉已经作为子项目的项目，避免重复显示
+    return _filterRootItems(result, validBackendViews);
+  }
+
+  /// 构建层级关系的菜单项
+  MySpaceMenuItem _buildHierarchicalItem(MySpaceMenuItem item, List<ViewPB> allViews) {
+    // 查找该项目的子项目
+    final childViews = allViews.where((view) => 
+      view.parentViewId == item.id && view.id != item.id
+    ).toList();
+    
+    if (childViews.isEmpty) {
+      return item;
+    }
+    
+    final childItems = childViews.map((childView) {
+      final childItem = _convertViewToMenuItem(childView);
+      return _buildHierarchicalItem(childItem, allViews);
+    }).toList();
+    
+    return item.copyWith(children: childItems);
+  }
+
+  /// 过滤根级项目，移除已经作为子项目的项目
+  List<MySpaceMenuItem> _filterRootItems(List<MySpaceMenuItem> items, List<ViewPB> allViews) {
+    final childViewIds = <String>{};
+    
+    // 收集所有子视图的ID
+    for (final view in allViews) {
+      if (view.parentViewId.isNotEmpty && 
+          allViews.any((parent) => parent.id == view.parentViewId)) {
+        childViewIds.add(view.id);
+      }
+    }
+    
+    // 只返回根级项目（不是其他项目子项目的项目）
+    return items.where((item) => !childViewIds.contains(item.id)).toList();
   }
 
   /// 判断是否为仅UI层的项目（还未同步到后端）
@@ -1200,14 +1297,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     return false;
   }
 
-  /// 将ViewPB列表转换为MySpaceMenuItem列表
-  /// 注意：此方法已被_mergeViewsWithLocalState替代，保留用于备份
-  @Deprecated('使用_mergeViewsWithLocalState代替，以保持UI状态')
-  List<MySpaceMenuItem> _convertViewsToMenuItems(List<ViewPB> views) {
-    // 过滤有效的视图，避免重复和无效项
-    final validViews = _filterValidViews(views);
-    return validViews.map((view) => _convertViewToMenuItem(view)).toList();
-  }
+
   
   /// 过滤有效的视图，去除重复和无效项
   List<ViewPB> _filterValidViews(List<ViewPB> views) {
