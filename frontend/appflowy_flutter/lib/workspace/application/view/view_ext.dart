@@ -50,6 +50,11 @@ class ViewExtKeys {
   static String spaceIconKey = 'space_icon';
   static String spaceIconColorKey = 'space_icon_color';
   static String spacePermissionKey = 'space_permission';
+
+  // folder and notebook types
+  static String viewTypeKey = 'view_type';
+  static String folderTypeValue = 'folder';
+  static String notebookTypeValue = 'notebook';
 }
 
 extension MinimalViewExtension on FolderViewMinimalPB {
@@ -60,6 +65,8 @@ extension MinimalViewExtension on FolderViewMinimalPB {
           ViewLayoutPB.Grid => FlowySvgs.icon_grid_s,
           ViewLayoutPB.Document => FlowySvgs.icon_document_s,
           ViewLayoutPB.Chat => FlowySvgs.chat_ai_page_s,
+          ViewLayoutPB.Folder => FlowySvgs.folder_m,
+          ViewLayoutPB.Notebook => FlowySvgs.folder_m, // 使用文件夹图标，后面可以改为专门的笔记本图标
           _ => FlowySvgs.icon_document_s,
         },
         size: size,
@@ -84,6 +91,8 @@ extension ViewExtension on ViewPB {
           ViewLayoutPB.Grid => FlowySvgs.icon_grid_s,
           ViewLayoutPB.Document => FlowySvgs.icon_document_s,
           ViewLayoutPB.Chat => FlowySvgs.chat_ai_page_s,
+          ViewLayoutPB.Folder => FlowySvgs.folder_m,
+          ViewLayoutPB.Notebook => FlowySvgs.folder_m, // 使用文件夹图标，后面可以改为专门的笔记本图标
           _ => FlowySvgs.icon_document_s,
         },
         size: size,
@@ -95,6 +104,8 @@ extension ViewExtension on ViewPB {
         ViewLayoutPB.Document => PluginType.document,
         ViewLayoutPB.Grid => PluginType.grid,
         ViewLayoutPB.Chat => PluginType.chat,
+        ViewLayoutPB.Folder => PluginType.document, // 文件夹使用 document 插件
+        ViewLayoutPB.Notebook => PluginType.document, // 笔记本使用 document 插件
         _ => throw UnimplementedError(),
       };
 
@@ -113,6 +124,8 @@ extension ViewExtension on ViewPB {
           initialRowId: rowId,
         );
       case ViewLayoutPB.Document:
+      case ViewLayoutPB.Folder:
+      case ViewLayoutPB.Notebook:
         final selectionValue = arguments[PluginArgumentKeys.selection];
         Selection? initialSelection;
         if (selectionValue is Selection) initialSelection = selectionValue;
@@ -313,6 +326,58 @@ extension ViewExtension on ViewPB {
       extra = jsonEncode({ViewExtKeys.isSpaceKey: value});
     }
   }
+
+  bool get isFolder {
+    if (layout != ViewLayoutPB.Folder) return false;
+    try {
+      if (extra.isEmpty) return false;
+      final ext = jsonDecode(extra);
+      final viewType = ext[ViewExtKeys.viewTypeKey];
+      return viewType == ViewExtKeys.folderTypeValue;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  bool get isNotebook {
+    if (layout != ViewLayoutPB.Notebook) return false;
+    try {
+      if (extra.isEmpty) return false;
+      final ext = jsonDecode(extra);
+      final viewType = ext[ViewExtKeys.viewTypeKey];
+      return viewType == ViewExtKeys.notebookTypeValue;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void setAsFolder() {
+    try {
+      if (extra.isEmpty) {
+        extra = jsonEncode({ViewExtKeys.viewTypeKey: ViewExtKeys.folderTypeValue});
+      } else {
+        final ext = jsonDecode(extra);
+        ext[ViewExtKeys.viewTypeKey] = ViewExtKeys.folderTypeValue;
+        extra = jsonEncode(ext);
+      }
+    } catch (e) {
+      extra = jsonEncode({ViewExtKeys.viewTypeKey: ViewExtKeys.folderTypeValue});
+    }
+  }
+
+  void setAsNotebook() {
+    try {
+      if (extra.isEmpty) {
+        extra = jsonEncode({ViewExtKeys.viewTypeKey: ViewExtKeys.notebookTypeValue});
+      } else {
+        final ext = jsonDecode(extra);
+        ext[ViewExtKeys.viewTypeKey] = ViewExtKeys.notebookTypeValue;
+        extra = jsonEncode(ext);
+      }
+    } catch (e) {
+      extra = jsonEncode({ViewExtKeys.viewTypeKey: ViewExtKeys.notebookTypeValue});
+    }
+  }
 }
 
 extension ViewLayoutExtension on ViewLayoutPB {
@@ -322,6 +387,8 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Grid => FlowySvgs.icon_grid_s,
         ViewLayoutPB.Document => FlowySvgs.icon_document_s,
         ViewLayoutPB.Chat => FlowySvgs.chat_ai_page_s,
+        ViewLayoutPB.Folder => FlowySvgs.folder_m,
+        ViewLayoutPB.Notebook => FlowySvgs.folder_m, // 使用文件夹图标，后面可以改为专门的笔记本图标
         _ => FlowySvgs.icon_document_s,
       };
 
@@ -330,7 +397,9 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Chat ||
         ViewLayoutPB.Grid ||
         ViewLayoutPB.Board ||
-        ViewLayoutPB.Calendar =>
+        ViewLayoutPB.Calendar ||
+        ViewLayoutPB.Folder ||
+        ViewLayoutPB.Notebook =>
           false,
         _ => throw Exception('Unknown layout type'),
       };
@@ -340,12 +409,17 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Board ||
         ViewLayoutPB.Calendar =>
           true,
-        ViewLayoutPB.Document || ViewLayoutPB.Chat => false,
+        ViewLayoutPB.Document || 
+        ViewLayoutPB.Chat ||
+        ViewLayoutPB.Folder ||
+        ViewLayoutPB.Notebook => false,
         _ => throw Exception('Unknown layout type'),
       };
 
   String get defaultName => switch (this) {
         ViewLayoutPB.Document => '',
+        ViewLayoutPB.Folder => 'New Folder',
+        ViewLayoutPB.Notebook => 'New Notebook',
         _ => LocaleKeys.menuAppHeader_defaultNewPageName.tr(),
       };
 
@@ -359,6 +433,7 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Document || ViewLayoutPB.Board || ViewLayoutPB.Chat => 450,
         ViewLayoutPB.Calendar => 650,
         ViewLayoutPB.Grid => double.infinity,
+        ViewLayoutPB.Folder || ViewLayoutPB.Notebook => 450, // 文件夹和笔记本使用默认高度
         _ => throw UnimplementedError(),
       };
 }

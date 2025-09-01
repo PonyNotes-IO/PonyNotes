@@ -192,6 +192,8 @@ pub enum ViewLayoutPB {
   Board = 2,
   Calendar = 3,
   Chat = 4,
+  Folder = 5,
+  Notebook = 6,
 }
 
 impl ViewLayoutPB {

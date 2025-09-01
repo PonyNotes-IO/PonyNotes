@@ -1,4 +1,5 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/shared/icon_emoji_picker/flowy_icon_emoji_picker.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
@@ -27,6 +28,7 @@ class MySpaceMenuItem {
   final MySpaceItemType type;
   final List<MySpaceMenuItem> children;
   final bool isExpanded;
+  final ViewPB? view; // 添加关联的视图对象，用于类型识别
 
   const MySpaceMenuItem({
     required this.id,
@@ -35,6 +37,7 @@ class MySpaceMenuItem {
     required this.type,
     this.children = const [],
     this.isExpanded = false,
+    this.view, // 添加视图参数
   });
 
   MySpaceMenuItem copyWith({
@@ -44,6 +47,7 @@ class MySpaceMenuItem {
     MySpaceItemType? type,
     List<MySpaceMenuItem>? children,
     bool? isExpanded,
+    ViewPB? view,
   }) {
     return MySpaceMenuItem(
       id: id ?? this.id,
@@ -52,6 +56,7 @@ class MySpaceMenuItem {
       type: type ?? this.type,
       children: children ?? this.children,
       isExpanded: isExpanded ?? this.isExpanded,
+      view: view ?? this.view,
     );
   }
 }
@@ -447,9 +452,20 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     final List<PopupMenuEntry<String>> menuItems = [];
     
     // 如果是文件夹或笔记本，添加子项目选项
-    if (item.type == MySpaceItemType.folder || item.type == MySpaceItemType.notebook) {
-      // 添加文件夹
-      if (item.type == MySpaceItemType.folder) {
+    // 根据父项目类型确定允许创建的子项目类型
+    MySpaceItemType parentType = item.type;
+    
+    // 如果有关联的视图，通过视图识别真实类型
+    if (item.view != null) {
+      parentType = _identifyViewType(item.view!);
+    }
+    
+    final allowedChildTypes = _getAllowedChildTypes(parentType);
+    
+    // 只有当允许创建子项目时才显示创建菜单
+    if (allowedChildTypes.isNotEmpty) {
+      // 根据允许的类型添加相应的菜单项
+      if (allowedChildTypes.contains(MySpaceItemType.folder)) {
         menuItems.add(
           PopupMenuItem<String>(
             value: 'add_folder',
@@ -465,35 +481,37 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
         );
       }
       
-      // 添加笔记本
-      menuItems.add(
-        PopupMenuItem<String>(
-          value: 'add_notebook',
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.book, size: 16),
-              const HSpace(8),
-              const Text('添加笔记本'),
-            ],
+      if (allowedChildTypes.contains(MySpaceItemType.notebook)) {
+        menuItems.add(
+          PopupMenuItem<String>(
+            value: 'add_notebook',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.book, size: 16),
+                const HSpace(8),
+                const Text('添加笔记本'),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
       
-      // 添加笔记
-      menuItems.add(
-        PopupMenuItem<String>(
-          value: 'add_note',
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.note, size: 16),
-              const HSpace(8),
-              const Text('添加笔记'),
-            ],
+      if (allowedChildTypes.contains(MySpaceItemType.note)) {
+        menuItems.add(
+          PopupMenuItem<String>(
+            value: 'add_note',
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.note, size: 16),
+                const HSpace(8),
+                const Text('添加笔记'),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
       
       // 分隔线
       menuItems.add(const PopupMenuDivider());
@@ -800,22 +818,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
 
   // 已移除弹窗式添加项目方法，改为使用下拉菜单
 
-  /// 递归添加项目
-  bool _addItemRecursive(List<MySpaceMenuItem> items, String parentId, MySpaceMenuItem newItem) {
-    for (int i = 0; i < items.length; i++) {
-      if (items[i].id == parentId) {
-        items[i] = items[i].copyWith(
-          children: [...items[i].children, newItem],
-          isExpanded: true, // 自动展开父项目
-        );
-        return true;
-      }
-      if (_addItemRecursive(items[i].children, parentId, newItem)) {
-        return true;
-      }
-    }
-    return false;
-  }
+
 
   /// 获取类型名称
   String _getTypeName(MySpaceItemType type) {
@@ -895,9 +898,9 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     });
 
     try {
-      // 调用后端API进行真实重命名
-      if (item.type == MySpaceItemType.note) {
-        // 对于笔记类型，调用真实的重命名API
+      // 调用后端API进行真实重命名 - 现在所有类型都需要重命名后端实体
+      if (item.view != null) {
+        // 如果有关联的ViewPB，说明是真实的后端实体，需要调用重命名API
         final result = await ViewBackendService.updateView(
           viewId: item.id,
           name: newName,
@@ -907,6 +910,8 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
           (success) {
             // 重命名成功，显示提示
             showMessageToast('已重命名为: $newName', context: context);
+            // 同步菜单项以确保UI与后端一致
+            _syncMenuItemsFromBloc();
           },
           (error) {
             // 重命名失败，显示错误并恢复UI状态
@@ -919,8 +924,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
           },
         );
       } else {
-        // 对于文件夹和笔记本类型，目前只做UI重命名
-        // TODO: 当后端支持文件夹和笔记本类型时，这里也需要调用相应的重命名API
+        // 如果没有关联的ViewPB，说明是仅UI层的项目（不太可能出现在当前实现中）
         showMessageToast('已重命名为: $newName', context: context);
       }
     } catch (e) {
@@ -983,15 +987,17 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
         _deleteItemRecursive(_menuItems, item.id);
       });
 
-      // 2. 调用后端API真实删除
-      if (item.type == MySpaceItemType.note) {
-        // 对于笔记类型，调用真实的删除API
+      // 2. 调用后端API真实删除 - 现在所有类型都需要删除后端实体
+      if (item.view != null) {
+        // 如果有关联的ViewPB，说明是真实的后端实体，需要调用删除API
         final result = await ViewBackendService.deleteView(viewId: item.id);
         
         result.fold(
           (success) {
             // 删除成功，显示提示
-            showMessageToast('已删除笔记: ${item.name}', context: context);
+            showMessageToast('已删除${_getTypeName(item.type)}: ${item.name}', context: context);
+            // 同步菜单项以确保UI与后端一致
+            _syncMenuItemsFromBloc();
           },
           (error) {
             // 删除失败，显示错误并恢复UI状态
@@ -1004,8 +1010,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
           },
         );
       } else {
-        // 对于文件夹和笔记本类型，目前只做UI删除
-        // TODO: 当后端支持文件夹和笔记本类型时，这里也需要调用相应的删除API
+        // 如果没有关联的ViewPB，说明是仅UI层的项目（不太可能出现在当前实现中）
         showMessageToast('已删除${_getTypeName(item.type)}: ${item.name}', context: context);
       }
     } catch (e) {
@@ -1037,60 +1042,25 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
 
   /// 添加根级项目
   void _addRootItem(MySpaceItemType type, String name) async {
-    // 生成临时ID用于UI
-    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
-    final newItem = MySpaceMenuItem(
-      id: tempId,
-      name: name,
-      icon: _getTypeEmoji(type),
-      type: type,
-      children: [],
-      isExpanded: false,
-    );
-
-    // 先更新UI（提供即时反馈）
-    setState(() {
-      _menuItems.add(newItem);
-    });
-
-    // TODO: 当后端支持文件夹和笔记本类型时，在这里调用相应的创建API
-    // 目前文件夹和笔记本只在UI层存在，将来可以扩展为真实的后端操作
-    showMessageToast('已创建${_getTypeName(type)}: $name', context: context);
+    // 为所有类型创建真实的后端实体
+    await _createRealBackendEntity(type, name, null);
   }
 
   /// 添加根级项目（使用默认名称）
   void _addRootItemWithDefaultName(MySpaceItemType type) {
     final defaultName = '未命名${_getTypeName(type)}';
-    
-    // 如果是笔记类型，创建真实的文档
-    if (type == MySpaceItemType.note) {
-      _createRealDocument(defaultName);
-    } else {
-      // 其他类型保持原有逻辑
-      _addRootItem(type, defaultName);
-    }
+    _addRootItem(type, defaultName);
   }
 
   /// 添加子项目（使用默认名称）
   void _addChildItemWithDefaultName(MySpaceMenuItem parentItem, MySpaceItemType type) {
     final defaultName = '未命名${_getTypeName(type)}';
+    final parentViewId = parentItem.view?.id;
     
-    // 如果是笔记类型，创建真实的文档
-    if (type == MySpaceItemType.note) {
-      _createRealDocumentWithParent(defaultName, parentItem.id);
-    } else {
-      // 其他类型保持原有逻辑
-      final newItem = MySpaceMenuItem(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        name: defaultName,
-        icon: _getTypeEmoji(type),
-        type: type,
-      );
-
-      setState(() {
-        _addItemRecursive(_menuItems, parentItem.id, newItem);
-      });
-    }
+    // 调试信息
+    debugPrint('创建子项目: $defaultName, 父项目ID: $parentViewId, 父项目类型: ${parentItem.type}, 父项目名称: ${parentItem.name}');
+    
+    _createRealBackendEntity(type, defaultName, parentViewId);
   }
 
   /// 将AddItemType转换为MySpaceItemType
@@ -1107,56 +1077,190 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
 
 
 
-  /// 创建真实的文档 - 复用"个人的"主菜单的创建逻辑，但放在私有区域
-  void _createRealDocument(String name) {
-    // 使用与PersonalSectionFolder相同的逻辑创建文档，但文档放在私有区域（"我的空间"对应私有区域）
-    context.read<SidebarSectionsBloc>().add(
-      SidebarSectionsEvent.createRootViewInSection(
-        name: name,
-        index: 0,
-        viewSection: ViewSectionPB.Private, // 使用私有区域，对应"我的空间"
-      ),
-    );
+  /// 根据视图图标识别MySpace项目类型
+  MySpaceItemType _identifyViewType(ViewPB view) {
+    // 首先通过布局类型识别（最准确的方式）
+    switch (view.layout) {
+      case ViewLayoutPB.Folder:
+        return MySpaceItemType.folder;
+      case ViewLayoutPB.Notebook:
+        return MySpaceItemType.notebook;
+      case ViewLayoutPB.Document:
+        // 文档类型需要进一步识别
+        break;
+      default:
+        // 其他布局类型默认为笔记
+        return MySpaceItemType.note;
+    }
+    
+    // 对于Document布局，通过图标识别类型
+    if (view.icon.value.isNotEmpty) {
+      final icon = view.icon.value;
+      if (icon.contains('📁') || icon.contains('folder')) {
+        return MySpaceItemType.folder;
+      } else if (icon.contains('📓') || icon.contains('notebook')) {
+        return MySpaceItemType.notebook;
+      }
+    }
+    
+    // 通过名称模式识别
+    final name = view.name.toLowerCase();
+    if (name.contains('文件夹') || name.contains('folder')) {
+      return MySpaceItemType.folder;
+    } else if (name.contains('笔记本') || name.contains('notebook')) {
+      return MySpaceItemType.notebook;
+    }
+    
+    // 默认为笔记类型
+    return MySpaceItemType.note;
   }
 
-  /// 创建真实的文档并指定父级视图
-  void _createRealDocumentWithParent(String name, String parentViewId) async {
+  /// 获取允许在指定父类型下创建的子项目类型
+  List<MySpaceItemType> _getAllowedChildTypes(MySpaceItemType parentType) {
+    switch (parentType) {
+      case MySpaceItemType.folder:
+        // 文件夹可以创建：文件夹、笔记本、笔记
+        return [MySpaceItemType.folder, MySpaceItemType.notebook, MySpaceItemType.note];
+      case MySpaceItemType.notebook:
+        // 笔记本只能创建：笔记
+        return [MySpaceItemType.note];
+      case MySpaceItemType.note:
+        // 笔记不能创建任何子项目
+        return [];
+    }
+  }
+
+  /// 设置视图图标
+  Future<void> _setViewIcon(ViewPB view, String iconData) async {
     try {
-      // 首先检查parentViewId是否对应一个真实的ViewPB
-      final parentViewResult = await ViewBackendService.getView(parentViewId);
+      final emojiIcon = EmojiIconData.emoji(iconData);
       
-      await parentViewResult.fold(
-        (parentView) async {
-          // 父视图存在，在其下创建子文档
-          final result = await ViewBackendService.createView(
-            layoutType: ViewLayoutPB.Document,
-            parentViewId: parentViewId,
-            name: name,
-            openAfterCreate: false,
-          );
-          
-          result.fold(
-            (newView) {
-              // 创建成功，显示提示并同步菜单
-              showMessageToast('已在"${parentView.name}"下创建笔记: $name', context: context);
-              _syncMenuItemsFromBloc();
-            },
-            (error) {
-              showMessageToast('创建笔记失败: ${error.msg}', context: context);
-            },
-          );
+      final result = await ViewBackendService.updateViewIcon(
+        view: view,
+        viewIcon: emojiIcon,
+      );
+      result.fold(
+        (success) {
+          // 图标设置成功
         },
         (error) {
-          // 父视图不存在（可能是UI-only的文件夹/笔记本），回退到根级创建
-          showMessageToast('父级项目不存在，将在根目录创建笔记', context: context);
-          _createRealDocument(name);
+          // 图标设置失败，但不影响主要功能
+          debugPrint('设置图标失败: ${error.msg}');
         },
       );
     } catch (e) {
-      showMessageToast('创建笔记失败: $e', context: context);
-      _createRealDocument(name); // 回退方案
+      debugPrint('设置图标异常: $e');
     }
   }
+
+  /// 为新创建的根级视图设置图标
+  Future<void> _setIconForNewRootView(String viewName, String iconData) async {
+    try {
+      // 获取当前私有区域的视图列表
+      final state = context.read<SidebarSectionsBloc>().state;
+      final privateSection = state.section;
+      
+      // privateSection不会为null，因为我们已经获取到了state.section
+      {
+        // 查找刚创建的视图
+        final newView = privateSection.publicViews
+            .where((view) => view.name == viewName)
+            .lastOrNull;
+            
+        if (newView != null) {
+          await _setViewIcon(newView, iconData);
+          // 刷新菜单以显示新图标
+          _syncMenuItemsFromBloc();
+        }
+      }
+    } catch (e) {
+      debugPrint('为根级视图设置图标异常: $e');
+    }
+  }
+
+  /// 统一的后端实体创建方法
+  Future<void> _createRealBackendEntity(MySpaceItemType type, String name, String? parentViewId) async {
+    try {
+      ViewLayoutPB layoutType;
+      String? iconData;
+      
+      // 调试信息
+      debugPrint('开始创建后端实体: 类型=$type, 名称=$name, 父视图ID=$parentViewId');
+      
+      // 根据类型确定布局和图标
+      switch (type) {
+        case MySpaceItemType.folder:
+          // 文件夹使用专门的文件夹布局类型
+          layoutType = ViewLayoutPB.Folder;
+          iconData = '📁'; // 文件夹图标
+          break;
+        case MySpaceItemType.notebook:
+          // 笔记本使用专门的笔记本布局类型
+          layoutType = ViewLayoutPB.Notebook;
+          iconData = '📓'; // 笔记本图标
+          break;
+        case MySpaceItemType.note:
+          // 笔记使用文档布局
+          layoutType = ViewLayoutPB.Document;
+          iconData = null; // 使用默认文档图标
+          break;
+      }
+
+      if (parentViewId != null) {
+        // 创建子项目
+        final result = await ViewBackendService.createView(
+          layoutType: layoutType,
+          parentViewId: parentViewId,
+          name: name,
+          openAfterCreate: false,
+          section: ViewSectionPB.Private, // 使用私有区域
+        );
+        
+        result.fold(
+          (newView) async {
+            debugPrint('子项目创建成功: ID=${newView.id}, 名称=${newView.name}, 父ID=${newView.parentViewId}');
+            
+            // 创建成功后设置图标
+            if (iconData != null) {
+              await _setViewIcon(newView, iconData);
+            }
+            // 显示提示并同步菜单
+            showMessageToast('已创建${_getTypeName(type)}: $name', context: context);
+            _syncMenuItemsFromBloc();
+          },
+          (error) {
+            debugPrint('子项目创建失败: ${error.msg}');
+            showMessageToast('创建${_getTypeName(type)}失败: ${error.msg}', context: context);
+          },
+        );
+      } else {
+        // 创建根级项目 - 暂时使用现有机制，后续可以优化
+        context.read<SidebarSectionsBloc>().add(
+          SidebarSectionsEvent.createRootViewInSection(
+            name: name,
+            index: 0,
+            viewSection: ViewSectionPB.Private, // 使用私有区域，对应"我的空间"
+          ),
+        );
+        
+        // 为根级项目设置图标（延迟执行，等待视图创建完成）
+        if (iconData != null) {
+          Future.delayed(const Duration(milliseconds: 500), () async {
+            // 查找刚创建的视图并设置图标
+            await _setIconForNewRootView(name, iconData!);
+          });
+        }
+        
+        showMessageToast('已创建${_getTypeName(type)}: $name', context: context);
+      }
+    } catch (e) {
+      showMessageToast('创建${_getTypeName(type)}失败: $e', context: context);
+    }
+  }
+
+
+
+
 
   /// 打开已存在的文档 - 复用"个人的"主菜单的打开逻辑
   void _openExistingDocument(MySpaceMenuItem item) async {
@@ -1198,13 +1302,40 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       final sidebarSectionsBloc = context.read<SidebarSectionsBloc>();
       final privateViews = sidebarSectionsBloc.state.section.privateViews;
       
+      // 调试信息
+      debugPrint('同步菜单项: 共${privateViews.length}个后端视图');
+      for (final view in privateViews) {
+        debugPrint('  视图: ${view.name} (ID: ${view.id}, 父ID: ${view.parentViewId})');
+      }
+      
       setState(() {
+        final oldCount = _menuItems.length;
         _menuItems = _mergeViewsWithLocalState(privateViews, _menuItems);
+        debugPrint('菜单项更新: $oldCount -> ${_menuItems.length}');
       });
     } catch (e) {
       // 如果context还未准备好，忽略错误
       // 会在BlocListener中重新尝试
+      debugPrint('同步菜单项异常: $e');
     }
+  }
+
+  /// 展平视图列表，包含所有子视图
+  List<ViewPB> _flattenViewsWithChildren(List<ViewPB> views) {
+    final result = <ViewPB>[];
+    
+    void addViewRecursively(ViewPB view) {
+      result.add(view);
+      for (final child in view.childViews) {
+        addViewRecursively(child);
+      }
+    }
+    
+    for (final view in views) {
+      addViewRecursively(view);
+    }
+    
+    return result;
   }
 
   /// 智能合并后端数据与本地状态，保持UI层的修改
@@ -1213,7 +1344,14 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     List<MySpaceMenuItem> localItems,
   ) {
     final result = <MySpaceMenuItem>[];
-    final validBackendViews = _filterValidViews(backendViews);
+    
+    // 先展平所有视图（包括子视图）
+    final allViews = _flattenViewsWithChildren(backendViews);
+    final validBackendViews = _filterValidViews(allViews);
+    
+    // 调试信息
+    debugPrint('合并视图数据: ${backendViews.length} -> ${allViews.length} 总视图 -> ${validBackendViews.length} 有效视图');
+    
     final backendViewsMap = <String, ViewPB>{
       for (final view in validBackendViews) view.id: view,
     };
@@ -1227,9 +1365,12 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       
       if (existingLocal != null) {
         // 如果本地已存在，保持本地的UI状态（如展开状态），但同步后端的数据
-        result.add(existingLocal.copyWith(
-          name: view.name, // 同步名称变化
-          // 保持 isExpanded, children 等UI状态不变
+        // 重要：需要重新构建层级关系以包含新的子项目
+        final menuItem = _convertViewToMenuItem(view);
+        final updatedItem = _buildHierarchicalItem(menuItem, validBackendViews);
+        
+        result.add(updatedItem.copyWith(
+          isExpanded: existingLocal.isExpanded, // 保持展开状态
         ));
       } else {
         // 如果本地不存在，创建新项目并构建层级关系
@@ -1257,6 +1398,14 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       view.parentViewId == item.id && view.id != item.id
     ).toList();
     
+    // 调试信息
+    if (childViews.isNotEmpty) {
+      debugPrint('构建层级: ${item.name} 有 ${childViews.length} 个子项目');
+      for (final child in childViews) {
+        debugPrint('  子项目: ${child.name} (ID: ${child.id})');
+      }
+    }
+    
     if (childViews.isEmpty) {
       return item;
     }
@@ -1281,8 +1430,14 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       }
     }
     
+    // 调试信息
+    debugPrint('过滤根级项目: ${items.length} 项目 -> 子项目IDs: $childViewIds');
+    
     // 只返回根级项目（不是其他项目子项目的项目）
-    return items.where((item) => !childViewIds.contains(item.id)).toList();
+    final rootItems = items.where((item) => !childViewIds.contains(item.id)).toList();
+    debugPrint('过滤结果: ${rootItems.length} 根级项目');
+    
+    return rootItems;
   }
 
   /// 判断是否为仅UI层的项目（还未同步到后端）
@@ -1322,29 +1477,54 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
 
   /// 将单个ViewPB转换为MySpaceMenuItem
   MySpaceMenuItem _convertViewToMenuItem(ViewPB view) {
-    // 根据ViewPB的类型判断MySpaceItemType
-    MySpaceItemType itemType;
-    switch (view.layout) {
-      case ViewLayoutPB.Document:
-        itemType = MySpaceItemType.note;
-        break;
-      case ViewLayoutPB.Grid:
-      case ViewLayoutPB.Board:
-      case ViewLayoutPB.Calendar:
-        itemType = MySpaceItemType.notebook;
-        break;
-      default:
-        itemType = MySpaceItemType.folder;
-        break;
-    }
+    // 根据ViewPB的名称和布局推断类型
+    MySpaceItemType itemType = _inferViewType(view);
 
     return MySpaceMenuItem(
       id: view.id,
       name: view.name,
+      icon: _getTypeEmoji(itemType),
       type: itemType,
       children: [], // 暂不处理子项目，后续可根据需要扩展
       isExpanded: false,
+      view: view, // 添加关联的视图对象
     );
+  }
+
+  /// 推断ViewPB的类型
+  MySpaceItemType _inferViewType(ViewPB view) {
+    // 首先通过布局类型识别（最准确的方式）
+    switch (view.layout) {
+      case ViewLayoutPB.Folder:
+        return MySpaceItemType.folder;
+      case ViewLayoutPB.Notebook:
+        return MySpaceItemType.notebook;
+      case ViewLayoutPB.Document:
+        // 文档类型需要进一步识别
+        break;
+      default:
+        // 其他布局类型默认为笔记
+        return MySpaceItemType.note;
+    }
+    
+    // 对于Document布局，首先基于名称模式推断类型
+    final name = view.name.toLowerCase();
+    
+    if (name.contains('文件夹') || name.contains('folder')) {
+      return MySpaceItemType.folder;
+    } else if (name.contains('笔记本') || name.contains('notebook')) {
+      return MySpaceItemType.notebook;
+    }
+    
+    // 然后基于是否有子项目判断
+    // 如果有子项目且名称不明确，优先考虑为容器类型
+    if (view.childViews.isNotEmpty) {
+      // 有子项目的文档，可能是文件夹或笔记本
+      return name.contains('未命名文件夹') ? MySpaceItemType.folder : MySpaceItemType.notebook;
+    }
+    
+    // 默认为笔记类型
+    return MySpaceItemType.note;
   }
 
   /// 检查两个privateViews列表是否相等
@@ -1404,3 +1584,4 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     }
   }
 }
+
