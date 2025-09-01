@@ -1,7 +1,10 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
+import 'package:appflowy/workspace/presentation/home/toast.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'add_item_dropdown.dart';
@@ -144,21 +147,45 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   // 我的空间主菜单是否展开的状态
   bool _isMainMenuExpanded = true;
   
-  // 我的空间菜单项列表 - 初始为空，用户可通过添加按钮创建项目
-  final List<MySpaceMenuItem> _menuItems = <MySpaceMenuItem>[];
+  // 我的空间菜单项列表 - 从SidebarSectionsBloc同步获取
+  List<MySpaceMenuItem> _menuItems = <MySpaceMenuItem>[];
+  
+  // 保存上次的privateViews，用于检测数据变化，避免重复同步
+  List<ViewPB> _lastPrivateViews = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // 在下一帧同步菜单项，确保context已准备好
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _syncMenuItemsFromBloc();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // 我的空间标题
-        _buildHeader(),
-        // 菜单项列表（根据主菜单展开状态显示/隐藏）
-        if (_isMainMenuExpanded) ...[
-          const VSpace(8.0),
-          ..._buildMenuItems(_menuItems, 0),
+    return BlocListener<SidebarSectionsBloc, SidebarSectionsState>(
+      listener: (context, state) {
+        // 只有当privateViews真正发生变化时才同步
+        final newPrivateViews = state.section.privateViews;
+        if (!_isPrivateViewsEqual(newPrivateViews, _lastPrivateViews)) {
+          _lastPrivateViews = List.from(newPrivateViews);
+          _syncMenuItemsFromBloc();
+        }
+      },
+      child: Column(
+        children: [
+          // 我的空间标题
+          _buildHeader(),
+          // 菜单项列表（根据主菜单展开状态显示/隐藏）
+          if (_isMainMenuExpanded) ...[
+            const VSpace(8.0),
+            ..._buildMenuItems(_menuItems, 0),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -190,6 +217,24 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
             ),
           ),
           const Spacer(),
+          // 清理重复项按钮
+          if (kDebugMode) // 只在调试模式下显示
+            GestureDetector(
+              onTap: _cleanupDuplicateViews,
+              child: Container(
+                padding: const EdgeInsets.all(4.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(4.0),
+                  color: Colors.orange.withOpacity(0.1),
+                ),
+                child: Icon(
+                  Icons.cleaning_services,
+                  size: 16,
+                  color: Colors.orange,
+                ),
+              ),
+            ),
+          if (kDebugMode) const HSpace(8.0),
           // 添加子项目下拉按钮
           AddItemButton(
             onItemSelected: (type) {
@@ -839,10 +884,51 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   }
 
   /// 执行重命名操作
-  void _renameItem(MySpaceMenuItem item, String newName) {
+  void _renameItem(MySpaceMenuItem item, String newName) async {
+    // 先更新UI（提供即时反馈）
+    final oldName = item.name;
     setState(() {
       _renameItemRecursive(_menuItems, item.id, newName);
     });
+
+    try {
+      // 调用后端API进行真实重命名
+      if (item.type == MySpaceItemType.note) {
+        // 对于笔记类型，调用真实的重命名API
+        final result = await ViewBackendService.updateView(
+          viewId: item.id,
+          name: newName,
+        );
+        
+        result.fold(
+          (success) {
+            // 重命名成功，显示提示
+            showMessageToast('已重命名为: $newName', context: context);
+          },
+          (error) {
+            // 重命名失败，显示错误并恢复UI状态
+            showMessageToast('重命名失败: ${error.msg}', context: context);
+            
+            // 恢复UI状态：恢复原名称
+            setState(() {
+              _renameItemRecursive(_menuItems, item.id, oldName);
+            });
+          },
+        );
+      } else {
+        // 对于文件夹和笔记本类型，目前只做UI重命名
+        // TODO: 当后端支持文件夹和笔记本类型时，这里也需要调用相应的重命名API
+        showMessageToast('已重命名为: $newName', context: context);
+      }
+    } catch (e) {
+      // 处理异常情况
+      showMessageToast('重命名操作失败: $e', context: context);
+      
+      // 恢复UI状态
+      setState(() {
+        _renameItemRecursive(_menuItems, item.id, oldName);
+      });
+    }
   }
 
   /// 递归重命名项目
@@ -887,10 +973,47 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   }
 
   /// 执行删除操作
-  void _deleteItem(MySpaceMenuItem item) {
-    setState(() {
-      _deleteItemRecursive(_menuItems, item.id);
-    });
+  void _deleteItem(MySpaceMenuItem item) async {
+    try {
+      // 1. 先从UI层移除（提供即时反馈）
+      setState(() {
+        _deleteItemRecursive(_menuItems, item.id);
+      });
+
+      // 2. 调用后端API真实删除
+      if (item.type == MySpaceItemType.note) {
+        // 对于笔记类型，调用真实的删除API
+        final result = await ViewBackendService.deleteView(viewId: item.id);
+        
+        result.fold(
+          (success) {
+            // 删除成功，显示提示
+            showMessageToast('已删除笔记: ${item.name}', context: context);
+          },
+          (error) {
+            // 删除失败，显示错误并恢复UI状态
+            showMessageToast('删除失败: ${error.msg}', context: context);
+            
+            // 恢复UI状态：重新添加项目
+            setState(() {
+              _menuItems.add(item);
+            });
+          },
+        );
+      } else {
+        // 对于文件夹和笔记本类型，目前只做UI删除
+        // TODO: 当后端支持文件夹和笔记本类型时，这里也需要调用相应的删除API
+        showMessageToast('已删除${_getTypeName(item.type)}: ${item.name}', context: context);
+      }
+    } catch (e) {
+      // 处理异常情况
+      showMessageToast('删除操作失败: $e', context: context);
+      
+      // 恢复UI状态
+      setState(() {
+        _menuItems.add(item);
+      });
+    }
   }
 
   /// 递归删除项目
@@ -910,9 +1033,11 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   // 已移除弹窗式添加根项目方法，改为使用下拉菜单
 
   /// 添加根级项目
-  void _addRootItem(MySpaceItemType type, String name) {
+  void _addRootItem(MySpaceItemType type, String name) async {
+    // 生成临时ID用于UI
+    final tempId = DateTime.now().millisecondsSinceEpoch.toString();
     final newItem = MySpaceMenuItem(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: tempId,
       name: name,
       icon: _getTypeEmoji(type),
       type: type,
@@ -920,9 +1045,14 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       isExpanded: false,
     );
 
+    // 先更新UI（提供即时反馈）
     setState(() {
       _menuItems.add(newItem);
     });
+
+    // TODO: 当后端支持文件夹和笔记本类型时，在这里调用相应的创建API
+    // 目前文件夹和笔记本只在UI层存在，将来可以扩展为真实的后端操作
+    showMessageToast('已创建${_getTypeName(type)}: $name', context: context);
   }
 
   /// 添加根级项目（使用默认名称）
@@ -998,5 +1128,189 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     // TODO: 实现真实的文档打开逻辑
     // 需要将MySpaceMenuItem的id映射到实际的ViewPB.id
     // 然后使用TabsBloc.openPlugin来打开文档
+  }
+
+  /// 从SidebarSectionsBloc同步菜单项（智能合并，保持UI状态）
+  void _syncMenuItemsFromBloc() {
+    if (!mounted) return;
+    
+    try {
+      final sidebarSectionsBloc = context.read<SidebarSectionsBloc>();
+      final privateViews = sidebarSectionsBloc.state.section.privateViews;
+      
+      setState(() {
+        _menuItems = _mergeViewsWithLocalState(privateViews, _menuItems);
+      });
+    } catch (e) {
+      // 如果context还未准备好，忽略错误
+      // 会在BlocListener中重新尝试
+    }
+  }
+
+  /// 智能合并后端数据与本地状态，保持UI层的修改
+  List<MySpaceMenuItem> _mergeViewsWithLocalState(
+    List<ViewPB> backendViews,
+    List<MySpaceMenuItem> localItems,
+  ) {
+    final result = <MySpaceMenuItem>[];
+    final validBackendViews = _filterValidViews(backendViews);
+    final backendViewsMap = <String, ViewPB>{
+      for (final view in validBackendViews) view.id: view,
+    };
+    final localItemsMap = <String, MySpaceMenuItem>{
+      for (final item in localItems) item.id: item,
+    };
+
+    // 1. 处理后端存在的项目（更新或保持现有状态）
+    for (final view in validBackendViews) {
+      final existingLocal = localItemsMap[view.id];
+      
+      if (existingLocal != null) {
+        // 如果本地已存在，保持本地的UI状态（如展开状态），但同步后端的数据
+        result.add(existingLocal.copyWith(
+          name: view.name, // 同步名称变化
+          // 保持 isExpanded, children 等UI状态不变
+        ));
+      } else {
+        // 如果本地不存在，创建新项目
+        result.add(_convertViewToMenuItem(view));
+      }
+    }
+
+    // 2. 保留本地新增但尚未同步到后端的项目（仅限UI-only项目）
+    for (final localItem in localItems) {
+      if (!backendViewsMap.containsKey(localItem.id) && 
+          _isUIOnlyItem(localItem)) {
+        result.add(localItem);
+      }
+    }
+
+    return result;
+  }
+
+  /// 判断是否为仅UI层的项目（还未同步到后端）
+  bool _isUIOnlyItem(MySpaceMenuItem item) {
+    // 如果是文件夹或笔记本类型，且ID是时间戳格式，说明是UI层创建的
+    if (item.type == MySpaceItemType.folder || item.type == MySpaceItemType.notebook) {
+      // 检查ID是否为数字格式的时间戳（UI层生成的ID格式）
+      return RegExp(r'^\d+$').hasMatch(item.id);
+    }
+    
+    // 笔记类型应该都有对应的ViewPB，如果后端没有则可能已被删除
+    return false;
+  }
+
+  /// 将ViewPB列表转换为MySpaceMenuItem列表
+  /// 注意：此方法已被_mergeViewsWithLocalState替代，保留用于备份
+  @Deprecated('使用_mergeViewsWithLocalState代替，以保持UI状态')
+  List<MySpaceMenuItem> _convertViewsToMenuItems(List<ViewPB> views) {
+    // 过滤有效的视图，避免重复和无效项
+    final validViews = _filterValidViews(views);
+    return validViews.map((view) => _convertViewToMenuItem(view)).toList();
+  }
+  
+  /// 过滤有效的视图，去除重复和无效项
+  List<ViewPB> _filterValidViews(List<ViewPB> views) {
+    final seenIds = <String>{};
+    final validViews = <ViewPB>[];
+    
+    for (final view in views) {
+      // 检查是否重复
+      if (seenIds.contains(view.id)) {
+        continue;
+      }
+      
+      // 检查是否有效（有id有名字）
+      if (view.id.isNotEmpty && view.name.isNotEmpty) {
+        seenIds.add(view.id);
+        validViews.add(view);
+      }
+    }
+    
+    return validViews;
+  }
+
+  /// 将单个ViewPB转换为MySpaceMenuItem
+  MySpaceMenuItem _convertViewToMenuItem(ViewPB view) {
+    // 根据ViewPB的类型判断MySpaceItemType
+    MySpaceItemType itemType;
+    switch (view.layout) {
+      case ViewLayoutPB.Document:
+        itemType = MySpaceItemType.note;
+        break;
+      case ViewLayoutPB.Grid:
+      case ViewLayoutPB.Board:
+      case ViewLayoutPB.Calendar:
+        itemType = MySpaceItemType.notebook;
+        break;
+      default:
+        itemType = MySpaceItemType.folder;
+        break;
+    }
+
+    return MySpaceMenuItem(
+      id: view.id,
+      name: view.name,
+      type: itemType,
+      children: [], // 暂不处理子项目，后续可根据需要扩展
+      isExpanded: false,
+    );
+  }
+
+  /// 检查两个privateViews列表是否相等
+  bool _isPrivateViewsEqual(List<ViewPB> newViews, List<ViewPB> oldViews) {
+    // 先过滤有效视图，再比较
+    final filteredNewViews = _filterValidViews(newViews);
+    final filteredOldViews = _filterValidViews(oldViews);
+    
+    if (filteredNewViews.length != filteredOldViews.length) {
+      return false;
+    }
+    
+    // 使用Set进行比较，避免顺序影响
+    final newViewsSet = filteredNewViews.map((v) => '${v.id}:${v.name}:${v.layout}').toSet();
+    final oldViewsSet = filteredOldViews.map((v) => '${v.id}:${v.name}:${v.layout}').toSet();
+    
+    return newViewsSet.length == oldViewsSet.length && 
+           newViewsSet.every((item) => oldViewsSet.contains(item));
+  }
+
+  /// 清理重复的私有视图
+  Future<void> _cleanupDuplicateViews() async {
+    try {
+      final result = await ViewBackendService.cleanupDuplicatePrivateViews();
+      result.fold(
+        (cleanedCount) {
+          if (cleanedCount > 0) {
+            showSnackBarMessage(
+              context,
+              '已清理 $cleanedCount 个重复项目',
+              showCancel: false,
+            );
+            // 触发重新同步
+            _syncMenuItemsFromBloc();
+          } else {
+            showSnackBarMessage(
+              context,
+              '没有发现重复项目',
+              showCancel: false,
+            );
+          }
+        },
+        (error) {
+          showSnackBarMessage(
+            context,
+            '清理失败: ${error.msg}',
+            showCancel: false,
+          );
+        },
+      );
+    } catch (e) {
+      showSnackBarMessage(
+        context,
+        '清理失败: $e',
+        showCancel: false,
+      );
+    }
   }
 }

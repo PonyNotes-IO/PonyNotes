@@ -23,6 +23,7 @@ import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_integration_button.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ioi_button.dart';
 
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/create_space_popup.dart';
@@ -91,6 +92,9 @@ class SidebarSpace extends StatelessWidget {
             // 我的团队
             const VSpace(4.0),
             const SidebarMyTeamButton(),
+            // IOI科技
+            const VSpace(4.0),
+            const SidebarIOIButton(),
             // 共享
             const VSpace(4.0),
             const SidebarShareButton(),

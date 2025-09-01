@@ -1,11 +1,10 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
-import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
+import 'package:appflowy/workspace/presentation/notifications/widgets/notification_tab_bar.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 class NotificationPage extends StatefulWidget {
   const NotificationPage({super.key});
@@ -19,17 +18,17 @@ class _NotificationPageState extends State<NotificationPage>
   late TabController _tabController;
   int _selectedTabIndex = 0;
 
-  final List<String> _tabTitles = [
-    '@提及通知',
-    '剪藏通知',
-    '提醒通知',
-    '系统通知',
+  final List<NotificationTabType> _tabs = [
+    NotificationTabType.mention,
+    NotificationTabType.clip,
+    NotificationTabType.reminder,
+    NotificationTabType.system,
   ];
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabTitles.length, vsync: this);
+    _tabController = TabController(length: _tabs.length, vsync: this);
     _tabController.addListener(() {
       setState(() {
         _selectedTabIndex = _tabController.index;
@@ -84,7 +83,7 @@ class _NotificationPageState extends State<NotificationPage>
       child: Row(
         children: [
           FlowyText.medium(
-            '消息通知',
+            LocaleKeys.notificationHub_title.tr(),
             fontSize: 20,
             color: theme.textColorScheme.primary,
           ),
@@ -101,9 +100,9 @@ class _NotificationPageState extends State<NotificationPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
-        children: _tabTitles.asMap().entries.map((entry) {
+        children: _tabs.asMap().entries.map((entry) {
           final index = entry.key;
-          final title = entry.value;
+          final tabType = entry.value;
           final isSelected = index == _selectedTabIndex;
           
           return GestureDetector(
@@ -114,7 +113,7 @@ class _NotificationPageState extends State<NotificationPage>
               });
             },
             child: Container(
-              margin: EdgeInsets.only(right: index < _tabTitles.length - 1 ? 10 : 0),
+              margin: EdgeInsets.only(right: index < _tabs.length - 1 ? 10 : 0),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected 
@@ -130,7 +129,7 @@ class _NotificationPageState extends State<NotificationPage>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   FlowyText.medium(
-                    title,
+                    tabType.tr,
                     fontSize: 14,
                     color: theme.textColorScheme.primary,
                   ),
@@ -182,7 +181,7 @@ class _NotificationPageState extends State<NotificationPage>
           const VSpace(30),
           // 提示文字
           FlowyText.regular(
-            '你将在这里收到@提及、剪藏、提醒、系统通知',
+            LocaleKeys.notificationHub_emptyBody.tr(),
             fontSize: 14,
             color: theme.textColorScheme.secondary,
             textAlign: TextAlign.center,
@@ -212,7 +211,7 @@ class _NotificationPageState extends State<NotificationPage>
           ),
           const HSpace(8),
           FlowyText.regular(
-            '全部标记已读',
+            LocaleKeys.notificationHub_actions_markAllRead.tr(),
             fontSize: 12,
             color: theme.textColorScheme.secondary,
           ),

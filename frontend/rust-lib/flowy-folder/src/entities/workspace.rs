@@ -232,3 +232,9 @@ pub struct UserFolderPB {
   #[pb(index = 2)]
   pub workspace_id: String,
 }
+
+#[derive(Default, ProtoBuf)]
+pub struct CleanupDuplicateViewsResponsePB {
+  #[pb(index = 1)]
+  pub cleaned_count: u64,
+}

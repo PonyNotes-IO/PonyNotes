@@ -1876,8 +1876,10 @@
     "emptyTitle": "都处理了！",
     "emptyBody": "没有待处理的通知或操作。享受平静。",
     "tabs": {
-      "inbox": "收件箱",
-      "upcoming": "即将推出"
+      "mention": "@提及通知",
+      "clip": "剪藏通知",
+      "reminder": "提醒通知",
+      "system": "系统通知"
     },
     "actions": {
       "markAllRead": "标记为已读",

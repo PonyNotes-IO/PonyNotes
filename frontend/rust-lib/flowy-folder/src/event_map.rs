@@ -246,4 +246,7 @@ pub enum FolderEvent {
 
   #[event(input = "ViewIdPB", output = "GetSharedViewSectionResponsePB")]
   GetSharedViewSection = 60,
+
+  #[event(output = "CleanupDuplicateViewsResponsePB")]
+  CleanupDuplicatePrivateViews = 61,
 }

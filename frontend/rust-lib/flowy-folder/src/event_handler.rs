@@ -600,3 +600,12 @@ pub(crate) async fn get_shared_view_section_handler(
   let section = folder.get_shared_view_section(&view_id).await?;
   data_result_ok(GetSharedViewSectionResponsePB { section })
 }
+
+#[tracing::instrument(level = "debug", skip(folder), err)]
+pub(crate) async fn cleanup_duplicate_private_views_handler(
+  folder: AFPluginState<Weak<FolderManager>>,
+) -> DataResult<CleanupDuplicateViewsResponsePB, FlowyError> {
+  let folder = upgrade_folder(folder)?;
+  let cleaned_count = folder.cleanup_duplicate_private_views().await?;
+  data_result_ok(CleanupDuplicateViewsResponsePB { cleaned_count: cleaned_count as u64 })
+}

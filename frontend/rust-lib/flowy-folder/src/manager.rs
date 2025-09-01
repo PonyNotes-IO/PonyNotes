@@ -2299,6 +2299,78 @@ impl FolderManager {
     }
   }
 
+  /// Clean up duplicate private view IDs and invalid views
+  pub async fn cleanup_duplicate_private_views(&self) -> FlowyResult<usize> {
+    let workspace_id = self.user.workspace_id()?;
+    let mut cleaned_count = 0;
+
+    if let Some(lock) = self.mutex_folder.load_full() {
+      let mut folder = lock.write().await;
+      
+      // Get all private view IDs
+      let private_view_ids = folder
+        .get_my_private_sections()
+        .into_iter()
+        .map(|section| section.id)
+        .collect::<Vec<String>>();
+
+      // Get all actual views that exist in the workspace
+      let existing_views = folder.get_views_belong_to(&workspace_id.to_string());
+      let existing_view_ids: std::collections::HashSet<String> = existing_views
+        .iter()
+        .map(|view| view.id.clone())
+        .collect();
+
+      // Find duplicate and invalid private view IDs
+      let mut seen_ids = std::collections::HashSet::new();
+      let mut valid_private_view_ids = Vec::new();
+
+      for view_id in private_view_ids {
+        // Skip if already seen (duplicate)
+        if seen_ids.contains(&view_id) {
+          cleaned_count += 1;
+          info!("Found duplicate private view ID: {}", view_id);
+          continue;
+        }
+
+        // Skip if view doesn't actually exist
+        if !existing_view_ids.contains(&view_id) {
+          cleaned_count += 1;
+          info!("Found orphaned private view ID: {}", view_id);
+          continue;
+        }
+
+        seen_ids.insert(view_id.clone());
+        valid_private_view_ids.push(view_id);
+      }
+
+      // Clear all private view IDs and re-add only the valid ones
+      if cleaned_count > 0 {
+        // First get all private section IDs
+        let private_section_ids: Vec<String> = folder
+          .get_my_private_sections()
+          .into_iter()
+          .map(|section| section.id)
+          .collect();
+        
+        // Then remove all private view IDs
+        folder.delete_private_view_ids(private_section_ids);
+        
+        // Then add back only the valid ones
+        if !valid_private_view_ids.is_empty() {
+          folder.add_private_view_ids(valid_private_view_ids);
+        }
+
+        // Notify workspace update
+        notify_did_update_workspace(&workspace_id, &folder);
+        
+        info!("Cleaned up {} duplicate/invalid private view entries", cleaned_count);
+      }
+    }
+
+    Ok(cleaned_count)
+  }
+
   /// Only support getting the Favorite and Recent sections.
   async fn get_sections(&self, section_type: Section) -> Vec<SectionItem> {
     match self.mutex_folder.load_full() {
@@ -2573,8 +2645,8 @@ impl FolderManager {
 
   /// Start the auto-cleanup task with necessary components instead of the full manager
   async fn start_auto_cleanup_task_with_components(
-    user: Arc<dyn FolderUser>,
-    store_preferences: Arc<KVStorePreferences>,
+    _user: Arc<dyn FolderUser>,
+    _store_preferences: Arc<KVStorePreferences>,
   ) {
     use std::time::Duration;
     use tokio::time::interval;

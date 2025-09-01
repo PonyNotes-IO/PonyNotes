@@ -424,4 +424,16 @@ class ViewBackendService {
     final payload = ViewIdPB()..value = viewId;
     return FolderEventUnlockView(payload).send();
   }
+
+  /// Clean up duplicate private views in the workspace
+  static Future<FlowyResult<int, FlowyError>> cleanupDuplicatePrivateViews() async {
+    // TODO: This event is not yet generated in Dart bindings
+    // return FolderEventCleanupDuplicatePrivateViews().send().then((result) {
+    //   return result.fold(
+    //     (response) => FlowyResult.success(response.cleanedCount.toInt()),
+    //     (error) => FlowyResult<int, FlowyError>.failure(error),
+    //   );
+    // });
+    return FlowyResult<int, FlowyError>.success(0); // Temporary stub
+  }
 }
