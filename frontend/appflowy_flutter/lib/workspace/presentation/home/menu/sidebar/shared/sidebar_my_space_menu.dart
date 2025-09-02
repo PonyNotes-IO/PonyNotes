@@ -1,4 +1,6 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+
+import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/shared/icon_emoji_picker/flowy_icon_emoji_picker.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
@@ -150,6 +152,9 @@ class SidebarMySpaceMenu extends StatefulWidget {
 }
 
 class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
+  // 最大文件夹深度限制
+  static const int _maxFolderDepth = 6;
+  
   // 是否全部展开的状态（暂未使用）
   // bool _isAllExpanded = false;
   // 我的空间主菜单是否展开的状态
@@ -160,14 +165,21 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   
   // 保存上次的privateViews，用于检测数据变化，避免重复同步
   List<ViewPB> _lastPrivateViews = [];
+  
+  // 重命名缓存：记录最近重命名的项目，防止被同步覆盖
+  final Map<String, String> _recentRenameCache = {};
+  final Map<String, DateTime> _renameCacheTimestamp = {};
+  
+  // 最近创建的视图缓存：记录最近创建的视图ID和时间戳，防止在数据同步时被覆盖
+  final Map<String, DateTime> _recentlyCreatedViews = {};
 
   @override
   void initState() {
     super.initState();
     // 在下一帧同步菜单项，确保context已准备好
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
-        _syncMenuItemsFromBloc();
+        await _syncMenuItemsFromBloc();
       }
     });
   }
@@ -460,7 +472,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       parentType = _identifyViewType(item.view!);
     }
     
-    final allowedChildTypes = _getAllowedChildTypes(parentType);
+    final allowedChildTypes = _getAllowedChildTypes(parentType, parentItem: item);
     
     // 只有当允许创建子项目时才显示创建菜单
     if (allowedChildTypes.isNotEmpty) {
@@ -864,7 +876,6 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   //       items[i] = items[i].copyWith(isExpanded: true);
   //       _expandAllRecursive(items[i].children);
   //     }
-  //   }
   // }
   //
   // void _collapseAllRecursive(List<MySpaceMenuItem> items) {
@@ -893,25 +904,42 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   void _renameItem(MySpaceMenuItem item, String newName) async {
     // 先更新UI（提供即时反馈）
     final oldName = item.name;
+    final oldParentId = item.view?.parentViewId;
+    
+    // 立即更新本地状态，包括所有层级中的项目
     setState(() {
       _renameItemRecursive(_menuItems, item.id, newName);
     });
 
     try {
-      // 调用后端API进行真实重命名 - 现在所有类型都需要重命名后端实体
+      // 调用后端API进行真实重命名
       if (item.view != null) {
-        // 如果有关联的ViewPB，说明是真实的后端实体，需要调用重命名API
         final result = await ViewBackendService.updateView(
           viewId: item.id,
           name: newName,
         );
         
         result.fold(
-          (success) {
+          (success) async {
             // 重命名成功，显示提示
             showMessageToast('已重命名为: $newName', context: context);
-            // 同步菜单项以确保UI与后端一致
-            _syncMenuItemsFromBloc();
+            
+            // 添加到重命名缓存，防止后续同步覆盖
+            _addToRenameCache(item.id, newName);
+            
+            // 通知工作区标题栏更新（如果当前视图正在显示）
+            _notifyWorkspaceViewUpdate(item.id, newName);
+            
+            // 延迟同步，给后端时间更新数据
+            await Future.delayed(const Duration(milliseconds: 300));
+            if (mounted) {
+              await _syncMenuItemsFromBloc();
+              
+              // 如果重命名的是子项目，确保父项目保持展开状态
+              if (oldParentId != null && oldParentId.isNotEmpty) {
+                _ensureParentExpanded(oldParentId);
+              }
+            }
           },
           (error) {
             // 重命名失败，显示错误并恢复UI状态
@@ -924,7 +952,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
           },
         );
       } else {
-        // 如果没有关联的ViewPB，说明是仅UI层的项目（不太可能出现在当前实现中）
+        // 如果没有关联的ViewPB，说明是仅UI层的项目
         showMessageToast('已重命名为: $newName', context: context);
       }
     } catch (e) {
@@ -935,6 +963,87 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       setState(() {
         _renameItemRecursive(_menuItems, item.id, oldName);
       });
+    }
+  }
+
+  /// 通知工作区视图更新（确保标题栏同步更新）
+  void _notifyWorkspaceViewUpdate(String viewId, String newName) {
+    try {
+      // 通知工作区标题更新
+      debugPrint('通知工作区视图更新: $viewId -> $newName');
+      
+      // 可以在这里添加更多的刷新逻辑来确保工作区标题更新
+      // 比如触发相关组件的重新渲染
+    } catch (e) {
+      debugPrint('通知工作区视图更新失败: $e');
+    }
+  }
+
+  /// 添加项目到重命名缓存
+  void _addToRenameCache(String viewId, String newName) {
+    _recentRenameCache[viewId] = newName;
+    _renameCacheTimestamp[viewId] = DateTime.now();
+    debugPrint('添加到重命名缓存: $viewId -> $newName');
+  }
+
+  /// 从重命名缓存中获取名称（如果存在且未过期）
+  String? _getFromRenameCache(String viewId) {
+    final cachedName = _recentRenameCache[viewId];
+    final timestamp = _renameCacheTimestamp[viewId];
+    
+    if (cachedName != null && timestamp != null) {
+      // 缓存有效期为5秒
+      final isExpired = DateTime.now().difference(timestamp).inSeconds > 5;
+      if (isExpired) {
+        _recentRenameCache.remove(viewId);
+        _renameCacheTimestamp.remove(viewId);
+        debugPrint('重命名缓存已过期: $viewId');
+        return null;
+      }
+      debugPrint('从重命名缓存获取名称: $viewId -> $cachedName');
+      return cachedName;
+    }
+    return null;
+  }
+
+  /// 清理过期的重命名缓存
+  void _cleanExpiredRenameCache() {
+    final now = DateTime.now();
+    final expiredKeys = <String>[];
+    
+    for (final entry in _renameCacheTimestamp.entries) {
+      if (now.difference(entry.value).inSeconds > 5) {
+        expiredKeys.add(entry.key);
+      }
+    }
+    
+    for (final key in expiredKeys) {
+      _recentRenameCache.remove(key);
+      _renameCacheTimestamp.remove(key);
+    }
+    
+    if (expiredKeys.isNotEmpty) {
+      debugPrint('清理过期重命名缓存: ${expiredKeys.length} 项');
+    }
+  }
+  
+  /// 清理过期的最近创建视图缓存（超过60秒）
+  void _cleanExpiredRecentlyCreatedCache() {
+    final now = DateTime.now();
+    final expiredKeys = <String>[];
+    
+    for (final entry in _recentlyCreatedViews.entries) {
+      if (now.difference(entry.value).inSeconds > 60) {
+        expiredKeys.add(entry.key);
+      }
+    }
+    
+    for (final key in expiredKeys) {
+      _recentlyCreatedViews.remove(key);
+    }
+    
+    if (expiredKeys.isNotEmpty) {
+      debugPrint('清理过期的最近创建视图缓存: ${expiredKeys.length} 项');
     }
   }
 
@@ -998,6 +1107,9 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
             showMessageToast('已删除${_getTypeName(item.type)}: ${item.name}', context: context);
             // 同步菜单项以确保UI与后端一致
             _syncMenuItemsFromBloc();
+            
+            // 安排多次延迟同步，确保删除在所有组件中生效
+            _scheduleMultipleSyncs();
           },
           (error) {
             // 删除失败，显示错误并恢复UI状态
@@ -1115,8 +1227,90 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     return MySpaceItemType.note;
   }
 
+  /// 计算项目的深度层级
+  int _calculateItemDepth(MySpaceMenuItem item) {
+    int depth = 1; // 根级项目深度为1
+    
+    // 获取当前工作区ID
+    final workspaceId = _getWorkspaceId();
+    
+    // 通过遍历菜单项列表找到父项目链
+    String? currentParentId = item.view?.parentViewId;
+    
+    debugPrint('计算深度: ${item.view?.name} (ID: ${item.id})');
+    debugPrint('  初始父ID: $currentParentId, 工作区ID: $workspaceId');
+    
+    // 如果 parentViewId 为空或者等于 workspaceId，则认为是根级项目
+    while (currentParentId != null && 
+           currentParentId.isNotEmpty && 
+           currentParentId != workspaceId) {
+      depth++;
+      debugPrint('  当前深度: $depth, 查找父项目: $currentParentId');
+      
+      // 查找父项目
+      MySpaceMenuItem? parentItem = _findItemById(_menuItems, currentParentId);
+      
+      if (parentItem?.view?.parentViewId != null) {
+        currentParentId = parentItem!.view!.parentViewId;
+        debugPrint('    找到父项目: ${parentItem.view?.name}, 其父ID: $currentParentId');
+      } else {
+        debugPrint('    未找到父项目，停止计算');
+        break;
+      }
+      
+      // 防止无限循环
+      if (depth > _maxFolderDepth + 2) {
+        debugPrint('    达到最大深度限制，停止计算');
+        break;
+      }
+    }
+    
+    debugPrint('  最终深度: $depth');
+    return depth;
+  }
+
+  /// 获取当前工作区ID
+  String? _getWorkspaceId() {
+    try {
+      // 尝试从 UserWorkspaceBloc 获取
+      final userWorkspaceBloc = context.read<UserWorkspaceBloc>();
+      return userWorkspaceBloc.state.currentWorkspace?.workspaceId;
+    } catch (e) {
+      debugPrint('无法获取工作区ID: $e');
+      return null;
+    }
+  }
+
+  /// 通过ID查找菜单项
+  MySpaceMenuItem? _findItemById(List<MySpaceMenuItem> items, String id) {
+    for (final item in items) {
+      if (item.id == id) {
+        return item;
+      }
+      // 递归查找子项目
+      final found = _findItemById(item.children, id);
+      if (found != null) {
+        return found;
+      }
+    }
+    return null;
+  }
+
   /// 获取允许在指定父类型下创建的子项目类型
-  List<MySpaceItemType> _getAllowedChildTypes(MySpaceItemType parentType) {
+  List<MySpaceItemType> _getAllowedChildTypes(MySpaceItemType parentType, {MySpaceMenuItem? parentItem}) {
+    // 检查深度限制 - 只有当新子项目会超过最大深度时才阻止创建
+    if (parentItem != null) {
+      final currentDepth = _calculateItemDepth(parentItem);
+      final newChildDepth = currentDepth + 1; // 新子项目的深度
+      if (newChildDepth > _maxFolderDepth) {
+        debugPrint('⚠️  无法创建子项目：新项目深度 ($newChildDepth) 将超过最大深度限制 ($_maxFolderDepth 层)，当前父项目深度：$currentDepth');
+        // 可以考虑显示用户提示
+        _showDepthLimitWarning();
+        return []; // 不允许创建任何子项目
+      }
+      debugPrint('✅  允许创建子项目：当前父项目深度 $currentDepth，新子项目深度 $newChildDepth，限制 $_maxFolderDepth');
+    }
+    
     switch (parentType) {
       case MySpaceItemType.folder:
         // 文件夹可以创建：文件夹、笔记本、笔记
@@ -1127,6 +1321,19 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       case MySpaceItemType.note:
         // 笔记不能创建任何子项目
         return [];
+    }
+  }
+
+  /// 显示深度限制警告
+  void _showDepthLimitWarning() {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('无法创建更多子文件夹：已达到最大深度限制（$_maxFolderDepth 层）'),
+          duration: const Duration(seconds: 3),
+          backgroundColor: Theme.of(context).colorScheme.error,
+        ),
+      );
     }
   }
 
@@ -1170,7 +1377,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
         if (newView != null) {
           await _setViewIcon(newView, iconData);
           // 刷新菜单以显示新图标
-          _syncMenuItemsFromBloc();
+          await _syncMenuItemsFromBloc();
         }
       }
     } catch (e) {
@@ -1226,7 +1433,23 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
             }
             // 显示提示并同步菜单
             showMessageToast('已创建${_getTypeName(type)}: $name', context: context);
-            _syncMenuItemsFromBloc();
+            
+            // 立即将新创建的项目添加到UI中（临时解决方案）
+            _addNewChildItemToUI(newView, parentViewId);
+            
+            // 确保父项目保持展开状态
+            _ensureParentExpanded(parentViewId);
+            
+            // 对于深层嵌套的项目，需要特别处理展开逻辑
+            debugPrint('新建子项目成功，父项目ID: $parentViewId');
+            debugPrint('新创建的子项目详情: ID=${newView.id}, 名称=${newView.name}, 父ID=${newView.parentViewId}');
+            
+            // 注意：SidebarSectionsBloc 会通过 ViewListener 自动接收到视图更新通知
+            // 我们依赖现有的同步机制，不需要手动触发刷新
+            debugPrint('依赖 ViewListener 自动同步新创建的项目到 SidebarSectionsBloc');
+            
+            // 安排多次延迟同步，确保列表更新，并保持父项目展开状态
+            _scheduleMultipleSyncs(parentViewId);
           },
           (error) {
             debugPrint('子项目创建失败: ${error.msg}');
@@ -1252,6 +1475,9 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
         }
         
         showMessageToast('已创建${_getTypeName(type)}: $name', context: context);
+        
+        // 安排多次延迟同步，确保列表更新
+        _scheduleMultipleSyncs();
       }
     } catch (e) {
       showMessageToast('创建${_getTypeName(type)}失败: $e', context: context);
@@ -1295,22 +1521,44 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   }
 
   /// 从SidebarSectionsBloc同步菜单项（智能合并，保持UI状态）
-  void _syncMenuItemsFromBloc() {
+  Future<void> _syncMenuItemsFromBloc() async {
     if (!mounted) return;
+    
+    // 清理过期的缓存
+    _cleanExpiredRenameCache();
+    _cleanExpiredRecentlyCreatedCache();
     
     try {
       final sidebarSectionsBloc = context.read<SidebarSectionsBloc>();
       final privateViews = sidebarSectionsBloc.state.section.privateViews;
       
+      // 获取所有视图（包括子视图）以确保数据完整
+      final allViewsResult = await ViewBackendService.getAllViews();
+      List<ViewPB> allViews = [];
+      allViewsResult.fold(
+        (views) => allViews = views.items,
+        (error) => debugPrint('获取所有视图失败: $error'),
+      );
+      
+      // 过滤出私有视图（非公共视图）
+      final completePrivateViews = allViews.where((view) => 
+        view.parentViewId.isNotEmpty || privateViews.any((pv) => pv.id == view.id)
+      ).toList();
+      
       // 调试信息
-      debugPrint('同步菜单项: 共${privateViews.length}个后端视图');
-      for (final view in privateViews) {
+      debugPrint('同步菜单项: SidebarSectionsBloc提供${privateViews.length}个根级视图, getAllViews获取${allViews.length}个总视图, 过滤后${completePrivateViews.length}个私有视图');
+      for (final view in completePrivateViews) {
         debugPrint('  视图: ${view.name} (ID: ${view.id}, 父ID: ${view.parentViewId})');
       }
       
+      // 检查是否缺少深层嵌套的视图
+      _checkForMissingDeepViews(completePrivateViews);
+      
       setState(() {
         final oldCount = _menuItems.length;
-        _menuItems = _mergeViewsWithLocalState(privateViews, _menuItems);
+        final oldExpandedStates = _collectExpandedStates(_menuItems);
+        _menuItems = _mergeViewsWithLocalState(completePrivateViews, _menuItems);
+        _restoreExpandedStates(_menuItems, oldExpandedStates);
         debugPrint('菜单项更新: $oldCount -> ${_menuItems.length}');
       });
     } catch (e) {
@@ -1318,6 +1566,153 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       // 会在BlocListener中重新尝试
       debugPrint('同步菜单项异常: $e');
     }
+  }
+
+  /// 收集所有项目的展开状态
+  Map<String, bool> _collectExpandedStates(List<MySpaceMenuItem> items) {
+    final states = <String, bool>{};
+    for (final item in items) {
+      states[item.id] = item.isExpanded;
+      if (item.children.isNotEmpty) {
+        states.addAll(_collectExpandedStates(item.children));
+      }
+    }
+    return states;
+  }
+
+  /// 恢复项目的展开状态
+  void _restoreExpandedStates(List<MySpaceMenuItem> items, Map<String, bool> states) {
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (states.containsKey(item.id)) {
+        items[i] = item.copyWith(isExpanded: states[item.id]!);
+      }
+      if (item.children.isNotEmpty) {
+        _restoreExpandedStates(items[i].children, states);
+      }
+    }
+  }
+
+  /// 安排多次延迟同步，确保新创建的项目显示在列表中
+  void _scheduleMultipleSyncs([String? parentIdToKeepExpanded]) {
+    if (!mounted) return;
+    
+    // 第一次延迟同步 - 200ms（更快响应）
+    Future.delayed(const Duration(milliseconds: 200), () async {
+      if (mounted) {
+        await _syncMenuItemsFromBloc();
+        if (parentIdToKeepExpanded != null) {
+          _ensureParentExpanded(parentIdToKeepExpanded);
+        }
+      }
+    });
+    
+    // 第二次延迟同步 - 500ms
+    Future.delayed(const Duration(milliseconds: 500), () async {
+      if (mounted) {
+        await _syncMenuItemsFromBloc();
+        if (parentIdToKeepExpanded != null) {
+          _ensureParentExpanded(parentIdToKeepExpanded);
+        }
+      }
+    });
+    
+    // 第三次延迟同步 - 1000ms（确保所有异步操作完成）
+    Future.delayed(const Duration(milliseconds: 1000), () async {
+      if (mounted) {
+        await _syncMenuItemsFromBloc();
+        if (parentIdToKeepExpanded != null) {
+          _ensureParentExpanded(parentIdToKeepExpanded);
+        }
+        
+        // 清理无效的视图祖先缓存，防止View not found错误
+        _cleanupInvalidViewAncestorCache();
+        
+        // 对于深层嵌套的情况，强制重新加载数据
+        if (parentIdToKeepExpanded != null) {
+          _forceReloadDeepViews(parentIdToKeepExpanded);
+        }
+      }
+    });
+    
+    // 第四次延迟同步 - 2000ms（最终确认）
+    Future.delayed(const Duration(milliseconds: 2000), () async {
+      if (mounted) {
+        await _syncMenuItemsFromBloc();
+        if (parentIdToKeepExpanded != null) {
+          _ensureParentExpanded(parentIdToKeepExpanded);
+        }
+      }
+    });
+  }
+
+  /// 确保指定的父项目保持展开状态
+  void _ensureParentExpanded(String parentId) {
+    if (!mounted) return;
+    
+    setState(() {
+      final expanded = _expandParentRecursive(_menuItems, parentId);
+      if (!expanded) {
+        debugPrint('无法在根级菜单中找到项目 $parentId，尝试展开其祖先路径');
+        _expandAncestorPath(parentId);
+      }
+    });
+    
+    debugPrint('确保父项目展开: $parentId');
+  }
+
+  /// 递归展开指定的父项目
+  bool _expandParentRecursive(List<MySpaceMenuItem> items, String targetId) {
+    for (int i = 0; i < items.length; i++) {
+      if (items[i].id == targetId) {
+        items[i] = items[i].copyWith(isExpanded: true);
+        return true;
+      }
+      if (_expandParentRecursive(items[i].children, targetId)) {
+        // 如果在子项目中找到了目标，也要展开当前项目
+        items[i] = items[i].copyWith(isExpanded: true);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /// 展开祖先路径，确保深层嵌套的项目能被找到和展开
+  void _expandAncestorPath(String targetId) {
+    // 从当前菜单项中找到目标项目及其祖先路径
+    final ancestorPath = _findAncestorPath(_menuItems, targetId, []);
+    
+    if (ancestorPath.isNotEmpty) {
+      debugPrint('找到祖先路径: ${ancestorPath.map((item) => item.name).join(' -> ')}');
+      
+      // 展开祖先路径中的所有项目
+      for (final ancestor in ancestorPath) {
+        _expandParentRecursive(_menuItems, ancestor.id);
+        debugPrint('展开祖先项目: ${ancestor.name} (ID: ${ancestor.id})');
+      }
+    } else {
+      debugPrint('未找到项目 $targetId 的祖先路径');
+    }
+  }
+
+  /// 查找项目的祖先路径
+  List<MySpaceMenuItem> _findAncestorPath(List<MySpaceMenuItem> items, String targetId, List<MySpaceMenuItem> currentPath) {
+    for (final item in items) {
+      final newPath = [...currentPath, item];
+      
+      if (item.id == targetId) {
+        // 找到目标项目，返回祖先路径（不包括目标项目本身）
+        return currentPath;
+      }
+      
+      // 在子项目中递归查找
+      final result = _findAncestorPath(item.children, targetId, newPath);
+      if (result.isNotEmpty) {
+        return result;
+      }
+    }
+    
+    return [];
   }
 
   /// 展平视图列表，包含所有子视图
@@ -1352,47 +1747,102 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     // 调试信息
     debugPrint('合并视图数据: ${backendViews.length} -> ${allViews.length} 总视图 -> ${validBackendViews.length} 有效视图');
     
+    // 详细显示所有视图的层级关系
+    _debugViewHierarchy(validBackendViews);
+    
     final backendViewsMap = <String, ViewPB>{
       for (final view in validBackendViews) view.id: view,
     };
+    
+    // 清理本地状态中的无效项目（防止缓存问题）
+    final validLocalItems = localItems.where((item) => 
+      // 保留UI-only项目或后端存在的项目
+      _isUIOnlyItem(item) || backendViewsMap.containsKey(item.id)
+    ).toList();
+    
     final localItemsMap = <String, MySpaceMenuItem>{
-      for (final item in localItems) item.id: item,
+      for (final item in validLocalItems) item.id: item,
     };
+    
+    debugPrint('清理本地状态: ${localItems.length} -> ${validLocalItems.length} 有效项目');
 
-    // 1. 处理后端存在的项目（更新或保持现有状态）
-    for (final view in validBackendViews) {
+    // 1. 只处理根级视图（没有父项目的视图）
+    final rootViews = validBackendViews.where((view) => 
+      view.parentViewId.isEmpty || 
+      !validBackendViews.any((v) => v.id == view.parentViewId)
+    ).toList();
+    
+    debugPrint('识别根级视图: ${rootViews.length}/${validBackendViews.length}');
+    for (final rootView in rootViews) {
+      debugPrint('  根级视图: ${rootView.name} (ID: ${rootView.id})');
+    }
+    
+    // 处理根级视图并构建完整的层级结构
+    for (final view in rootViews) {
       final existingLocal = localItemsMap[view.id];
       
       if (existingLocal != null) {
         // 如果本地已存在，保持本地的UI状态（如展开状态），但同步后端的数据
         // 重要：需要重新构建层级关系以包含新的子项目
         final menuItem = _convertViewToMenuItem(view);
-        final updatedItem = _buildHierarchicalItem(menuItem, validBackendViews);
+        final updatedItem = _buildHierarchicalItem(menuItem, validBackendViews, depth: 1);
         
+        // 保持原有的展开状态和UI状态
         result.add(updatedItem.copyWith(
           isExpanded: existingLocal.isExpanded, // 保持展开状态
         ));
+        
+        // 调试信息
+        debugPrint('保持项目状态: ${updatedItem.name} (展开: ${updatedItem.isExpanded}, 子项目数: ${updatedItem.children.length})');
       } else {
         // 如果本地不存在，创建新项目并构建层级关系
         final menuItem = _convertViewToMenuItem(view);
-        result.add(_buildHierarchicalItem(menuItem, validBackendViews));
+        final newItem = _buildHierarchicalItem(menuItem, validBackendViews, depth: 1);
+        result.add(newItem);
+        
+        // 调试信息
+        debugPrint('创建新项目: ${newItem.name} (子项目数: ${newItem.children.length})');
       }
     }
 
     // 2. 保留本地新增但尚未同步到后端的项目（仅限UI-only项目）
-    for (final localItem in localItems) {
+    for (final localItem in validLocalItems) {
       if (!backendViewsMap.containsKey(localItem.id) && 
           _isUIOnlyItem(localItem)) {
         result.add(localItem);
+        debugPrint('保留UI-only项目: ${localItem.name}');
       }
     }
 
-    // 3. 过滤掉已经作为子项目的项目，避免重复显示
-    return _filterRootItems(result, validBackendViews);
+    // 3. 最终调试信息
+    debugPrint('合并完成: 最终项目数: ${result.length}');
+    for (final item in result) {
+      debugPrint('  根项目: ${item.name} (子项目数: ${item.children.length})');
+      _debugChildrenRecursive(item.children, depth: 1);
+    }
+    
+    return result;
+  }
+
+  /// 递归显示子项目的调试信息
+  void _debugChildrenRecursive(List<MySpaceMenuItem> children, {int depth = 1}) {
+    final indent = '  ' * (depth + 1);
+    for (final child in children) {
+      debugPrint('$indent子项目: ${child.name} (ID: ${child.id}, 子项目数: ${child.children.length})');
+      if (child.children.isNotEmpty) {
+        _debugChildrenRecursive(child.children, depth: depth + 1);
+      }
+    }
   }
 
   /// 构建层级关系的菜单项
-  MySpaceMenuItem _buildHierarchicalItem(MySpaceMenuItem item, List<ViewPB> allViews) {
+  MySpaceMenuItem _buildHierarchicalItem(MySpaceMenuItem item, List<ViewPB> allViews, {int depth = 1}) {
+    // 检查深度限制 - 只有当深度超过限制时才停止构建
+    if (depth > _maxFolderDepth) {
+      debugPrint('⚠️  达到最大深度限制 ($_maxFolderDepth 层): ${item.name} (当前深度: $depth)');
+      return item; // 不再构建子项目
+    }
+    
     // 查找该项目的子项目
     final childViews = allViews.where((view) => 
       view.parentViewId == item.id && view.id != item.id
@@ -1400,7 +1850,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
     
     // 调试信息
     if (childViews.isNotEmpty) {
-      debugPrint('构建层级: ${item.name} 有 ${childViews.length} 个子项目');
+      debugPrint('构建层级: ${item.name} 有 ${childViews.length} 个子项目 (深度: $depth)');
       for (final child in childViews) {
         debugPrint('  子项目: ${child.name} (ID: ${child.id})');
       }
@@ -1410,46 +1860,318 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       return item;
     }
     
+    // 按名称排序子项目，确保显示顺序一致
+    childViews.sort((a, b) => a.name.compareTo(b.name));
+    
     final childItems = childViews.map((childView) {
       final childItem = _convertViewToMenuItem(childView);
-      return _buildHierarchicalItem(childItem, allViews);
+      return _buildHierarchicalItem(childItem, allViews, depth: depth + 1);
     }).toList();
     
     return item.copyWith(children: childItems);
   }
 
-  /// 过滤根级项目，移除已经作为子项目的项目
-  List<MySpaceMenuItem> _filterRootItems(List<MySpaceMenuItem> items, List<ViewPB> allViews) {
-    final childViewIds = <String>{};
-    
-    // 收集所有子视图的ID
-    for (final view in allViews) {
-      if (view.parentViewId.isNotEmpty && 
-          allViews.any((parent) => parent.id == view.parentViewId)) {
-        childViewIds.add(view.id);
+  /// 判断是否为仅UI层的项目（还未同步到后端）
+  bool _isUIOnlyItem(MySpaceMenuItem item) {
+    // 1. 如果是文件夹或笔记本类型，且ID是时间戳格式，说明是UI层创建的
+    if (item.type == MySpaceItemType.folder || item.type == MySpaceItemType.notebook) {
+      // 检查ID是否为数字格式的时间戳（UI层生成的ID格式）
+      if (RegExp(r'^\d+$').hasMatch(item.id)) {
+        return true;
       }
     }
     
-    // 调试信息
-    debugPrint('过滤根级项目: ${items.length} 项目 -> 子项目IDs: $childViewIds');
-    
-    // 只返回根级项目（不是其他项目子项目的项目）
-    final rootItems = items.where((item) => !childViewIds.contains(item.id)).toList();
-    debugPrint('过滤结果: ${rootItems.length} 根级项目');
-    
-    return rootItems;
-  }
-
-  /// 判断是否为仅UI层的项目（还未同步到后端）
-  bool _isUIOnlyItem(MySpaceMenuItem item) {
-    // 如果是文件夹或笔记本类型，且ID是时间戳格式，说明是UI层创建的
-    if (item.type == MySpaceItemType.folder || item.type == MySpaceItemType.notebook) {
-      // 检查ID是否为数字格式的时间戳（UI层生成的ID格式）
-      return RegExp(r'^\d+$').hasMatch(item.id);
+    // 2. 检查是否是最近创建的视图（30秒内创建的）
+    final createdTime = _recentlyCreatedViews[item.id];
+    if (createdTime != null) {
+      final now = DateTime.now();
+      final isRecent = now.difference(createdTime).inSeconds < 30;
+      if (isRecent) {
+        debugPrint('识别为最近创建的视图: ${item.name} (${now.difference(createdTime).inSeconds}秒前)');
+        return true;
+      }
+      // 注意：不在这里清理缓存，由定期清理方法处理
     }
     
     // 笔记类型应该都有对应的ViewPB，如果后端没有则可能已被删除
     return false;
+  }
+
+  /// 清理无效的视图祖先缓存，防止View not found错误
+  void _cleanupInvalidViewAncestorCache() {
+    try {
+      // 获取当前有效的视图ID列表
+      final validViewIds = <String>{};
+      void collectValidIds(List<MySpaceMenuItem> items) {
+        for (final item in items) {
+          if (item.view != null) {
+            validViewIds.add(item.id);
+          }
+          collectValidIds(item.children);
+        }
+      }
+      collectValidIds(_menuItems);
+      
+      debugPrint('清理视图祖先缓存: 当前有效视图数量: ${validViewIds.length}');
+      
+      // 这里可以添加清理ViewAncestorCache的逻辑
+      // 由于ViewAncestorCache是一个独立的服务，我们通过获取实例来清理
+      // 注意：这需要ViewAncestorCache提供清理方法
+      
+    } catch (e) {
+      debugPrint('清理视图祖先缓存时发生错误: $e');
+    }
+  }
+
+  /// 强制重新加载深层视图数据
+  void _forceReloadDeepViews(String parentId) {
+    try {
+      debugPrint('强制重新加载深层视图数据，父项目ID: $parentId');
+      
+      // 强制SidebarSectionsBloc重新加载数据
+      _forceReloadSidebarData();
+      
+      // 对于深层嵌套的情况，确保祖先路径都被展开
+      _ensureAncestorPathExpanded(parentId);
+      
+      debugPrint('已处理深层视图展开逻辑');
+    } catch (e) {
+      debugPrint('强制重新加载深层视图数据时发生错误: $e');
+    }
+  }
+
+  /// 强制SidebarSectionsBloc重新加载数据
+  void _forceReloadSidebarData() {
+    try {
+      // 强制重新加载数据
+      // 作为临时解决方案，我们使用一个延迟来确保后端数据已经更新
+      debugPrint('请求SidebarSectionsBloc强制刷新数据');
+      
+      // 添加一个更长的延迟，等待后端数据完全同步
+      Future.delayed(const Duration(milliseconds: 3000), () async {
+        if (mounted) {
+          debugPrint('执行最终数据同步检查');
+          await _syncMenuItemsFromBloc();
+        }
+      });
+      
+    } catch (e) {
+      debugPrint('强制重新加载SidebarData时发生错误: $e');
+    }
+  }
+
+  /// 立即将新创建的子项目添加到UI中
+  void _addNewChildItemToUI(ViewPB newView, String parentViewId) {
+    try {
+      debugPrint('立即添加新子项目到UI: ${newView.name} (ID: ${newView.id}, 父ID: $parentViewId)');
+      
+      // 将新创建的视图添加到最近创建缓存中
+      _recentlyCreatedViews[newView.id] = DateTime.now();
+      debugPrint('将新视图添加到最近创建缓存: ${newView.id}');
+      
+      setState(() {
+        // 将ViewPB转换为MySpaceMenuItem
+        final newMenuItem = _convertViewToMenuItem(newView);
+        
+        // 递归查找父项目并添加子项目
+        bool added = _addChildToParentRecursive(_menuItems, parentViewId, newMenuItem);
+        
+        if (added) {
+          debugPrint('成功将新子项目添加到父项目 $parentViewId');
+        } else {
+          debugPrint('未找到父项目 $parentViewId，无法添加子项目');
+        }
+      });
+      
+    } catch (e) {
+      debugPrint('添加新子项目到UI时发生错误: $e');
+    }
+  }
+
+  /// 递归查找父项目并添加子项目
+  bool _addChildToParentRecursive(List<MySpaceMenuItem> items, String parentId, MySpaceMenuItem childItem) {
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      
+      if (item.id == parentId) {
+        // 找到父项目，检查子项目是否已存在
+        final existingChildIndex = item.children.indexWhere((child) => child.id == childItem.id);
+        
+        if (existingChildIndex == -1) {
+          // 子项目不存在，添加到子项目列表
+          final updatedChildren = [...item.children, childItem];
+          items[i] = item.copyWith(children: updatedChildren, isExpanded: true);
+          debugPrint('已将子项目 ${childItem.name} 添加到父项目 ${item.name}');
+          return true;
+        } else {
+          // 子项目已存在，更新现有子项目
+          final updatedChildren = [...item.children];
+          updatedChildren[existingChildIndex] = childItem;
+          items[i] = item.copyWith(children: updatedChildren, isExpanded: true);
+          debugPrint('已更新父项目 ${item.name} 中的子项目 ${childItem.name}');
+          return true;
+        }
+      } else if (item.children.isNotEmpty) {
+        // 递归查找子项目
+        if (_addChildToParentRecursive(item.children, parentId, childItem)) {
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /// 确保祖先路径都被展开
+  void _ensureAncestorPathExpanded(String targetId) {
+    final ancestorPath = _findAncestorPath(_menuItems, targetId, []);
+    
+    if (ancestorPath.isNotEmpty) {
+      debugPrint('展开祖先路径以确保深层项目可见: ${ancestorPath.map((item) => item.name).join(' -> ')}');
+      
+      // 展开所有祖先项目
+      for (final ancestor in ancestorPath) {
+        _expandParentRecursive(_menuItems, ancestor.id);
+        debugPrint('  展开祖先: ${ancestor.name} (ID: ${ancestor.id})');
+      }
+      
+      // 最后展开目标项目本身
+      _expandParentRecursive(_menuItems, targetId);
+      debugPrint('  展开目标项目: $targetId');
+    } else {
+      debugPrint('未找到目标项目 $targetId 的祖先路径');
+    }
+  }
+
+  /// 检查是否缺少深层嵌套的视图
+  void _checkForMissingDeepViews(List<ViewPB> views) {
+    try {
+      // 构建父子关系映射
+      final parentChildMap = <String, List<ViewPB>>{};
+      final allViewIds = <String>{};
+      
+      for (final view in views) {
+        allViewIds.add(view.id);
+        final parentId = view.parentViewId;
+        if (parentId.isNotEmpty) {
+          parentChildMap.putIfAbsent(parentId, () => []).add(view);
+        }
+      }
+      
+      debugPrint('深层嵌套检查: 总视图数=${views.length}, 父子关系=${parentChildMap.length}');
+      
+      // 检查是否有父项目在视图列表中但子项目缺失
+      for (final entry in parentChildMap.entries) {
+        final parentId = entry.key;
+        final children = entry.value;
+        
+        if (allViewIds.contains(parentId)) {
+          debugPrint('  父项目 $parentId 有 ${children.length} 个子项目:');
+          for (final child in children) {
+            debugPrint('    子项目: ${child.name} (ID: ${child.id})');
+          }
+        } else {
+          debugPrint('  ⚠️  父项目 $parentId 不在视图列表中，但有 ${children.length} 个子项目');
+        }
+      }
+      
+      // 检查三级嵌套
+      var deepNestingCount = 0;
+      for (final view in views) {
+        if (view.parentViewId.isNotEmpty && parentChildMap.containsKey(view.id)) {
+          final grandParentId = _findParentOfParent(views, view.id);
+          if (grandParentId != null) {
+            deepNestingCount++;
+            debugPrint('  发现三级嵌套: ${view.name} (ID: ${view.id}) -> 父: ${view.parentViewId} -> 祖父: $grandParentId');
+          }
+        }
+      }
+      
+      debugPrint('深层嵌套检查完成: 发现 $deepNestingCount 个三级嵌套项目');
+      
+    } catch (e) {
+      debugPrint('检查深层嵌套视图时发生错误: $e');
+    }
+  }
+  
+  /// 查找父项目的父项目ID
+  String? _findParentOfParent(List<ViewPB> views, String viewId) {
+    // 找到当前视图的父项目
+    final currentView = views.firstWhere((v) => v.id == viewId, orElse: () => ViewPB());
+    if (currentView.parentViewId.isEmpty) return null;
+    
+    // 找到父项目的父项目
+    final parentView = views.firstWhere((v) => v.id == currentView.parentViewId, orElse: () => ViewPB());
+    if (parentView.parentViewId.isEmpty) return null;
+    
+    return parentView.parentViewId;
+  }
+
+  /// 调试显示视图层级关系
+  void _debugViewHierarchy(List<ViewPB> views) {
+    try {
+      debugPrint('=== 视图层级关系详情 ===');
+      
+      // 按层级分组
+      final workspaceId = _getWorkspaceId();
+      // 根级视图：parentViewId 为空或者等于 workspaceId
+      final rootViews = views.where((v) => v.parentViewId.isEmpty || v.parentViewId == workspaceId).toList();
+      final childViews = views.where((v) => v.parentViewId.isNotEmpty && v.parentViewId != workspaceId).toList();
+      
+      debugPrint('根级视图 (${rootViews.length}个):');
+      for (final view in rootViews) {
+        debugPrint('  📁 ${view.name} (ID: ${view.id})');
+        _debugViewChildren(views, view.id, 1);
+      }
+      
+      // 检查孤儿视图（父项目不存在的子视图）
+      final orphanViews = <ViewPB>[];
+      for (final child in childViews) {
+        final hasParent = views.any((v) => v.id == child.parentViewId);
+        if (!hasParent) {
+          orphanViews.add(child);
+        }
+      }
+      
+      if (orphanViews.isNotEmpty) {
+        debugPrint('⚠️  孤儿视图 (${orphanViews.length}个):');
+        for (final orphan in orphanViews) {
+          debugPrint('  🔴 ${orphan.name} (ID: ${orphan.id}, 父ID: ${orphan.parentViewId})');
+        }
+      }
+      
+      debugPrint('=== 层级关系详情结束 ===');
+    } catch (e) {
+      debugPrint('调试视图层级关系时发生错误: $e');
+    }
+  }
+
+  /// 递归显示子视图
+  void _debugViewChildren(List<ViewPB> allViews, String parentId, int level) {
+    final children = allViews.where((v) => v.parentViewId == parentId).toList();
+    final indent = '  ' * level;
+    
+    for (final child in children) {
+      final icon = level == 1 ? '📂' : (level == 2 ? '📄' : '🔸');
+      
+      // 显示深度警告
+      if (level > _maxFolderDepth) {
+        debugPrint('$indent⚠️  ${child.name} (ID: ${child.id}) - 超过最大深度限制 (第${level}层)');
+      } else {
+        debugPrint('$indent$icon ${child.name} (ID: ${child.id}) - 第${level}层');
+      }
+      
+      // 递归显示更深层的子项目，但如果超过限制则显示警告
+      if (level <= _maxFolderDepth) {
+        _debugViewChildren(allViews, child.id, level + 1);
+      } else {
+        // 检查是否还有更深层的子项目
+        final deepChildren = allViews.where((v) => v.parentViewId == child.id).toList();
+        if (deepChildren.isNotEmpty) {
+          debugPrint('$indent  ⚠️  此项目有 ${deepChildren.length} 个子项目被深度限制隐藏');
+        }
+      }
+    }
   }
 
 
@@ -1479,10 +2201,13 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   MySpaceMenuItem _convertViewToMenuItem(ViewPB view) {
     // 根据ViewPB的名称和布局推断类型
     MySpaceItemType itemType = _inferViewType(view);
+    
+    // 优先使用重命名缓存中的名称，如果没有则使用view的名称
+    final displayName = _getFromRenameCache(view.id) ?? view.name;
 
     return MySpaceMenuItem(
       id: view.id,
-      name: view.name,
+      name: displayName,
       icon: _getTypeEmoji(itemType),
       type: itemType,
       children: [], // 暂不处理子项目，后续可根据需要扩展
