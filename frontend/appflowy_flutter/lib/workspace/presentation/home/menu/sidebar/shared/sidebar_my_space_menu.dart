@@ -1392,7 +1392,7 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
       String? iconData;
       
       // 调试信息
-      debugPrint('开始创建后端实体: 类型=$type, 名称=$name, 父视图ID=$parentViewId');
+      debugPrint('创建后端实体: 类型=$type, 名称=$name, 父视图ID=$parentViewId');
       
       // 根据类型确定布局和图标
       switch (type) {
