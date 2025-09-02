@@ -653,11 +653,15 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
         SizedBox(height: 8),
         // 统一的日记和日程展示组件 - 使用Expanded让其占据剩余空间
         Expanded(
-          child: CalendarContent(
-            diaryItems: _diaryItems,
-            selectedDate: _selectedDay ?? _focusedDay,
-            viewId: _currentViewId, // 传递视图ID
-            onScheduleTap: _onScheduleTap, // 传递点击回调
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16), // 确保内容与侧边栏边缘有距离
+            child: CalendarContent(
+              diaryItems: _diaryItems,
+              selectedDate: _selectedDay ?? _focusedDay,
+              viewId: _currentViewId, // 传递视图ID
+              onScheduleTap: _onScheduleTap, // 传递点击回调
+            ),
           ),
         ),
       ],
@@ -881,7 +885,6 @@ class CalendarContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -912,14 +915,8 @@ class CalendarContent extends StatelessWidget {
               databaseViewId: viewId,
               onScheduleTap: onScheduleTap,
             ),
-          ] else ...[
-            Text(
-              '暂无日程数据',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-              ),
-            ),
           ],
+          // 移除else部分，不显示"暂无日程数据"提示
         ],
       ),
     );

@@ -67,40 +67,7 @@ class _ScheduleSidebarState extends State<ScheduleSidebar> {
     final completedSchedules = model.completedSchedules;
 
     if (model.schedules.isEmpty) {
-      return const SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: EdgeInsets.all(32.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 64,
-                  color: Colors.grey,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  '暂无日程',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16,
-                  ),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  '点击"+"创建新日程',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+      return const SizedBox.shrink(); // 显示空白而不是"暂无日程"提示
     }
 
     return SingleChildScrollView(
@@ -513,29 +480,7 @@ class _ScheduleSidebarContentState extends State<ScheduleSidebarContent> {
     final completedSchedules = model.completedSchedules;
 
     if (model.schedules.isEmpty) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.calendar_today,
-                size: 64,
-                color: Colors.grey,
-              ),
-              SizedBox(height: 16),
-              Text(
-                '暂无日程',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
+      return const SizedBox.shrink(); // 显示空白而不是"暂无日程"提示
     }
 
     return Column(
