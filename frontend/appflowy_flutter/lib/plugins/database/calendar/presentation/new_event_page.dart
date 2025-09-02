@@ -9,6 +9,7 @@ import 'package:appflowy_backend/protobuf/flowy-error/errors.pb.dart';
 import 'package:appflowy_result/appflowy_result.dart';
 import '../../application/row/row_service.dart';
 import '../../application/field/field_info.dart';
+import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/reminder_selector.dart';
 
 class NewEventPage extends StatefulWidget {
   final DateTime selectedDate;
@@ -42,6 +43,28 @@ class _NewEventPageState extends State<NewEventPage> {
   
   // 使用ScheduleModel来管理日程
   late ScheduleModel _scheduleModel;
+
+  // 字符串提醒选项转换为ReminderOption枚举
+  ReminderOption _convertStringToReminderOption(String reminderString) {
+    switch (reminderString) {
+      case '无':
+        return ReminderOption.none;
+      case '准时':
+        return ReminderOption.atTimeOfEvent;
+      case '提前5分钟':
+        return ReminderOption.fiveMinsBefore;
+      case '提前30分钟':
+        return ReminderOption.thirtyMinsBefore;
+      case '提前1个小时':
+        return ReminderOption.oneHourBefore;
+      case '提前1天':
+        return ReminderOption.oneDayBefore;
+      case '自定义':
+        return ReminderOption.custom;
+      default:
+        return ReminderOption.none;
+    }
+  }
 
   @override
   void initState() {
@@ -218,6 +241,10 @@ class _NewEventPageState extends State<NewEventPage> {
         description: _description,
         startTime: startDateTime,
         endTime: endDateTime,
+        isAllDay: _isAllDay,
+        isImportant: _isImportant,
+        category: _calendar,
+        reminderOption: _convertStringToReminderOption(_reminderOption),
       );
 
       // 再次检查widget是否仍然挂载

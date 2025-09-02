@@ -481,6 +481,10 @@ class ScheduleModel extends ChangeNotifier {
             notifyListeners();
           }
           
+          // 如果设置了提醒选项，创建提醒
+          if (reminderOption != ReminderOption.none) {
+            _setReminder(newSchedule);
+          }
           
           // 创建成功后，刷新数据以获取最新的事件列表
           try {
@@ -722,6 +726,18 @@ class ScheduleModel extends ChangeNotifier {
     try {
       final reminderBloc = getIt<ReminderBloc>();
       final reminderId = schedule.reminderId ?? nanoid();
+      
+      // 如果schedule没有reminderId，需要更新本地列表中的schedule
+      if (schedule.reminderId == null) {
+        final updatedSchedule = schedule.copyWith(reminderId: reminderId);
+        final index = _schedules.indexWhere((s) => s.id == schedule.id);
+        if (index != -1) {
+          _schedules[index] = updatedSchedule;
+          if (!_isDisposed) {
+            notifyListeners();
+          }
+        }
+      }
       
       // 使用当前视图ID，如果没有设置则使用默认的新建日程视图ID
       final viewId = _currentViewId ?? _newScheduleViewId;
