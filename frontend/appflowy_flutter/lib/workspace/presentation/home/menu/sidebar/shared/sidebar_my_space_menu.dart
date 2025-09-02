@@ -63,85 +63,7 @@ class MySpaceMenuItem {
   }
 }
 
-// 原弹窗组件已移除，改为使用下拉菜单
-
-/// 重命名项目对话框
-class _RenameItemDialog extends StatefulWidget {
-  final String currentName;
-  final Function(String) onRename;
-
-  const _RenameItemDialog({
-    required this.currentName,
-    required this.onRename,
-  });
-
-  @override
-  State<_RenameItemDialog> createState() => _RenameItemDialogState();
-}
-
-class _RenameItemDialogState extends State<_RenameItemDialog> {
-  final TextEditingController _nameController = TextEditingController();
-  bool _canConfirm = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController.text = widget.currentName;
-    _nameController.addListener(_onTextChanged);
-  }
-
-  @override
-  void dispose() {
-    _nameController.removeListener(_onTextChanged);
-    _nameController.dispose();
-    super.dispose();
-  }
-
-  void _onTextChanged() {
-    final newName = _nameController.text.trim();
-    final canConfirm = newName.isNotEmpty && newName != widget.currentName;
-    if (canConfirm != _canConfirm) {
-      setState(() {
-        _canConfirm = canConfirm;
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('重命名项目'),
-      content: TextField(
-        controller: _nameController,
-        decoration: const InputDecoration(
-          labelText: '项目名称',
-          hintText: '请输入新的项目名称',
-          border: OutlineInputBorder(),
-        ),
-        autofocus: true,
-        onSubmitted: (_) => _canConfirm ? _onConfirm() : null,
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
-        ),
-        ElevatedButton(
-          onPressed: _canConfirm ? _onConfirm : null,
-          child: const Text('重命名'),
-        ),
-      ],
-    );
-  }
-
-  void _onConfirm() {
-    final newName = _nameController.text.trim();
-    if (newName.isNotEmpty && newName != widget.currentName) {
-      widget.onRename(newName);
-      Navigator.of(context).pop();
-    }
-  }
-}
+// 重命名功能已改为内联编辑模式，不再使用弹窗
 
 /// 我的空间菜单组件
 class SidebarMySpaceMenu extends StatefulWidget {
@@ -172,6 +94,11 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   
   // 最近创建的视图缓存：记录最近创建的视图ID和时间戳，防止在数据同步时被覆盖
   final Map<String, DateTime> _recentlyCreatedViews = {};
+  
+  // 内联编辑状态：记录正在编辑的项目ID
+  String? _editingItemId;
+  final TextEditingController _editingController = TextEditingController();
+  final FocusNode _editingFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -182,6 +109,13 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
         await _syncMenuItemsFromBloc();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _editingController.dispose();
+    _editingFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -238,22 +172,22 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
           ),
           const Spacer(),
           // 清理重复项按钮
-          if (kDebugMode) // 只在调试模式下显示
-            GestureDetector(
-              onTap: _cleanupDuplicateViews,
-              child: Container(
-                padding: const EdgeInsets.all(4.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4.0),
-                  color: Colors.orange.withOpacity(0.1),
-                ),
-                child: Icon(
-                  Icons.cleaning_services,
-                  size: 16,
-                  color: Colors.orange,
-                ),
-              ),
-            ),
+          // if (kDebugMode) // 只在调试模式下显示
+          //   GestureDetector(
+          //     onTap: _cleanupDuplicateViews,
+          //     child: Container(
+          //       padding: const EdgeInsets.all(4.0),
+          //       decoration: BoxDecoration(
+          //         borderRadius: BorderRadius.circular(4.0),
+          //         color: Colors.orange.withOpacity(0.1),
+          //       ),
+          //       child: Icon(
+          //         Icons.cleaning_services,
+          //         size: 16,
+          //         color: Colors.orange,
+          //       ),
+          //     ),
+          //   ),
           if (kDebugMode) const HSpace(8.0),
           // 添加子项目下拉按钮
           AddItemButton(
@@ -378,19 +312,21 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
                   ),
                   const HSpace(8),
                 ],
-                // 名称
+                // 名称或编辑框
                 Expanded(
-                  child: GestureDetector(
-                    onSecondaryTap: () => _showContextMenu(context, item),
-                    child: Text(
-                      item.name,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: itemColor,
-                        fontSize: isNote ? 13 : 14,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  child: _editingItemId == item.id
+                      ? _buildInlineEditField(item)
+                      : GestureDetector(
+                          onSecondaryTap: () => _showContextMenu(context, item),
+                          child: Text(
+                            item.name,
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: itemColor,
+                              fontSize: isNote ? 13 : 14,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                 ),
                 // 三点菜单按钮
                 IconButton(
@@ -889,19 +825,126 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
 
   /// 重命名项目
   void _onRenameItem(MySpaceMenuItem item) {
-    showDialog(
-      context: context,
-      builder: (context) => _RenameItemDialog(
-        currentName: item.name,
-        onRename: (newName) {
-          _renameItem(item, newName);
-        },
+    setState(() {
+      _editingItemId = item.id;
+      _editingController.text = item.name;
+    });
+    
+    // 延迟聚焦到编辑框
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _editingFocusNode.requestFocus();
+      _editingController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: _editingController.text.length,
+      );
+    });
+  }
+
+  /// 构建内联编辑框
+  Widget _buildInlineEditField(MySpaceMenuItem item) {
+    return TextField(
+      controller: _editingController,
+      focusNode: _editingFocusNode,
+      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        fontSize: item.type == MySpaceItemType.note ? 13 : 14,
       ),
+      decoration: InputDecoration(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 1,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(4),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 8,
+          vertical: 4,
+        ),
+        isDense: true,
+      ),
+      onSubmitted: (newName) => _confirmRename(item, newName),
+      onTapOutside: (_) => _cancelRename(),
+    );
+  }
+
+  /// 确认重命名
+  void _confirmRename(MySpaceMenuItem item, String newName) {
+    final trimmedName = newName.trim();
+    
+    // 检查名称是否为空
+    if (trimmedName.isEmpty) {
+      _showRenameError('项目名称不能为空');
+      return;
+    }
+    
+    // 检查名称是否有变化
+    if (trimmedName == item.name) {
+      _cancelRename();
+      return;
+    }
+    
+    // 检查同目录下同类项目名称是否重复
+    if (_isDuplicateName(item, trimmedName)) {
+      _showRenameError('同目录下已存在同名的${_getTypeName(item.type)}');
+      return;
+    }
+    
+    // 执行重命名
+    _executeRename(item, trimmedName);
+  }
+
+  /// 取消重命名
+  void _cancelRename() {
+    setState(() {
+      _editingItemId = null;
+      _editingController.clear();
+    });
+  }
+
+  /// 显示重命名错误
+  void _showRenameError(String message) {
+    showMessageToast(message, context: context);
+    // 重新聚焦到编辑框
+    _editingFocusNode.requestFocus();
+  }
+
+  /// 检查同目录下同类项目名称是否重复
+  bool _isDuplicateName(MySpaceMenuItem item, String newName) {
+    // 获取父项目的子项目列表
+    List<MySpaceMenuItem> siblings;
+    
+    if (item.view?.parentViewId != null && item.view!.parentViewId.isNotEmpty) {
+      // 子项目：查找父项目的子项目列表
+      final parentItem = _findItemById(_menuItems, item.view!.parentViewId);
+      siblings = parentItem?.children ?? [];
+    } else {
+      // 根级项目：使用根级菜单项列表
+      siblings = _menuItems;
+    }
+    
+    // 检查同类型的兄弟项目中是否有同名的
+    return siblings.any((sibling) =>
+        sibling.id != item.id && // 排除自身
+        sibling.type == item.type && // 同类型
+        sibling.name == newName // 同名称
     );
   }
 
   /// 执行重命名操作
-  void _renameItem(MySpaceMenuItem item, String newName) async {
+  void _executeRename(MySpaceMenuItem item, String newName) async {
+    // 取消编辑状态
+    setState(() {
+      _editingItemId = null;
+      _editingController.clear();
+    });
+    
     // 先更新UI（提供即时反馈）
     final oldName = item.name;
     final oldParentId = item.view?.parentViewId;
@@ -1160,19 +1203,50 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
 
   /// 添加根级项目（使用默认名称）
   void _addRootItemWithDefaultName(MySpaceItemType type) {
-    final defaultName = '未命名${_getTypeName(type)}';
+    final defaultName = _generateUniqueDefaultName(type, null);
     _addRootItem(type, defaultName);
   }
 
   /// 添加子项目（使用默认名称）
   void _addChildItemWithDefaultName(MySpaceMenuItem parentItem, MySpaceItemType type) {
-    final defaultName = '未命名${_getTypeName(type)}';
+    final defaultName = _generateUniqueDefaultName(type, parentItem);
     final parentViewId = parentItem.view?.id;
     
     // 调试信息
     debugPrint('创建子项目: $defaultName, 父项目ID: $parentViewId, 父项目类型: ${parentItem.type}, 父项目名称: ${parentItem.name}');
     
     _createRealBackendEntity(type, defaultName, parentViewId);
+  }
+
+  /// 生成唯一的默认名称
+  String _generateUniqueDefaultName(MySpaceItemType type, MySpaceMenuItem? parentItem) {
+    final baseName = '未命名${_getTypeName(type)}';
+    
+    // 获取兄弟项目列表
+    List<MySpaceMenuItem> siblings;
+    if (parentItem != null) {
+      siblings = parentItem.children;
+    } else {
+      siblings = _menuItems;
+    }
+    
+    // 过滤出同类型的兄弟项目
+    final sameTypeSiblings = siblings.where((item) => item.type == type).toList();
+    
+    // 检查基础名称是否已存在
+    if (!sameTypeSiblings.any((item) => item.name == baseName)) {
+      return baseName;
+    }
+    
+    // 如果基础名称已存在，尝试添加数字后缀
+    int counter = 2;
+    String candidateName;
+    do {
+      candidateName = '$baseName $counter';
+      counter++;
+    } while (sameTypeSiblings.any((item) => item.name == candidateName) && counter <= 100);
+    
+    return candidateName;
   }
 
   /// 将AddItemType转换为MySpaceItemType
@@ -2271,42 +2345,42 @@ class _SidebarMySpaceMenuState extends State<SidebarMySpaceMenu> {
   }
 
   /// 清理重复的私有视图
-  Future<void> _cleanupDuplicateViews() async {
-    try {
-      final result = await ViewBackendService.cleanupDuplicatePrivateViews();
-      result.fold(
-        (cleanedCount) {
-          if (cleanedCount > 0) {
-            showSnackBarMessage(
-              context,
-              '已清理 $cleanedCount 个重复项目',
-              showCancel: false,
-            );
-            // 触发重新同步
-            _syncMenuItemsFromBloc();
-          } else {
-            showSnackBarMessage(
-              context,
-              '没有发现重复项目',
-              showCancel: false,
-            );
-          }
-        },
-        (error) {
-          showSnackBarMessage(
-            context,
-            '清理失败: ${error.msg}',
-            showCancel: false,
-          );
-        },
-      );
-    } catch (e) {
-      showSnackBarMessage(
-        context,
-        '清理失败: $e',
-        showCancel: false,
-      );
-    }
-  }
+  // Future<void> _cleanupDuplicateViews() async {
+  //   try {
+  //     final result = await ViewBackendService.cleanupDuplicatePrivateViews();
+  //     result.fold(
+  //       (cleanedCount) {
+  //         if (cleanedCount > 0) {
+  //           showSnackBarMessage(
+  //             context,
+  //             '已清理 $cleanedCount 个重复项目',
+  //             showCancel: false,
+  //           );
+  //           // 触发重新同步
+  //           _syncMenuItemsFromBloc();
+  //         } else {
+  //           showSnackBarMessage(
+  //             context,
+  //             '没有发现重复项目',
+  //             showCancel: false,
+  //           );
+  //         }
+  //       },
+  //       (error) {
+  //         showSnackBarMessage(
+  //           context,
+  //           '清理失败: ${error.msg}',
+  //           showCancel: false,
+  //         );
+  //       },
+  //     );
+  //   } catch (e) {
+  //     showSnackBarMessage(
+  //       context,
+  //       '清理失败: $e',
+  //       showCancel: false,
+  //     );
+  //   }
+  // }
 }
 
