@@ -438,6 +438,9 @@ class TrashToolbar extends StatelessWidget {
   }
 
   void _showRestoreAllDialog(BuildContext context) {
+    // 在对话框显示前获取TrashBloc引用
+    final trashBloc = context.read<TrashBloc>();
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -501,7 +504,7 @@ class TrashToolbar extends StatelessWidget {
                       child: InkWell(
                         onTap: () {
                           Navigator.of(context).pop();
-                          context.read<TrashBloc>().add(const TrashEvent.restoreAll());
+                          trashBloc.add(const TrashEvent.restoreAll());
                         },
                         child: Container(
                           alignment: Alignment.center,
@@ -526,6 +529,9 @@ class TrashToolbar extends StatelessWidget {
   }
 
   void _showDeleteAllDialog(BuildContext context) {
+    // 在对话框显示前获取TrashBloc引用
+    final trashBloc = context.read<TrashBloc>();
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -589,7 +595,7 @@ class TrashToolbar extends StatelessWidget {
                       child: InkWell(
                         onTap: () {
                           Navigator.of(context).pop();
-                          context.read<TrashBloc>().add(const TrashEvent.deleteAll());
+                          trashBloc.add(const TrashEvent.deleteAll());
                         },
                         child: Container(
                           alignment: Alignment.center,
