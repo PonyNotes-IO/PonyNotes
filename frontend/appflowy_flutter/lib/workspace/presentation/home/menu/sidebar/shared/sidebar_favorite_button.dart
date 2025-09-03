@@ -1,6 +1,9 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/workspace/application/favorite/favorite_bloc.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
+import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
+import 'package:appflowy/workspace/presentation/home/menu/view/view_item.dart';
+import 'package:appflowy/workspace/application/sidebar/folder/folder_bloc.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +41,6 @@ class _SidebarFavoriteButtonState extends State<SidebarFavoriteButton> {
 
   Widget _buildFavoriteHeader(BuildContext context, FavoriteState state) {
     final theme = AppFlowyTheme.of(context);
-    final favoriteCount = state.views.length;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
@@ -75,21 +77,6 @@ class _SidebarFavoriteButtonState extends State<SidebarFavoriteButton> {
                       color: AppFlowyTheme.of(context).textColorScheme.primary,
                     ),
                   ),
-                  // 收藏数量
-                  if (favoriteCount > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: FlowyText(
-                        favoriteCount.toString(),
-                        fontSize: 10,
-                        color: Theme.of(context).textTheme.bodySmall?.color,
-                      ),
-                    ),
-                  const SizedBox(width: 4),
                   // 展开/收起箭头
                   Icon(
                     _isExpanded 
@@ -140,83 +127,23 @@ class _SidebarFavoriteButtonState extends State<SidebarFavoriteButton> {
 
     return state.views.map((sectionView) {
       final view = sectionView.item;
-      return _buildFavoriteItem(context, view);
+      return ViewItem(
+        key: ValueKey('favorite_${view.id}'),
+        spaceType: FolderSpaceType.public,
+        view: view,
+        level: 0,
+        leftPadding: HomeSpaceViewSizes.leftPadding,
+        height: HomeSpaceViewSizes.viewHeight,
+        isFeedback: false,
+        isHoverEnabled: true,
+        enableRightClickContext: true,
+        onSelected: (viewContext, view) {
+          context.read<TabsBloc>().openPlugin(view);
+        },
+        onTertiarySelected: (viewContext, view) =>
+            context.read<TabsBloc>().openTab(view),
+      );
     }).toList();
-  }
-
-  Widget _buildFavoriteItem(BuildContext context, ViewPB view) {
-    final theme = AppFlowyTheme.of(context);
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Container(
-        margin: const EdgeInsets.only(top: 2),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(theme.borderRadius.s),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(theme.borderRadius.s),
-            onTap: () {
-              // 打开收藏的页面
-              context.read<TabsBloc>().openPlugin(view);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                children: [
-                  const SizedBox(width: 20), // 缩进，与展开箭头对齐
-                  // 页面类型图标
-                  _getViewIcon(view),
-                  const SizedBox(width: 8),
-                  // 页面名称
-                  Expanded(
-                    child: FlowyText(
-                      view.name.isEmpty ? '未命名' : view.name,
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodyMedium?.color,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _getViewIcon(ViewPB view) {
-    IconData iconData;
-    Color? iconColor;
-    
-    switch (view.layout) {
-      case ViewLayoutPB.Document:
-        iconData = Icons.description_outlined;
-        break;
-      case ViewLayoutPB.Grid:
-        iconData = Icons.table_chart_outlined;
-        break;
-      case ViewLayoutPB.Board:
-        iconData = Icons.view_kanban_outlined;
-        break;
-      case ViewLayoutPB.Calendar:
-        iconData = Icons.calendar_today_outlined;
-        break;
-      case ViewLayoutPB.Chat:
-        iconData = Icons.chat_outlined;
-        break;
-      default:
-        iconData = Icons.description_outlined;
-    }
-    
-    return Icon(
-      iconData,
-      size: 14,
-      color: iconColor ?? Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-    );
   }
 }
 
