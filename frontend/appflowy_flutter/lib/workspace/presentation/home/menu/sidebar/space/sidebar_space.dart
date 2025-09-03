@@ -2,24 +2,25 @@ import 'package:appflowy/features/shared_section/presentation/shared_section.dar
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/shared/feature_flags.dart';
 import 'package:appflowy/startup/startup.dart';
-import 'package:appflowy/workspace/application/favorite/favorite_bloc.dart';
+
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/hotkeys.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/favorites/favorite_folder.dart';
+
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ai_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_calendar_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_home_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_settings_button.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_template_button.dart';
+
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_favorite_button.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_my_space_button.dart';
+import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
+import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_my_team_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_share_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_publish_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_template_new_button.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_folder_button.dart';
+
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_integration_button.dart';
@@ -86,9 +87,22 @@ class SidebarSpace extends StatelessWidget {
             // favorite
             const VSpace(4.0),
             const SidebarFavoriteButton(),
-            // 我的空间
+            // 我的空间 (原个人的功能，已移至上方合适位置)
             const VSpace(4.0),
-            const SidebarMySpaceButton(),
+            BlocBuilder<SidebarSectionsBloc, SidebarSectionsState>(
+              builder: (context, state) {
+                // 在非协作工作空间模式下显示个人空间（重命名为我的空间）
+                final isCollaborativeWorkspace =
+                    context.read<UserWorkspaceBloc>().state.isCollabWorkspaceOn;
+                
+                if (!isCollaborativeWorkspace) {
+                  return PersonalSectionFolder(
+                    views: state.section.publicViews,
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
             // 我的团队
             const VSpace(4.0),
             const SidebarMyTeamButton(),

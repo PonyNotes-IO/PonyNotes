@@ -581,7 +581,8 @@ impl FolderManager {
   ) -> FlowyResult<(View, Option<EncodedCollab>)> {
     let workspace_id = self.user.workspace_id()?;
     let view_layout: ViewLayout = params.layout.clone().into();
-    let handler = self.get_handler(&view_layout)?;
+    // Use special handler selection for Folder and Notebook types
+    let handler = self.get_handler_for_layout_pb(&params.layout)?;
     let user_id = self.user.user_id()?;
     let mut encoded_collab: Option<EncodedCollab> = None;
 
@@ -2210,6 +2211,21 @@ impl FolderManager {
         view_layout
       ))),
       Some(processor) => Ok(processor.clone()),
+    }
+  }
+
+  /// Returns a handler based on ViewLayoutPB, with special handling for Folder and Notebook
+  fn get_handler_for_layout_pb(&self, layout_pb: &ViewLayoutPB) -> FlowyResult<Arc<dyn FolderOperationHandler>> {
+    match layout_pb {
+      ViewLayoutPB::Folder | ViewLayoutPB::Notebook => {
+        // Create a simple folder handler that doesn't need special data handling
+        use crate::view_operation::SimpleFolderHandler;
+        Ok(Arc::new(SimpleFolderHandler))
+      }
+      _ => {
+        let view_layout: ViewLayout = layout_pb.clone().into();
+        self.get_handler(&view_layout)
+      }
     }
   }
 

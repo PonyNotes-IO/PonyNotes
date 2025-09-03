@@ -106,7 +106,7 @@ class _MobileFolderState extends State<_MobileFolder> {
 
     return [
       MobileSectionFolder(
-        title: LocaleKeys.sideBar_personal.tr(),
+        title: LocaleKeys.sideBar_workspace.tr(), // 改为"我的空间"
         spaceType: FolderSpaceType.public,
         views: state.section.publicViews,
       ),

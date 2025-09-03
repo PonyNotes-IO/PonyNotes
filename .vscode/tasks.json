@@ -95,7 +95,7 @@
       },
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -104,7 +104,7 @@
       "command": "cargo make --profile development-ios-arm64 appflowy-core-dev-ios",
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -113,7 +113,7 @@
       "command": "cargo make --profile development-ios-arm64-sim appflowy-core-dev-ios",
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -122,7 +122,7 @@
       "command": "cargo make --profile development-android appflowy-core-dev-android",
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -151,7 +151,7 @@
       "command": "cargo make flutter_clean",
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -159,7 +159,7 @@
       "type": "shell",
       "command": "flutter clean",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend/appflowy_flutter"
+        "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
       }
     },
     {
@@ -167,7 +167,7 @@
       "type": "shell",
       "command": "flutter pub get",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend/appflowy_flutter"
+        "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
       }
     },
     {
@@ -175,7 +175,7 @@
       "type": "shell",
       "command": "sh ./scripts/code_generation/freezed/generate_freezed.sh",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       },
       "group": "build",
       "windows": {
@@ -209,7 +209,7 @@
       },
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -230,7 +230,7 @@
       },
       "group": "build",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend"
+        "cwd": "${workspaceFolder}/frontend"
       }
     },
     {
@@ -250,7 +250,7 @@
       "type": "shell",
       "command": "dart run build_runner clean && dart run build_runner build --delete-conflicting-outputs",
       "options": {
-        "cwd": "${workspaceFolder}/PonyNotes/frontend/appflowy_flutter"
+        "cwd": "${workspaceFolder}/frontend/appflowy_flutter"
       }
     }
   ]

@@ -44,7 +44,7 @@ class _FolderHeaderState extends State<FolderHeader> {
         onExit: (_) => isHovered.value = false,
         child: FlowyButton(
           onTap: widget.onPressed,
-          margin: const EdgeInsets.only(left: 6.0, right: 4.0),
+          margin: const EdgeInsets.only(left: 16.0, right: 12.0),
           rightIcon: ValueListenableBuilder(
             valueListenable: isHovered,
             builder: (context, onHover, child) =>
@@ -60,6 +60,14 @@ class _FolderHeaderState extends State<FolderHeader> {
           iconPadding: 10.0,
           text: Row(
             children: [
+              // 添加文件夹图标（只为"我的空间"显示）
+              if (widget.title == "我的空间") ...[
+                FlowySvg(
+                  FlowySvgs.icon_folder_s,
+                  size: const Size.square(16.0),
+                ),
+                const HSpace(8.0),
+              ],
               FlowyText(
                 widget.title,
                 lineHeight: 1.15,

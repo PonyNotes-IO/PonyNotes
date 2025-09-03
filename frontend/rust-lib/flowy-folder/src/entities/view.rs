@@ -89,13 +89,14 @@ pub struct ViewPB {
 }
 
 pub fn view_pb_without_child_views(view: View) -> ViewPB {
+  let layout = view_layout_pb_from_view(&view);
   ViewPB {
     id: view.id,
     parent_view_id: view.parent_view_id,
     name: view.name,
     create_time: view.created_at,
     child_views: Default::default(),
-    layout: view.layout.into(),
+    layout,
     icon: view.icon.clone().map(|icon| icon.into()),
     is_favorite: view.is_favorite,
     extra: view.extra,
@@ -113,7 +114,7 @@ pub fn view_pb_without_child_views_from_arc(view: Arc<View>) -> ViewPB {
     name: view.name.clone(),
     create_time: view.created_at,
     child_views: Default::default(),
-    layout: view.layout.clone().into(),
+    layout: view_layout_pb_from_view(&view),
     icon: view.icon.clone().map(|icon| icon.into()),
     is_favorite: view.is_favorite,
     extra: view.extra.clone(),
@@ -135,7 +136,7 @@ pub fn view_pb_with_child_views(view: Arc<View>, child_views: Vec<Arc<View>>) ->
       .into_iter()
       .map(|view| view_pb_without_child_views(view.as_ref().clone()))
       .collect(),
-    layout: view.layout.clone().into(),
+    layout: view_layout_pb_from_view(&view),
     icon: view.icon.clone().map(|icon| icon.into()),
     is_favorite: view.is_favorite,
     extra: view.extra.clone(),
@@ -169,7 +170,7 @@ where
       name: view.name.clone(),
       create_time: view.created_at,
       child_views,
-      layout: view.layout.clone().into(),
+      layout: view_layout_pb_from_view(&view),
       icon: view.icon.clone().map(|icon| icon.into()),
       is_favorite: view.is_favorite,
       extra: view.extra.clone(),
@@ -202,6 +203,31 @@ impl ViewLayoutPB {
       self,
       ViewLayoutPB::Grid | ViewLayoutPB::Board | ViewLayoutPB::Calendar
     )
+  }
+}
+
+/// Convert ViewLayout to ViewLayoutPB, considering extra field for folder/notebook detection
+pub fn view_layout_pb_from_view(view: &View) -> ViewLayoutPB {
+  match view.layout {
+    ViewLayout::Grid => ViewLayoutPB::Grid,
+    ViewLayout::Board => ViewLayoutPB::Board,
+    ViewLayout::Calendar => ViewLayoutPB::Calendar,
+    ViewLayout::Chat => ViewLayoutPB::Chat,
+    ViewLayout::Document => {
+      // Check extra field to determine if this is actually a folder or notebook
+      if let Some(extra) = &view.extra {
+        if let Ok(extra_map) = serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(extra) {
+          if let Some(view_type) = extra_map.get("view_type").and_then(|v| v.as_str()) {
+            match view_type {
+              "folder" => return ViewLayoutPB::Folder,
+              "notebook" => return ViewLayoutPB::Notebook,
+              _ => {}
+            }
+          }
+        }
+      }
+      ViewLayoutPB::Document
+    }
   }
 }
 

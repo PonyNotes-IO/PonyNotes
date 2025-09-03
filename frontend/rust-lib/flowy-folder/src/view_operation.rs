@@ -145,7 +145,7 @@ impl From<ViewLayoutPB> for ViewLayout {
       ViewLayoutPB::Board => ViewLayout::Board,
       ViewLayoutPB::Calendar => ViewLayout::Calendar,
       ViewLayoutPB::Chat => ViewLayout::Chat,
-      // Folder and Notebook are treated as Document layout in the backend
+      // Folder and Notebook use Document layout but will be handled by FolderOperationHandler
       ViewLayoutPB::Folder => ViewLayout::Document,
       ViewLayoutPB::Notebook => ViewLayout::Document,
     }
@@ -213,5 +213,97 @@ impl ViewData {
       ViewData::Data(data) => data.is_empty(),
       ViewData::Empty => true,
     }
+  }
+}
+
+/// Simple handler for Folder and Notebook views
+/// These are container views that don't need special data handling like documents or databases
+pub struct SimpleFolderHandler;
+
+#[async_trait]
+impl FolderOperationHandler for SimpleFolderHandler {
+  fn name(&self) -> &str {
+    "SimpleFolderHandler"
+  }
+
+  async fn create_workspace_view(
+    &self,
+    _uid: i64,
+    _workspace_view_builder: Arc<RwLock<NestedViewBuilder>>,
+  ) -> Result<(), FlowyError> {
+    // Folders and notebooks don't need special workspace initialization
+    Ok(())
+  }
+
+  async fn open_view(&self, _view_id: &Uuid) -> Result<(), FlowyError> {
+    // Folders and notebooks don't need special opening logic
+    Ok(())
+  }
+
+  async fn close_view(&self, _view_id: &Uuid) -> Result<(), FlowyError> {
+    // Folders and notebooks don't need special closing logic
+    Ok(())
+  }
+
+  async fn delete_view(&self, _view_id: &Uuid) -> Result<(), FlowyError> {
+    // Folders and notebooks don't need special deletion logic beyond removing from hierarchy
+    Ok(())
+  }
+
+  async fn duplicate_view(&self, _view_id: &Uuid) -> Result<Bytes, FlowyError> {
+    // Return empty data for folder/notebook duplication
+    Ok(Bytes::new())
+  }
+
+  async fn gather_publish_encode_collab(
+    &self,
+    _user: &Arc<dyn FolderUser>,
+    _view_id: &Uuid,
+  ) -> Result<GatherEncodedCollab, FlowyError> {
+    // Folders and notebooks don't have publishable content
+    Err(FlowyError::not_support())
+  }
+
+  async fn create_view_with_view_data(
+    &self,
+    _user_id: i64,
+    _params: CreateViewParams,
+  ) -> Result<Option<EncodedCollab>, FlowyError> {
+    // Folders and notebooks don't need encoded collab data
+    Ok(None)
+  }
+
+  async fn create_default_view(
+    &self,
+    _user_id: i64,
+    _parent_view_id: &Uuid,
+    _view_id: &Uuid,
+    _name: &str,
+    _layout: ViewLayout,
+  ) -> Result<(), FlowyError> {
+    // Folders and notebooks are created without special data
+    Ok(())
+  }
+
+  async fn import_from_bytes(
+    &self,
+    _uid: i64,
+    _view_id: &Uuid,
+    _name: &str,
+    _import_type: ImportType,
+    _bytes: Vec<u8>,
+  ) -> Result<Vec<ImportedData>, FlowyError> {
+    // Folders and notebooks don't support import
+    Ok(vec![])
+  }
+
+  async fn import_from_file_path(
+    &self,
+    _view_id: &str,
+    _name: &str,
+    _path: String,
+  ) -> Result<(), FlowyError> {
+    // Folders and notebooks don't support import from file
+    Ok(())
   }
 }
