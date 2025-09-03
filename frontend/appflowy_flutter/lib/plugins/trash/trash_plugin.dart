@@ -2,6 +2,7 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/trash/application/trash_bloc.dart';
 import 'package:appflowy/plugins/trash/src/trash_cell.dart';
+import 'package:appflowy/plugins/trash/src/trash_search_bar.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
@@ -283,6 +284,14 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
       builder: (context, state) {
         return Column(
           children: [
+            // 搜索栏
+            if (state.objects.isNotEmpty)
+              TrashSearchBar(
+                onChanged: (query) {
+                  context.read<TrashBloc>().add(TrashEvent.search(query));
+                },
+              ),
+            // 列表内容
             Expanded(
               child: state.objects.isEmpty
                   ? _buildEmptyState(context)
@@ -327,6 +336,14 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
   }
 
   Widget _buildTrashList(BuildContext context, TrashState state) {
+    // 使用过滤后的对象列表
+    final displayObjects = state.filteredObjects;
+    
+    // 如果搜索结果为空，显示无结果状态
+    if (displayObjects.isEmpty && state.searchQuery.isNotEmpty) {
+      return _buildNoSearchResults(context);
+    }
+    
     return ScrollbarListStack(
       axis: Axis.vertical,
       controller: _scrollController,
@@ -334,9 +351,9 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
       child: ListView.builder(
         controller: _scrollController,
         padding: const EdgeInsets.fromLTRB(16, 0, 0, 0), // 左边距16px，右边距8px
-        itemCount: state.objects.length,
+        itemCount: displayObjects.length,
         itemBuilder: (context, index) {
-          final object = state.objects[index];
+          final object = displayObjects[index];
           final isSelected = widget.selectedObject?.id == object.id;
           
           return Container(
@@ -383,6 +400,36 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildNoSearchResults(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16.0, 32.0, 16.0, 32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.search_off,
+            size: 48,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
+          ),
+          const VSpace(16),
+          FlowyText.medium(
+            '未找到匹配结果',
+            fontSize: FontSizes.s16,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+            textAlign: TextAlign.center,
+          ),
+          const VSpace(8),
+          FlowyText.regular(
+            '尝试使用不同的关键词搜索',
+            fontSize: FontSizes.s14,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }

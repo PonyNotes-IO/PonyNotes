@@ -31,6 +31,7 @@ class TrashBloc extends Bloc<TrashEvent, TrashState> {
             result.fold(
               (object) => state.copyWith(
                 objects: object.items,
+                filteredObjects: object.items,
                 successOrFailure: FlowyResult.success(null),
               ),
               (error) =>
@@ -39,7 +40,18 @@ class TrashBloc extends Bloc<TrashEvent, TrashState> {
           );
         },
         didReceiveTrash: (e) async {
-          emit(state.copyWith(objects: e.trash));
+          final filteredObjects = _filterObjects(e.trash, state.searchQuery);
+          emit(state.copyWith(
+            objects: e.trash,
+            filteredObjects: filteredObjects,
+          ));
+        },
+        search: (e) async {
+          final filteredObjects = _filterObjects(state.objects, e.query);
+          emit(state.copyWith(
+            searchQuery: e.query,
+            filteredObjects: filteredObjects,
+          ));
         },
         putback: (e) async {
           final result = await TrashService.putback(e.trashId);
@@ -59,6 +71,18 @@ class TrashBloc extends Bloc<TrashEvent, TrashState> {
         },
       );
     });
+  }
+
+  List<TrashPB> _filterObjects(List<TrashPB> objects, String query) {
+    if (query.isEmpty) {
+      return objects;
+    }
+    
+    final lowerQuery = query.toLowerCase();
+    return objects.where((object) {
+      final name = object.name.toLowerCase();
+      return name.contains(lowerQuery);
+    }).toList();
   }
 
   Future<void> _handleResult(
@@ -97,6 +121,7 @@ class TrashBloc extends Bloc<TrashEvent, TrashState> {
 class TrashEvent with _$TrashEvent {
   const factory TrashEvent.initial() = Initial;
   const factory TrashEvent.didReceiveTrash(List<TrashPB> trash) = ReceiveTrash;
+  const factory TrashEvent.search(String query) = Search;
   const factory TrashEvent.putback(String trashId) = Putback;
   const factory TrashEvent.delete(TrashPB trash) = Delete;
   const factory TrashEvent.restoreAll() = RestoreAll;
@@ -107,11 +132,15 @@ class TrashEvent with _$TrashEvent {
 class TrashState with _$TrashState {
   const factory TrashState({
     required List<TrashPB> objects,
+    required List<TrashPB> filteredObjects,
+    required String searchQuery,
     required FlowyResult<void, FlowyError> successOrFailure,
   }) = _TrashState;
 
   factory TrashState.init() => TrashState(
         objects: [],
+        filteredObjects: [],
+        searchQuery: '',
         successOrFailure: FlowyResult.success(null),
       );
 }
