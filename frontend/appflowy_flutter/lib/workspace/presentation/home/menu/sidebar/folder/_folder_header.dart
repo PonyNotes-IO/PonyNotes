@@ -1,5 +1,7 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
+import 'package:appflowy/workspace/presentation/home/menu/view/view_add_button.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -13,6 +15,8 @@ class FolderHeader extends StatefulWidget {
     required this.onPressed,
     required this.onAdded,
     required this.isExpanded,
+    this.parentViewId,
+    this.onViewSelected,
   });
 
   final String title;
@@ -21,6 +25,14 @@ class FolderHeader extends StatefulWidget {
   final VoidCallback onPressed;
   final VoidCallback onAdded;
   final bool isExpanded;
+  final String? parentViewId;
+  final Function(
+    PluginBuilder,
+    String? name,
+    List<int>? initialDataBytes,
+    bool openAfterCreated,
+    bool createNewView,
+  )? onViewSelected;
 
   @override
   State<FolderHeader> createState() => _FolderHeaderState();
@@ -49,13 +61,7 @@ class _FolderHeaderState extends State<FolderHeader> {
             valueListenable: isHovered,
             builder: (context, onHover, child) =>
                 Opacity(opacity: onHover ? 1 : 0, child: child),
-            child: FlowyIconButton(
-              width: 24,
-              iconPadding: const EdgeInsets.all(4.0),
-              tooltipText: widget.addButtonTooltip,
-              icon: const FlowySvg(FlowySvgs.view_item_add_s),
-              onPressed: widget.onAdded,
-            ),
+            child: _buildAddButton(),
           ),
           iconPadding: 10.0,
           text: Row(
@@ -82,6 +88,32 @@ class _FolderHeaderState extends State<FolderHeader> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildAddButton() {
+    // 如果提供了parentViewId和onViewSelected回调，则使用ViewAddButton显示选择菜单
+    if (widget.parentViewId != null && widget.onViewSelected != null) {
+      return SizedBox(
+        width: 24,
+        height: 24,
+        child: ViewAddButton(
+          parentViewId: widget.parentViewId!,
+          onEditing: (value) {
+            // 这里可以处理编辑状态，暂时留空
+          },
+          onSelected: widget.onViewSelected!,
+        ),
+      );
+    }
+    
+    // 否则使用原来的简单按钮
+    return FlowyIconButton(
+      width: 24,
+      iconPadding: const EdgeInsets.all(4.0),
+      tooltipText: widget.addButtonTooltip,
+      icon: const FlowySvg(FlowySvgs.view_item_add_s),
+      onPressed: widget.onAdded,
     );
   }
 }

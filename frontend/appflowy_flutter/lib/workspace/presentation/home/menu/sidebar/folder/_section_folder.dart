@@ -1,11 +1,15 @@
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
+import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/application/menu/sidebar_sections_bloc.dart';
 import 'package:appflowy/workspace/application/sidebar/folder/folder_bloc.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/home/home_sizes.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/folder/_folder_header.dart';
 import 'package:appflowy/workspace/presentation/home/menu/view/view_item.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -67,6 +71,10 @@ class _SectionFolderState extends State<SectionFolder> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    // 获取当前工作空间ID作为parentViewId
+    final parentViewId =
+        context.read<UserWorkspaceBloc>().state.currentWorkspace?.workspaceId;
+    
     return FolderHeader(
       title: widget.title,
       isExpanded: context.watch<FolderBloc>().state.isExpanded,
@@ -87,7 +95,61 @@ class _SectionFolderState extends State<SectionFolder> {
             .read<FolderBloc>()
             .add(const FolderEvent.expandOrUnExpand(isExpanded: true));
       },
+      // 只为"我的空间"提供选择菜单功能
+      parentViewId: widget.title == "我的空间" ? parentViewId : null,
+      onViewSelected: widget.title == "我的空间" ? _onViewSelected : null,
     );
+  }
+
+  void _onViewSelected(
+    PluginBuilder pluginBuilder,
+    String? name,
+    List<int>? initialDataBytes,
+    bool openAfterCreated,
+    bool createNewView,
+  ) async {
+    // 获取当前工作空间ID作为parentViewId
+    final parentViewId =
+        context.read<UserWorkspaceBloc>().state.currentWorkspace?.workspaceId;
+    
+    if (parentViewId == null) return;
+
+    // 根据插件类型确定视图名称
+    final viewName = ![ViewLayoutPB.Document, ViewLayoutPB.Chat]
+            .contains(pluginBuilder.layoutType)
+        ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
+        : '';
+
+    try {
+      // 使用ViewBackendService创建指定类型的视图
+      final result = await ViewBackendService.createView(
+        layoutType: pluginBuilder.layoutType!,
+        parentViewId: parentViewId,
+        name: viewName,
+        openAfterCreate: openAfterCreated,
+        initialDataBytes: initialDataBytes,
+        index: 0,
+        section: widget.spaceType.toViewSectionPB,
+      );
+
+      result.fold(
+        (view) {
+          // 创建成功，展开文件夹以显示新创建的视图
+          context
+              .read<FolderBloc>()
+              .add(const FolderEvent.expandOrUnExpand(isExpanded: true));
+          
+          // 不需要手动刷新，系统会自动更新侧边栏
+        },
+        (error) {
+          // 处理错误，可以显示错误消息
+          // TODO: 可以添加错误提示
+        },
+      );
+    } catch (e) {
+      // 处理异常
+      // TODO: 可以添加异常处理
+    }
   }
 
   Iterable<Widget> _buildViews(
