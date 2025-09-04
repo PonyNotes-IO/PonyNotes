@@ -377,25 +377,8 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
               borderRadius: BorderRadius.circular(8),
               child: TrashCell(
                 object: object,
-                onRestore: () => showCancelAndConfirmDialog(
-                  context: context,
-                  title: LocaleKeys.trash_restorePage_title.tr(args: [object.name]),
-                  description: LocaleKeys.trash_restorePage_caption.tr(),
-                  confirmLabel: LocaleKeys.trash_restore.tr(),
-                  onConfirm: (_) => context
-                      .read<TrashBloc>()
-                      .add(TrashEvent.putback(object.id)),
-                ),
-                onDelete: () => showConfirmDeletionDialog(
-                  context: context,
-                  name: object.name.trim().isEmpty
-                      ? LocaleKeys.menuAppHeader_defaultNewPageName.tr()
-                      : object.name,
-                  description:
-                      LocaleKeys.deletePagePrompt_deletePermanentDescription.tr(),
-                  onConfirm: () =>
-                      context.read<TrashBloc>().add(TrashEvent.delete(object)),
-                ),
+                onRestore: () => _showRestorePageDialog(context, object),
+                onDelete: () => _showDeletePageDialog(context, object),
               ),
             ),
           );
@@ -430,6 +413,188 @@ class _TrashSidebarContentState extends State<TrashSidebarContent> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+
+  void _showRestorePageDialog(BuildContext context, TrashPB object) {
+    // 在对话框显示前获取TrashBloc引用
+    final trashBloc = context.read<TrashBloc>();
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Container(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 提示信息区域
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                child: Text(
+                  '你确定要恢复此页面吗？',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // 分割线
+              Container(
+                width: double.infinity,
+                height: 1,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              ),
+              // 底部操作区域
+              Container(
+                width: double.infinity,
+                height: 56,
+                child: Row(
+                  children: [
+                    // 取消区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '取消',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 垂直分割线
+                    Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    ),
+                    // 恢复区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          trashBloc.add(TrashEvent.putback(object.id));
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '恢复',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFFFF6B35), // 橙色文字
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showDeletePageDialog(BuildContext context, TrashPB object) {
+    // 在对话框显示前获取TrashBloc引用
+    final trashBloc = context.read<TrashBloc>();
+    
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Container(
+          width: 320,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 提示信息区域
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+                child: Text(
+                  '你确定要永久删除此页面吗？',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurface,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              // 分割线
+              Container(
+                width: double.infinity,
+                height: 1,
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+              ),
+              // 底部操作区域
+              Container(
+                width: double.infinity,
+                height: 56,
+                child: Row(
+                  children: [
+                    // 取消区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '取消',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 垂直分割线
+                    Container(
+                      width: 1,
+                      height: double.infinity,
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+                    ),
+                    // 删除区域
+                    Expanded(
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).pop();
+                          trashBloc.add(TrashEvent.delete(object));
+                        },
+                        child: Container(
+                          alignment: Alignment.center,
+                          child: Text(
+                            '删除',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
