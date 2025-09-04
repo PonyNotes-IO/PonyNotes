@@ -49,7 +49,10 @@ class FileLibraryPluginWidgetBuilder extends PluginWidgetBuilder
   String? get viewName => "文件库";
 
   @override
-  Widget get leftBarItem => const Text("文件库");
+  Widget get leftBarItem => const SizedBox.shrink(); // 不显示左侧标题
+
+  @override
+  EdgeInsets get contentPadding => EdgeInsets.zero; // 去除所有留白
 
   @override
   Widget tabBarItem(String pluginId, [bool shortForm = false]) => leftBarItem;

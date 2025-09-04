@@ -700,9 +700,10 @@ class PageManager {
   }
 
   Widget stackTopBar({required HomeLayout layout}) {
-    // 为日历页面和回收站页面隐藏顶部标题栏
+    // 为日历页面、回收站页面和文件库页面隐藏顶部标题栏
     if (notifier.plugin.pluginType == PluginType.calendar || 
-        notifier.plugin.pluginType == PluginType.trash) {
+        notifier.plugin.pluginType == PluginType.trash ||
+        notifier.plugin.pluginType == PluginType.fileLibrary) {
       return const SizedBox.shrink();
     }
 
