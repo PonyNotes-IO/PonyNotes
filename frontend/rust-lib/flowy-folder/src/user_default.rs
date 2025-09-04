@@ -51,7 +51,7 @@ impl DefaultFolderBuilder {
 
     let workspace = Workspace {
       id: workspace_id,
-      name: "Workspace".to_string(),
+      name: "我的空间".to_string(),
       child_views: RepeatedViewIdentifier::new(first_level_views),
       created_at: timestamp(),
       created_by: Some(uid),
