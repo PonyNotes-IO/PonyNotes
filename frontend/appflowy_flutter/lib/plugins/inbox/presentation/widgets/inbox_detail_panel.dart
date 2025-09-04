@@ -4,11 +4,15 @@ import 'package:appflowy/plugins/inbox/domain/models/inbox_item.dart';
 class InboxDetailPanel extends StatefulWidget {
   final InboxItem item;
   final VoidCallback onClose;
+  final bool showBackButton;
+  final VoidCallback? onBackToList;
 
   const InboxDetailPanel({
     super.key,
     required this.item,
     required this.onClose,
+    this.showBackButton = false,
+    this.onBackToList,
   });
 
   @override
@@ -49,12 +53,18 @@ class _InboxDetailPanelState extends State<InboxDetailPanel> {
       ),
       child: Row(
         children: [
-          // 关闭按钮
-          IconButton(
-            icon: const Icon(Icons.close, color: Color(0xFF666666)),
-            onPressed: widget.onClose,
-            tooltip: '关闭',
-          ),
+          // 关闭按钮或返回按钮
+          widget.showBackButton 
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF666666)),
+                onPressed: widget.onBackToList,
+                tooltip: '返回列表',
+              )
+            : IconButton(
+                icon: const Icon(Icons.close, color: Color(0xFF666666)),
+                onPressed: widget.onClose,
+                tooltip: '关闭',
+              ),
           
           const SizedBox(width: 8),
           

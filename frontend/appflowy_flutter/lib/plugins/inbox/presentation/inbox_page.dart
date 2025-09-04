@@ -17,6 +17,7 @@ class _InboxPageState extends State<InboxPage> {
   String selectedFilter = '全部'; // 当前选中的筛选标签
   InboxItem? selectedItem; // 当前选中的邮件
   double leftPanelWidth = 0.35; // 左栏宽度比例，默认35%
+  bool isLeftPanelVisible = true; // 左侧面板是否可见
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +25,7 @@ class _InboxPageState extends State<InboxPage> {
       backgroundColor: Colors.white,
       body: selectedItem == null
           ? _buildSingleColumnLayout()
-          : _buildTwoColumnLayout(),
+          : (isLeftPanelVisible ? _buildTwoColumnLayout() : _buildFullDetailLayout()),
     );
   }
 
@@ -33,7 +34,13 @@ class _InboxPageState extends State<InboxPage> {
     return Column(
       children: [
         // 收件箱头部
-        InboxHeader(),
+        InboxHeader(
+          onToggleLeftPanel: () {
+            setState(() {
+              isLeftPanelVisible = !isLeftPanelVisible;
+            });
+          },
+        ),
         
         // 筛选标签
         InboxFilterTabs(
@@ -74,7 +81,13 @@ class _InboxPageState extends State<InboxPage> {
           child: Column(
             children: [
               // 收件箱头部
-              InboxHeader(),
+              InboxHeader(
+                onToggleLeftPanel: () {
+                  setState(() {
+                    isLeftPanelVisible = !isLeftPanelVisible;
+                  });
+                },
+              ),
               
               // 筛选标签
               InboxFilterTabs(
@@ -120,6 +133,24 @@ class _InboxPageState extends State<InboxPage> {
           ),
         ),
       ],
+    );
+  }
+
+  // 全屏详情布局（隐藏左侧面板）
+  Widget _buildFullDetailLayout() {
+    return InboxDetailPanel(
+      item: selectedItem!,
+      onClose: () {
+        setState(() {
+          selectedItem = null;
+        });
+      },
+      showBackButton: true, // 显示返回按钮来恢复左侧面板
+      onBackToList: () {
+        setState(() {
+          isLeftPanelVisible = true;
+        });
+      },
     );
   }
 

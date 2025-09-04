@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 
 class InboxHeader extends StatelessWidget {
-  const InboxHeader({super.key});
+  final VoidCallback? onToggleLeftPanel;
+  
+  const InboxHeader({
+    super.key,
+    this.onToggleLeftPanel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +34,7 @@ class InboxHeader extends StatelessWidget {
               _buildIconButton(
                 icon: FlowySvgs.double_back_arrow_m,
                 onTap: () {
-                  // TODO: 实现双左箭头功能
+                  onToggleLeftPanel?.call();
                 },
               ),
               

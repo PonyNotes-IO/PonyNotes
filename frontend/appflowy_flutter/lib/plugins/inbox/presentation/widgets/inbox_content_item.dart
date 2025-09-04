@@ -18,8 +18,8 @@ class InboxContentItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 75,
-        padding: const EdgeInsets.all(8),
+        height: 100,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF0F8FF) : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
@@ -45,9 +45,11 @@ class InboxContentItem extends StatelessWidget {
   }
 
   Widget _buildContentArea() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
         // 标题
         Text(
           item.title,
@@ -56,18 +58,21 @@ class InboxContentItem extends StatelessWidget {
             fontWeight: FontWeight.w500,
             color: Color(0xFF333333),
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         
         // 描述内容（如果有）
         if (item.description.isNotEmpty) ...[
           const SizedBox(height: 4),
-          Expanded(
+          Container(
+            height: 30, // 减少固定高度
             child: Text(
               item.description,
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF888888),
-                height: 1.4,
+                height: 1.3,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -76,7 +81,7 @@ class InboxContentItem extends StatelessWidget {
         ],
         
         // 日期
-        const Spacer(),
+        const Expanded(child: SizedBox.shrink()),
         Text(
           item.date,
           style: const TextStyle(
@@ -85,6 +90,7 @@ class InboxContentItem extends StatelessWidget {
           ),
         ),
       ],
+      ),
     );
   }
 
@@ -95,13 +101,13 @@ class InboxContentItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(4),
         child: Container(
           width: 115,
-          height: 75,
+          height: 76,
           color: const Color(0xFFF0F0F0),
           child: item.imageUrl != null
               ? Image.network(
                   item.imageUrl!,
                   width: 115,
-                  height: 75,
+                  height: 76,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return _buildPlaceholderImage();
@@ -120,7 +126,7 @@ class InboxContentItem extends StatelessWidget {
   Widget _buildPlaceholderImage() {
     return Container(
       width: 115,
-      height: 75,
+      height: 76,
       color: const Color(0xFFF0F0F0),
       child: const Icon(
         Icons.image,
