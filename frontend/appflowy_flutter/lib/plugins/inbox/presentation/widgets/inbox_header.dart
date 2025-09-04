@@ -25,21 +25,21 @@ class InboxHeader extends StatelessWidget {
           // 操作按钮组
           Row(
             children: [
-              // 后退按钮
+              // 双左箭头按钮
               _buildIconButton(
-                icon: FlowySvgs.arrow_left_s,
+                icon: FlowySvgs.double_back_arrow_m,
                 onTap: () {
-                  // TODO: 实现后退功能
+                  // TODO: 实现双左箭头功能
                 },
               ),
               
               const SizedBox(width: 10),
               
-              // 前进按钮
+              // 排序按钮
               _buildIconButton(
-                icon: FlowySvgs.arrow_right_s,
+                icon: FlowySvgs.database_sort_s,
                 onTap: () {
-                  // TODO: 实现前进功能
+                  // TODO: 实现排序功能
                 },
               ),
               
@@ -76,4 +76,5 @@ class InboxHeader extends StatelessWidget {
       ),
     );
   }
+
 }
