@@ -33,6 +33,7 @@ import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/hover.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 typedef ViewItemOnSelected = void Function(BuildContext context, ViewPB view);
@@ -493,8 +494,18 @@ class SingleInnerViewItem extends StatefulWidget {
 class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
   final controller = PopoverController();
   final viewMoreActionController = PopoverController();
+  final TextEditingController _renameController = TextEditingController();
+  final FocusNode _renameFocusNode = FocusNode();
 
   bool isIconPickerOpened = false;
+  bool isRenaming = false;
+
+  @override
+  void dispose() {
+    _renameController.dispose();
+    _renameFocusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -519,19 +530,16 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
       style: HoverStyle(hoverColor: Theme.of(context).colorScheme.secondary),
       resetHoverOnRebuild: widget.showActions || !isIconPickerOpened,
       buildWhenOnHover: () =>
-          !widget.showActions && !_isDragging && !isIconPickerOpened,
+          !widget.showActions && !_isDragging && !isIconPickerOpened && !isRenaming,
       isSelected: () => widget.showActions || isSelected,
       builder: (_, onHover) => _buildViewItem(onHover, isSelected),
     );
   }
 
   Widget _buildViewItem(bool onHover, [bool isSelected = false]) {
-    final name = FlowyText.regular(
-      widget.view.nameOrDefault,
-      overflow: TextOverflow.ellipsis,
-      fontSize: 14.0,
-      figmaLineHeight: 18.0,
-    );
+    // 构建名称部分 - 内联编辑或普通文本
+    final nameWidget = isRenaming ? _buildInlineRenameField() : _buildNameText();
+    
     final children = [
       const HSpace(2),
       // expand icon or placeholder
@@ -545,11 +553,11 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
         child: widget.extendBuilder != null
             ? Row(
                 children: [
-                  Flexible(child: name),
+                  Flexible(child: nameWidget),
                   ...widget.extendBuilder!(widget.view),
                 ],
               )
-            : name,
+            : nameWidget,
       ),
     ];
 
@@ -685,6 +693,102 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
     return child;
   }
 
+  Widget _buildNameText() {
+    return GestureDetector(
+      onDoubleTap: () {
+        // 双击开始重命名
+        _startRenaming();
+      },
+      child: FlowyText.regular(
+        widget.view.nameOrDefault,
+        overflow: TextOverflow.ellipsis,
+        fontSize: 14.0,
+        figmaLineHeight: 18.0,
+      ),
+    );
+  }
+
+  Widget _buildInlineRenameField() {
+    return KeyboardListener(
+      focusNode: FocusNode(),
+      onKeyEvent: (event) {
+        if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+          _cancelRenaming();
+        }
+      },
+      child: SizedBox(
+        height: 20.0,
+        child: TextField(
+          controller: _renameController,
+          focusNode: _renameFocusNode,
+          style: const TextStyle(
+            fontSize: 14.0,
+            height: 18.0 / 14.0,
+          ),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4.0),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(4.0),
+              borderSide: BorderSide(color: Theme.of(context).colorScheme.primary, width: 2.0),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 6.0),
+            isDense: true,
+            counterText: '',
+          ),
+          maxLength: 256,
+          onSubmitted: _finishRenaming,
+          onEditingComplete: () => _finishRenaming(_renameController.text),
+        ),
+      ),
+    );
+  }
+
+  void _startRenaming() {
+    setState(() {
+      isRenaming = true;
+      _renameController.text = widget.view.nameOrDefault;
+      _renameController.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: widget.view.nameOrDefault.length,
+      );
+    });
+    // 延迟聚焦以确保TextField已经构建
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _renameFocusNode.requestFocus();
+    });
+    
+    // 监听焦点丢失事件
+    _renameFocusNode.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (!_renameFocusNode.hasFocus && isRenaming) {
+      _finishRenaming(_renameController.text);
+      _renameFocusNode.removeListener(_onFocusChange);
+    }
+  }
+
+  Future<void> _finishRenaming(String newName) async {
+    if (newName.isNotEmpty && newName != widget.view.nameOrDefault) {
+      await ViewBackendService.updateView(
+        viewId: widget.view.id,
+        name: newName,
+      );
+    }
+    setState(() {
+      isRenaming = false;
+    });
+  }
+
+  void _cancelRenaming() {
+    setState(() {
+      isRenaming = false;
+    });
+  }
+
   // > button or · button
   // show > if the view is expandable.
   // show · if the view can't contain child views.
@@ -765,17 +869,7 @@ class _SingleInnerViewItemState extends State<SingleInnerViewItem> {
                   .add(FavoriteEvent.toggle(widget.view));
               break;
             case ViewMoreActionType.rename:
-              unawaited(
-                NavigatorTextFieldDialog(
-                  title: LocaleKeys.disclosureAction_rename.tr(),
-                  autoSelectAllText: true,
-                  value: widget.view.nameOrDefault,
-                  maxLength: 256,
-                  onConfirm: (newValue, _) {
-                    context.read<ViewBloc>().add(ViewEvent.rename(newValue));
-                  },
-                ).show(context),
-              );
+              _startRenaming();
               break;
             case ViewMoreActionType.delete:
               // get if current page contains published child views
