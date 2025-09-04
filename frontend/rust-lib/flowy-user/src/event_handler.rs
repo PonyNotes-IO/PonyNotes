@@ -18,6 +18,8 @@ use std::{convert::TryInto, sync::Arc};
 use tracing::event;
 use uuid::Uuid;
 
+pub mod inbox_handler;
+
 fn upgrade_manager(manager: AFPluginState<Weak<UserManager>>) -> FlowyResult<Arc<UserManager>> {
   let manager = manager
     .upgrade()

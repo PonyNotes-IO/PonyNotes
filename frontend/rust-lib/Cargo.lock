@@ -2841,6 +2841,7 @@ dependencies = [
  "serde_json",
  "strum 0.25.0",
  "strum_macros 0.25.2",
+ "tempfile",
  "tokio",
  "tokio-stream",
  "tracing",

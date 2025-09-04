@@ -19,7 +19,7 @@ use semver::Version;
 use serde_json::Value;
 use std::string::ToString;
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Weak};
+use std::sync::{Arc, Weak, OnceLock};
 use tokio_stream::StreamExt;
 use tracing::{debug, error, event, info, instrument, warn};
 use uuid::Uuid;
@@ -35,6 +35,7 @@ use crate::migrations::workspace_trash_v1::WorkspaceTrashMapToSectionMigration;
 use crate::services::authenticate_user::AuthenticateUser;
 use crate::services::cloud_config::get_cloud_config;
 use crate::services::collab_interact::{DefaultCollabInteract, UserReminder};
+use crate::services::inbox_manager::{InboxManager, InboxUserService};
 use crate::migrations::anon_user_workspace::AnonUserWorkspaceTableMigration;
 use crate::migrations::doc_key_with_workspace::CollabDocKeyWithWorkspaceIdMigration;
 use crate::{errors::FlowyError, notification::*};
@@ -128,6 +129,7 @@ pub struct UserManager {
   pub(crate) authenticate_user: Arc<AuthenticateUser>,
   refresh_user_profile_since: AtomicI64,
   pub(crate) is_loading_awareness: Arc<DashMap<Uuid, bool>>,
+  pub(crate) inbox_manager: OnceLock<Arc<InboxManager>>,
 }
 
 impl Drop for UserManager {
@@ -159,9 +161,15 @@ impl UserManager {
       refresh_user_profile_since,
       user_workspace_service,
       is_loading_awareness: Arc::new(Default::default()),
+      inbox_manager: OnceLock::new(),
     });
 
     let weak_user_manager = Arc::downgrade(&user_manager);
+    
+    // Initialize inbox_manager with the correct weak reference
+    let inbox_manager = Arc::new(InboxManager::new(weak_user_manager.clone()));
+    let _ = user_manager.inbox_manager.set(inbox_manager);
+    
     if let Ok(user_service) = user_manager
       .cloud_service
       .upgrade()
@@ -1128,4 +1136,25 @@ pub async fn sign_out(
   }
 
   Ok(())
+}
+
+impl UserManager {
+  pub fn inbox_manager(&self) -> Arc<InboxManager> {
+    self.inbox_manager.get().expect("InboxManager should be initialized").clone()
+  }
+}
+
+impl InboxUserService for UserManager {
+  fn user_id(&self) -> Result<i64, FlowyError> {
+    self.user_id()
+  }
+
+  fn workspace_id(&self) -> Result<String, FlowyError> {
+    let session = self.get_session()?;
+    Ok(session.workspace_id.clone())
+  }
+
+  fn sqlite_connection(&self, uid: i64) -> Result<DBConnection, FlowyError> {
+    self.authenticate_user.database.get_connection(uid)
+  }
 }

@@ -55,6 +55,27 @@ diesel::table! {
 }
 
 diesel::table! {
+    inbox_table (id) {
+        id -> Text,
+        workspace_id -> Text,
+        title -> Text,
+        content -> Text,
+        description -> Text,
+        source_type -> Integer,
+        source_url -> Nullable<Text>,
+        file_url -> Nullable<Text>,
+        image_url -> Nullable<Text>,
+        is_read -> Bool,
+        is_clipped -> Bool,
+        is_starred -> Bool,
+        created_at -> BigInt,
+        updated_at -> BigInt,
+        tags -> Nullable<Text>,
+        metadata -> Nullable<Text>,
+    }
+}
+
+diesel::table! {
     index_collab_record_table (oid) {
         oid -> Text,
         workspace_id -> Text,
@@ -177,6 +198,7 @@ diesel::allow_tables_to_appear_in_same_query!(
   chat_message_table,
   chat_table,
   collab_snapshot,
+  inbox_table,
   index_collab_record_table,
   local_ai_model_table,
   upload_file_part,

@@ -4,19 +4,29 @@ import 'package:appflowy/plugins/inbox/domain/models/inbox_item.dart';
 class InboxContentItem extends StatelessWidget {
   final InboxItem item;
   final VoidCallback onTap;
+  final bool isSelected;
 
   const InboxContentItem({
     super.key,
     required this.item,
     required this.onTap,
+    this.isSelected = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: SizedBox(
+      child: Container(
         height: 75,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFF0F8FF) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+          border: isSelected 
+              ? Border.all(color: const Color(0xFF4A90E2), width: 1)
+              : null,
+        ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

@@ -10,6 +10,7 @@ use strum_macros::Display;
 use uuid::Uuid;
 
 use crate::event_handler::*;
+use crate::event_handler::inbox_handler::*;
 use crate::services::entities::{UserConfig, UserPaths};
 use crate::user_manager::UserManager;
 
@@ -68,6 +69,11 @@ pub fn init(user_manager: Weak<UserManager>) -> AFPlugin {
     .event(UserEvent::InviteWorkspaceMember, invite_workspace_member_handler)
     .event(UserEvent::ListWorkspaceInvitations, list_workspace_invitations_handler)
     .event(UserEvent::AcceptWorkspaceInvitation, accept_workspace_invitations_handler)
+    // Inbox
+    .event(UserEvent::GetInboxItems, get_inbox_items_handler)
+    .event(UserEvent::CreateInboxItem, create_inbox_item_handler)
+    .event(UserEvent::UpdateInboxItem, update_inbox_item_handler)
+    .event(UserEvent::DeleteInboxItem, delete_inbox_item_handler)
     // Billing
     .event(UserEvent::SubscribeWorkspace, subscribe_workspace_handler)
     .event(UserEvent::GetWorkspaceSubscriptionInfo, get_workspace_subscription_info_handler)
@@ -234,6 +240,19 @@ pub enum UserEvent {
 
   #[event(input = "AcceptWorkspaceInvitationPB")]
   AcceptWorkspaceInvitation = 49,
+
+  // Inbox events
+  #[event(output = "RepeatedInboxItemPB")]
+  GetInboxItems = 80,
+
+  #[event(input = "CreateInboxItemPB", output = "InboxItemPB")]
+  CreateInboxItem = 81,
+
+  #[event(input = "UpdateInboxItemPB")]
+  UpdateInboxItem = 82,
+
+  #[event(input = "DeleteInboxItemPB")]
+  DeleteInboxItem = 83,
 
   #[event(input = "MagicLinkSignInPB", output = "UserProfilePB")]
   MagicLinkSignIn = 50,

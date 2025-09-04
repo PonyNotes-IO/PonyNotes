@@ -7,6 +7,7 @@ class InboxItem {
   final String? imageUrl;
   final bool isRead;
   final bool isClipped;
+  final bool isStarred;
 
   const InboxItem({
     required this.id,
@@ -17,6 +18,7 @@ class InboxItem {
     this.imageUrl,
     this.isRead = false,
     this.isClipped = false,
+    this.isStarred = false,
   });
 
   InboxItem copyWith({
@@ -28,6 +30,7 @@ class InboxItem {
     String? imageUrl,
     bool? isRead,
     bool? isClipped,
+    bool? isStarred,
   }) {
     return InboxItem(
       id: id ?? this.id,
@@ -38,6 +41,7 @@ class InboxItem {
       imageUrl: imageUrl ?? this.imageUrl,
       isRead: isRead ?? this.isRead,
       isClipped: isClipped ?? this.isClipped,
+      isStarred: isStarred ?? this.isStarred,
     );
   }
 }
