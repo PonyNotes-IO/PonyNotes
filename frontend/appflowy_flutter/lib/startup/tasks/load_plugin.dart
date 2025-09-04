@@ -13,6 +13,7 @@ import 'package:appflowy/plugins/document/document.dart';
 import 'package:appflowy/plugins/trash/trash_plugin.dart';
 import 'package:appflowy/plugins/import_page/import_page_plugin.dart';
 import 'package:appflowy/plugins/inbox/inbox_plugin.dart';
+import 'package:appflowy/plugins/file_library/file_library_plugin.dart';
 
 class PluginLoadTask extends LaunchTask {
   const PluginLoadTask();
@@ -63,6 +64,10 @@ class PluginLoadTask extends LaunchTask {
     registerPlugin(
       builder: InboxPluginBuilder(),
       config: InboxPluginConfig(),
+    );
+    registerPlugin(
+      builder: FileLibraryPluginBuilder(),
+      config: FileLibraryPluginConfig(),
     );
   }
 }

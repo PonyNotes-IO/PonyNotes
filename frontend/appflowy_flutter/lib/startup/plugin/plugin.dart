@@ -24,6 +24,7 @@ enum PluginType {
   newEvent,
   importPage,
   inbox,
+  fileLibrary,
 }
 
 typedef PluginId = String;
