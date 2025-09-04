@@ -78,11 +78,11 @@ class _FileLibraryPageState extends State<FileLibraryPage> {
 
   Widget _buildCategoryList() {
     final categories = [
-      {'name': '全部文件', 'icon': FlowySvgs.icon_file_library_s, 'count': 0},
-      {'name': '图片文件', 'icon': FlowySvgs.icon_document_s, 'count': 0},
-      {'name': '文档文件', 'icon': FlowySvgs.icon_document_s, 'count': 0},
-      {'name': '音频文件', 'icon': FlowySvgs.icon_document_s, 'count': 0},
-      {'name': '音频文件', 'icon': FlowySvgs.icon_document_s, 'count': 0},
+      {'name': '全部文件', 'icon': FlowySvgs.dl_folder_s, 'count': 0},
+      {'name': '图片文件', 'icon': FlowySvgs.dl_image_s, 'count': 0},
+      {'name': '文档文件', 'icon': FlowySvgs.dl_document_s, 'count': 0},
+      {'name': '音频文件', 'icon': FlowySvgs.dl_audio_s, 'count': 0},
+      {'name': '视频文件', 'icon': FlowySvgs.dl_video_s, 'count': 0},
     ];
 
     final cloudCategories = [
