@@ -1,7 +1,7 @@
-import 'package:appflowy/core/helpers/url_launcher.dart';
 import 'package:appflowy/generated/flowy_svgs.g.dart';
-import 'package:appflowy/generated/locale_keys.g.dart';
-import 'package:easy_localization/easy_localization.dart';
+import 'package:appflowy/startup/plugin/plugin.dart';
+import 'package:appflowy/startup/startup.dart';
+import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
@@ -18,11 +18,7 @@ class SidebarFileLibraryButton extends StatelessWidget {
         text: '文件库', // 临时使用硬编码文本
         mainAxisAlignment: MainAxisAlignment.start,
         size: AFButtonSize.l,
-        onTap: () {
-          // 测试代码 - 文件库按钮点击逻辑
-          debugPrint('文件库按钮被点击了！');
-          // TODO: 在这里添加真正的文件库逻辑
-        },
+        onTap: () => _openFileLibrary(context),
         padding: EdgeInsets.symmetric(
           horizontal: 8,
           vertical: 10,
@@ -33,6 +29,34 @@ class SidebarFileLibraryButton extends StatelessWidget {
           size: const Size.square(16.0),
           color: Theme.of(context).textTheme.bodyMedium?.color,
         ),
+      ),
+    );
+  }
+
+  void _openFileLibrary(BuildContext context) {
+    try {
+      // 创建文件库插件
+      final fileLibraryPlugin = makePlugin(
+        pluginType: PluginType.fileLibrary,
+        data: null,
+      );
+
+      // 在新标签页中打开文件库
+      getIt<TabsBloc>().add(
+        TabsEvent.openPlugin(
+          plugin: fileLibraryPlugin,
+        ),
+      );
+    } catch (e) {
+      _showMessage(context, '打开文件库时发生错误: $e');
+    }
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

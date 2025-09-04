@@ -23,6 +23,7 @@ enum PluginType {
   homepage,
   newEvent,
   importPage,
+  fileLibrary,
 }
 
 typedef PluginId = String;
