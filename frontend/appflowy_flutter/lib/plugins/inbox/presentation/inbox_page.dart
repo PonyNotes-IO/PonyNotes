@@ -20,6 +20,27 @@ class _InboxPageState extends State<InboxPage> {
   double leftPanelWidth = 0.35; // 左栏宽度比例，默认35%
   bool isLeftPanelVisible = true; // 左侧面板是否可见
   SortOption currentSort = SortOption.updatedDate; // 当前排序方式
+  final GlobalKey<InboxContentListState> _contentListKey = GlobalKey<InboxContentListState>();
+
+  /// 标记所有项目为已读
+  void _markAllAsRead() async {
+    try {
+      await _contentListKey.currentState?.markAllAsRead();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ 已将所有未读项目标记为已读'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('❌ 操作失败: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +69,7 @@ class _InboxPageState extends State<InboxPage> {
               currentSort = sortOption;
             });
           },
+          onMarkAllAsRead: _markAllAsRead,
         ),
         
         // 筛选标签
@@ -66,6 +88,7 @@ class _InboxPageState extends State<InboxPage> {
         // 邮件列表
         Expanded(
           child: InboxContentList(
+            key: _contentListKey,
             selectedFilter: selectedFilter,
             onItemSelected: (item) {
               setState(() {
@@ -102,6 +125,7 @@ class _InboxPageState extends State<InboxPage> {
                     currentSort = sortOption;
                   });
                 },
+                onMarkAllAsRead: _markAllAsRead,
               ),
               
               // 筛选标签

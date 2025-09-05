@@ -20,10 +20,10 @@ class InboxContentList extends StatefulWidget {
   });
 
   @override
-  State<InboxContentList> createState() => _InboxContentListState();
+  State<InboxContentList> createState() => InboxContentListState();
 }
 
-class _InboxContentListState extends State<InboxContentList> {
+class InboxContentListState extends State<InboxContentList> {
   List<InboxItem> _items = [];
   bool _isLoading = true;
 
@@ -223,6 +223,48 @@ class _InboxContentListState extends State<InboxContentList> {
           builder: (context) => InboxDetailPage(item: item),
         ),
       );
+    }
+  }
+
+  /// 标记所有项目为已读
+  Future<void> markAllAsRead() async {
+    try {
+      const dbPath = '/Users/kuncao/Library/Application Support/com.appflowy.appflowy.flutter/ponynotes_data_dev_api.xiaomabiji.com/1756905910/flowy-database.db';
+      
+      final database = await openDatabase(dbPath);
+      
+      // 更新数据库中的所有项目为已读
+      await database.update(
+        'inbox_table',
+        {'is_read': 1},
+        where: 'is_read = ?',
+        whereArgs: [0],
+      );
+      
+      await database.close();
+      
+      // 重新加载数据以反映变更
+      await _loadInboxItems();
+      
+      print('✅ 已将所有未读项目标记为已读');
+    } catch (e) {
+      print('❌ 标记全部已读失败: $e');
+      // 如果数据库操作失败，至少在本地状态中更新
+      setState(() {
+        _items = _items.map((item) => InboxItem(
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          date: item.date,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+          hasImage: item.hasImage,
+          imageUrl: item.imageUrl,
+          isRead: true, // 标记为已读
+          isClipped: item.isClipped,
+          isStarred: item.isStarred,
+        )).toList();
+      });
     }
   }
 }

@@ -8,12 +8,14 @@ class InboxHeader extends StatefulWidget {
   final VoidCallback? onToggleLeftPanel;
   final SortOption currentSort;
   final Function(SortOption) onSortChanged;
+  final VoidCallback? onMarkAllAsRead;
   
   const InboxHeader({
     super.key,
     this.onToggleLeftPanel,
     required this.currentSort,
     required this.onSortChanged,
+    this.onMarkAllAsRead,
   });
 
   @override
@@ -22,10 +24,15 @@ class InboxHeader extends StatefulWidget {
 
 class _InboxHeaderState extends State<InboxHeader> with TickerProviderStateMixin {
   bool _isMenuVisible = false;
+  bool _isMoreMenuVisible = false;
   final GlobalKey _sortButtonKey = GlobalKey();
+  final GlobalKey _moreButtonKey = GlobalKey();
   OverlayEntry? _overlayEntry;
+  OverlayEntry? _moreOverlayEntry;
   late AnimationController _animationController;
+  late AnimationController _moreAnimationController;
   late Animation<double> _fadeAnimation;
+  late Animation<double> _moreFadeAnimation;
 
   @override
   void initState() {
@@ -39,6 +46,18 @@ class _InboxHeaderState extends State<InboxHeader> with TickerProviderStateMixin
       end: 1.0,
     ).animate(CurvedAnimation(
       parent: _animationController,
+      curve: Curves.easeInOut,
+    ));
+    
+    _moreAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 200),
+      vsync: this,
+    );
+    _moreFadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _moreAnimationController,
       curve: Curves.easeInOut,
     ));
   }
@@ -96,10 +115,9 @@ class _InboxHeaderState extends State<InboxHeader> with TickerProviderStateMixin
               
               // 更多选项按钮
               _buildIconButton(
+                key: _moreButtonKey,
                 icon: FlowySvgs.three_dots_s,
-                onTap: () {
-                  // TODO: 实现更多选项功能
-                },
+                onTap: _toggleMoreMenu,
               ),
             ],
           ),
@@ -162,6 +180,43 @@ class _InboxHeaderState extends State<InboxHeader> with TickerProviderStateMixin
     
     setState(() {
       _isMenuVisible = false;
+    });
+  }
+
+  void _toggleMoreMenu() {
+    print('🔧 更多选项按钮被点击！当前菜单状态: $_isMoreMenuVisible -> ${!_isMoreMenuVisible}');
+    
+    if (_isMoreMenuVisible) {
+      _hideMoreMenu();
+    } else {
+      _showMoreMenu();
+    }
+  }
+  
+  void _showMoreMenu() {
+    if (_moreOverlayEntry != null) {
+      _hideMoreMenu();
+      return;
+    }
+    
+    setState(() {
+      _isMoreMenuVisible = true;
+    });
+    
+    _moreOverlayEntry = _createMoreOverlayEntry();
+    Overlay.of(context).insert(_moreOverlayEntry!);
+    _moreAnimationController.forward();
+  }
+  
+  void _hideMoreMenu() async {
+    if (_moreOverlayEntry != null) {
+      await _moreAnimationController.reverse();
+      _moreOverlayEntry?.remove();
+      _moreOverlayEntry = null;
+    }
+    
+    setState(() {
+      _isMoreMenuVisible = false;
     });
   }
 
@@ -235,12 +290,131 @@ class _InboxHeaderState extends State<InboxHeader> with TickerProviderStateMixin
       ),
     );
   }
+
+  OverlayEntry _createMoreOverlayEntry() {
+    print('🎯 正在创建更多选项菜单...');
+    
+    // 获取更多选项按钮的位置和尺寸
+    final RenderBox? renderBox = _moreButtonKey.currentContext?.findRenderObject() as RenderBox?;
+    Offset? buttonPosition;
+    Size? buttonSize;
+    
+    if (renderBox != null) {
+      buttonPosition = renderBox.localToGlobal(Offset.zero);
+      buttonSize = renderBox.size;
+      print('📍 更多按钮位置: $buttonPosition, 尺寸: $buttonSize');
+    } else {
+      print('❌ 无法获取更多按钮位置');
+      buttonPosition = const Offset(100, 70);
+      buttonSize = const Size(40, 40);
+    }
+
+    return OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          // 透明背景，点击关闭菜单
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _hideMoreMenu,
+              child: Container(
+                color: Colors.transparent,
+              ),
+            ),
+          ),
+          // 菜单本身
+          Positioned(
+            top: (buttonPosition?.dy ?? 70) + (buttonSize?.height ?? 40) + 4, // 紧贴按钮下方
+            left: (buttonPosition?.dx ?? 100) + (buttonSize?.width ?? 40) - 160, // 菜单右边缘对齐按钮右边缘
+            child: AnimatedBuilder(
+              animation: _moreFadeAnimation,
+              builder: (context, child) {
+                return FadeTransition(
+                  opacity: _moreFadeAnimation,
+                  child: Transform.scale(
+                    scale: 0.9 + (_moreFadeAnimation.value * 0.1), // 轻微的缩放效果
+                    child: GestureDetector(
+                      onTap: () {}, // 阻止点击菜单时关闭
+                      child: Container(
+                        width: 160, // 增加菜单宽度以避免溢出
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildMoreMenuItem(
+                              icon: Icons.done_all,
+                              title: '全部标记为已读',
+                              onTap: () {
+                                _hideMoreMenu();
+                                widget.onMarkAllAsRead?.call();
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMoreMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min, // 设置主轴大小为最小
+          children: [
+            Icon(
+              icon,
+              size: 16,
+              color: const Color(0xFF666666),
+            ),
+            const SizedBox(width: 8),
+            Flexible( // 使用Flexible包装文本以处理溢出
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF333333),
+                ),
+                overflow: TextOverflow.ellipsis, // 添加省略号处理
+                maxLines: 1, // 限制为单行
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   
   @override
   void dispose() {
     _animationController.dispose();
+    _moreAnimationController.dispose();
     _overlayEntry?.remove();
     _overlayEntry = null;
+    _moreOverlayEntry?.remove();
+    _moreOverlayEntry = null;
     super.dispose();
   }
 }
