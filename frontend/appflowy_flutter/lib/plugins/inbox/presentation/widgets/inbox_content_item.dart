@@ -18,7 +18,7 @@ class InboxContentItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 100,
+        // height: 100, // 移除固定高度避免溢出
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFF0F8FF) : Colors.transparent,
@@ -31,9 +31,7 @@ class InboxContentItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 左侧内容区域
-            Expanded(
-              child: _buildContentArea(),
-            ),
+            _buildContentArea(),
             
             // 右侧图片区域
             if (item.hasImage && item.imageUrl != null)
@@ -65,9 +63,7 @@ class InboxContentItem extends StatelessWidget {
         // 描述内容（如果有）
         if (item.description.isNotEmpty) ...[
           const SizedBox(height: 4),
-          Container(
-            height: 30, // 减少固定高度
-            child: Text(
+          Text(
               item.description,
               style: const TextStyle(
                 fontSize: 12,
@@ -77,11 +73,10 @@ class InboxContentItem extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-          ),
         ],
         
         // 日期
-        const Expanded(child: SizedBox.shrink()),
+        const SizedBox(height: 8),
         Text(
           item.date,
           style: const TextStyle(

@@ -5,6 +5,7 @@ import 'package:appflowy/plugins/inbox/presentation/widgets/inbox_clip_section.d
 import 'package:appflowy/plugins/inbox/presentation/widgets/inbox_content_list.dart';
 import 'package:appflowy/plugins/inbox/presentation/widgets/inbox_detail_panel.dart';
 import 'package:appflowy/plugins/inbox/domain/models/inbox_item.dart';
+import 'package:appflowy/plugins/inbox/domain/models/sort_option.dart';
 
 class InboxPage extends StatefulWidget {
   const InboxPage({super.key});
@@ -18,6 +19,7 @@ class _InboxPageState extends State<InboxPage> {
   InboxItem? selectedItem; // 当前选中的邮件
   double leftPanelWidth = 0.35; // 左栏宽度比例，默认35%
   bool isLeftPanelVisible = true; // 左侧面板是否可见
+  SortOption currentSort = SortOption.updatedDate; // 当前排序方式
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +40,12 @@ class _InboxPageState extends State<InboxPage> {
           onToggleLeftPanel: () {
             setState(() {
               isLeftPanelVisible = !isLeftPanelVisible;
+            });
+          },
+          currentSort: currentSort,
+          onSortChanged: (sortOption) {
+            setState(() {
+              currentSort = sortOption;
             });
           },
         ),
@@ -65,6 +73,7 @@ class _InboxPageState extends State<InboxPage> {
               });
             },
             selectedItem: selectedItem,
+            sortOption: currentSort,
           ),
         ),
       ],
@@ -85,6 +94,12 @@ class _InboxPageState extends State<InboxPage> {
                 onToggleLeftPanel: () {
                   setState(() {
                     isLeftPanelVisible = !isLeftPanelVisible;
+                  });
+                },
+                currentSort: currentSort,
+                onSortChanged: (sortOption) {
+                  setState(() {
+                    currentSort = sortOption;
                   });
                 },
               ),
@@ -112,6 +127,7 @@ class _InboxPageState extends State<InboxPage> {
                     });
                   },
                   selectedItem: selectedItem,
+                  sortOption: currentSort,
                 ),
               ),
             ],

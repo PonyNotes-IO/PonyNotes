@@ -2,7 +2,9 @@ class InboxItem {
   final String id;
   final String title;
   final String description;
-  final String date;
+  final String date; // 显示日期（兼容现有代码）
+  final DateTime createdAt; // 创建日期
+  final DateTime updatedAt; // 更新日期
   final bool hasImage;
   final String? imageUrl;
   final bool isRead;
@@ -14,6 +16,8 @@ class InboxItem {
     required this.title,
     required this.description,
     required this.date,
+    required this.createdAt,
+    required this.updatedAt,
     this.hasImage = false,
     this.imageUrl,
     this.isRead = false,
@@ -26,6 +30,8 @@ class InboxItem {
     String? title,
     String? description,
     String? date,
+    DateTime? createdAt,
+    DateTime? updatedAt,
     bool? hasImage,
     String? imageUrl,
     bool? isRead,
@@ -37,6 +43,8 @@ class InboxItem {
       title: title ?? this.title,
       description: description ?? this.description,
       date: date ?? this.date,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
       hasImage: hasImage ?? this.hasImage,
       imageUrl: imageUrl ?? this.imageUrl,
       isRead: isRead ?? this.isRead,

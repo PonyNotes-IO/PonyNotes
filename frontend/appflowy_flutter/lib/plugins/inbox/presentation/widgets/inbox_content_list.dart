@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:appflowy/plugins/inbox/presentation/widgets/inbox_content_item.dart';
 import 'package:appflowy/plugins/inbox/domain/models/inbox_item.dart';
+import 'package:appflowy/plugins/inbox/domain/models/sort_option.dart';
 import 'package:appflowy/plugins/inbox/presentation/inbox_detail_page.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -8,12 +9,14 @@ class InboxContentList extends StatefulWidget {
   final String selectedFilter;
   final Function(InboxItem)? onItemSelected;
   final InboxItem? selectedItem;
+  final SortOption sortOption;
 
   const InboxContentList({
     super.key,
     required this.selectedFilter,
     this.onItemSelected,
     this.selectedItem,
+    required this.sortOption,
   });
 
   @override
@@ -33,7 +36,8 @@ class _InboxContentListState extends State<InboxContentList> {
   @override
   void didUpdateWidget(InboxContentList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.selectedFilter != widget.selectedFilter) {
+    if (oldWidget.selectedFilter != widget.selectedFilter || 
+        oldWidget.sortOption != widget.sortOption) {
       _loadInboxItems();
     }
   }
@@ -46,8 +50,9 @@ class _InboxContentListState extends State<InboxContentList> {
     try {
       final items = await _getInboxItemsFromDatabase();
       final filteredItems = _filterItems(items);
+      final sortedItems = _sortItems(filteredItems);
       setState(() {
-        _items = filteredItems;
+        _items = sortedItems;
         _isLoading = false;
       });
     } catch (e) {
@@ -55,8 +60,9 @@ class _InboxContentListState extends State<InboxContentList> {
       // 如果数据库查询失败，使用模拟数据
       final mockItems = _getMockItems();
       final filteredItems = _filterItems(mockItems);
+      final sortedItems = _sortItems(filteredItems);
       setState(() {
-        _items = filteredItems;
+        _items = sortedItems;
         _isLoading = false;
       });
     }
@@ -104,8 +110,11 @@ class _InboxContentListState extends State<InboxContentList> {
       await database.close();
       
       return maps.map((map) {
-        // 将时间戳转换为可读格式
+        // 将时间戳转换为可读格式和DateTime对象
         final createdAt = DateTime.fromMillisecondsSinceEpoch(map['created_at'] * 1000);
+        final updatedAt = map['updated_at'] != null 
+            ? DateTime.fromMillisecondsSinceEpoch(map['updated_at'] * 1000)
+            : createdAt; // 如果没有更新时间，使用创建时间
         final dateStr = '${createdAt.year}年${createdAt.month}月${createdAt.day}日 ${createdAt.hour.toString().padLeft(2, '0')}:${createdAt.minute.toString().padLeft(2, '0')}';
         
         return InboxItem(
@@ -113,6 +122,8 @@ class _InboxContentListState extends State<InboxContentList> {
           title: map['title'] ?? '',
           description: map['description'] ?? '',
           date: dateStr,
+          createdAt: createdAt,
+          updatedAt: updatedAt,
           hasImage: map['image_url'] != null && map['image_url'].toString().isNotEmpty,
           imageUrl: map['image_url'],
           isRead: (map['is_read'] ?? 0) == 1,
@@ -127,12 +138,18 @@ class _InboxContentListState extends State<InboxContentList> {
   }
 
   List<InboxItem> _getMockItems() {
+    final now = DateTime.now();
+    final yesterday = now.subtract(const Duration(days: 1));
+    final dayBeforeYesterday = now.subtract(const Duration(days: 2));
+    
     return [
       InboxItem(
         id: '1',
-        title: '标题名称',
+        title: 'ABC任务计划',
         description: '风控所有点滴生活记录，请珍惜小小的\n幸福，大大的爱',
         date: '2025年6月25日 12:22',
+        createdAt: now,
+        updatedAt: now,
         hasImage: true,
         imageUrl: 'https://via.placeholder.com/115x75',
         isRead: false,
@@ -140,9 +157,11 @@ class _InboxContentListState extends State<InboxContentList> {
       ),
       InboxItem(
         id: '2',
-        title: '标题名称',
+        title: '标题名称中等',
         description: '风控所有点滴生活记录，请珍惜小小的\n幸福，大大的爱',
         date: '2025年6月25日 12:22',
+        createdAt: yesterday,
+        updatedAt: yesterday,
         hasImage: false,
         isRead: true,
         isClipped: true,
@@ -150,9 +169,11 @@ class _InboxContentListState extends State<InboxContentList> {
       ),
       InboxItem(
         id: '3',
-        title: '标题名称',
+        title: 'ZZZ最后项目',
         description: '',
         date: '2025年6月25日 12:22',
+        createdAt: dayBeforeYesterday,
+        updatedAt: now, // 最近更新过
         hasImage: true,
         imageUrl: 'https://via.placeholder.com/115x76',
         isRead: false,
@@ -171,6 +192,24 @@ class _InboxContentListState extends State<InboxContentList> {
       default:
         return items;
     }
+  }
+
+  List<InboxItem> _sortItems(List<InboxItem> items) {
+    final List<InboxItem> sortedItems = List.from(items);
+    
+    switch (widget.sortOption) {
+      case SortOption.updatedDate:
+        sortedItems.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        break;
+      case SortOption.createdDate:
+        sortedItems.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case SortOption.title:
+        sortedItems.sort((a, b) => a.title.compareTo(b.title));
+        break;
+    }
+    
+    return sortedItems;
   }
 
   void _handleItemTap(BuildContext context, InboxItem item) {
