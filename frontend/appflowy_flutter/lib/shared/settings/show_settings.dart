@@ -4,6 +4,7 @@ import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/af_focus_manager.dart';
 import 'package:appflowy/workspace/presentation/settings/settings_dialog.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/new_settings_page.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart'
     show UserProfilePB;
@@ -63,5 +64,23 @@ void showSimpleSettingsDialog(BuildContext context) {
   showDialog(
     context: context,
     builder: (dialogContext) => const SimpleSettingsDialog(),
+  );
+}
+
+// show new redesigned settings page
+void showNewSettingsDialog(BuildContext context) {
+  AFFocusManager.of(context).notifyLoseFocus();
+  showDialog(
+    context: context,
+    barrierDismissible: true,
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      insetPadding: EdgeInsets.zero,
+      child: Container(
+        width: MediaQuery.of(context).size.width,
+        height: MediaQuery.of(context).size.height,
+        child: const NewSettingsPage(),
+      ),
+    ),
   );
 }
