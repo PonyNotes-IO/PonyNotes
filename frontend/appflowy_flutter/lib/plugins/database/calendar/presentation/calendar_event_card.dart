@@ -103,8 +103,8 @@ class _EventCardState extends State<EventCard> {
         cardPadding: const EdgeInsets.all(6),
         hoverStyle: HoverStyle(
           hoverColor: Theme.of(context).brightness == Brightness.light
-              ? const Color(0x0F1F2329)
-              : const Color(0x0FEFF4FB),
+              ? const Color(0x10808080)
+              : const Color(0x10FFFFFF),
           foregroundColorOnHover: AFThemeExtension.of(context).onBackground,
         ),
       ),
@@ -114,7 +114,7 @@ class _EventCardState extends State<EventCard> {
     );
 
     final decoration = BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
+      color: AFThemeExtension.of(context).background,
       border: Border.fromBorderSide(
         BorderSide(
           color: Theme.of(context).brightness == Brightness.light

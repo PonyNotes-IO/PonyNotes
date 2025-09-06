@@ -9,6 +9,7 @@ import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/widgets/date_picker/widgets/date_picker.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
+import 'package:flowy_infra_ui/style_widget/hover.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:appflowy/workspace/application/workspace/workspace_service.dart';
@@ -903,9 +904,11 @@ class _CalendarContentState extends State<CalendarContent> {
       
       await allViewsResult.fold(
         (allViews) async {
-          // 过滤出文档类型的视图（笔记）
+          // 过滤出文档类型的视图（笔记），只包含有父页面的文档（排除根级页面如Workspace）
           final documentViews = allViews.items
-              .where((view) => view.layout == ViewLayoutPB.Document)
+              .where((view) => 
+                view.layout == ViewLayoutPB.Document && 
+                view.parentViewId.isNotEmpty)
               .toList();
 
           // 根据选中日期过滤笔记
@@ -971,51 +974,7 @@ class _CalendarContentState extends State<CalendarContent> {
           ]
           // 真实的笔记内容
           else if (_realNotes.isNotEmpty) ...[
-            ...(_realNotes.map((note) => Padding(
-              padding: const EdgeInsets.only(bottom: 4),
-              child: InkWell(
-                onTap: () {
-                  // 点击笔记时打开该笔记
-                  context.read<TabsBloc>().add(
-                    TabsEvent.openTab(plugin: note.plugin(), view: note),
-                  );
-                },
-                child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).hoverColor,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.description_outlined,
-                        size: 16,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          note.name,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        _formatCreateTime(note.createTime.toInt()),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ))),
+            ...(_realNotes.map((note) => _buildNoteItem(note))),
             const SizedBox(height: 16),
           ]
           // 如果当天没有笔记，显示提示
@@ -1040,6 +999,49 @@ class _CalendarContentState extends State<CalendarContent> {
           ],
           // 移除else部分，不显示"暂无日程数据"提示
         ],
+      ),
+    );
+  }
+
+  Widget _buildNoteItem(ViewPB note) {
+    return FlowyHover(
+      style: HoverStyle(hoverColor: Theme.of(context).colorScheme.secondary),
+      builder: (_, onHover) => GestureDetector(
+        onTap: () {
+          // 点击笔记时打开该笔记
+          context.read<TabsBloc>().add(
+            TabsEvent.openTab(plugin: note.plugin(), view: note),
+          );
+        },
+        child: Container(
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Row(
+            children: [
+              Icon(
+                Icons.description_outlined,
+                size: 16,
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  note.name,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                _formatCreateTime(note.createTime.toInt()),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

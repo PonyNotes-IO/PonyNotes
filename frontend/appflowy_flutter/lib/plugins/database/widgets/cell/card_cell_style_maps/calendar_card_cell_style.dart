@@ -22,6 +22,7 @@ CardCellStyleMap desktopCalendarCardCellStyleMap(BuildContext context) {
         fontSize: 10,
         overflow: TextOverflow.ellipsis,
         fontWeight: FontWeight.w400,
+        color: Theme.of(context).textTheme.bodyMedium?.color,
       );
 
   return {
@@ -63,6 +64,7 @@ CardCellStyleMap desktopCalendarCardCellStyleMap(BuildContext context) {
       titleTextStyle: Theme.of(context).textTheme.bodyMedium!.copyWith(
             fontSize: 11,
             overflow: TextOverflow.ellipsis,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
           ),
     ),
     FieldType.SingleSelect: SelectOptionCardCellStyle(
