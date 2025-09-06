@@ -22,6 +22,15 @@ import 'presentation/new_event_page.dart';
 import 'presentation/edit_event_page.dart';
 import 'widgets/schedule_sidebar.dart';
 import 'models/schedule_model.dart';
+import 'dart:ui' as ui;
+import 'package:appflowy/plugins/document/application/document_bloc.dart';
+import 'package:appflowy/workspace/application/view/view_bloc.dart';
+import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
+import 'package:appflowy_editor/appflowy_editor.dart';
+import 'package:appflowy_backend/protobuf/flowy-error/protobuf.dart';
+import 'package:appflowy/plugins/document/presentation/editor_plugins/plugins.dart';
+import 'package:appflowy/plugins/document/presentation/editor_page.dart';
+import 'package:appflowy/plugins/document/presentation/editor_style.dart';
 
 // 添加日历事件类
 class CalendarEvent {
@@ -140,6 +149,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
   late bool _isSidebarExpanded;
   late PopoverController _settingsPopoverController;
   late PopoverController _addPopoverController;
+  late ViewPB? _selectedNote; // 添加选中的笔记
 
 
   @override
@@ -160,6 +170,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
     _isSidebarExpanded = true;
     _settingsPopoverController = PopoverController();
     _addPopoverController = PopoverController();
+    _selectedNote = null;
 
     
     // 初始化时尝试创建或获取日历视图
@@ -307,6 +318,16 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
       _showEditEventPage = true;
       _editingSchedule = schedule;
       _showNewEventPage = false; // 确保新建页面关闭
+      _selectedNote = null; // 清除选中的笔记
+    });
+  }
+
+  // 处理点击笔记
+  void _onNoteTap(ViewPB note) {
+    setState(() {
+      _selectedNote = note;
+      _showNewEventPage = false;
+      _showEditEventPage = false;
     });
   }
 
@@ -636,7 +657,9 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
                   ? _buildNewEventView()
                   : _showEditEventPage && _editingSchedule != null
                     ? _buildEditEventView()
-                    : _buildDefaultView(),
+                    : _selectedNote != null
+                      ? _buildNoteContentView()
+                      : _buildDefaultView(),
               ),
             ),
         ],
@@ -687,6 +710,7 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
               selectedDate: _selectedDay ?? _focusedDay,
               viewId: _currentViewId, // 传递视图ID
               onScheduleTap: _onScheduleTap, // 传递点击回调
+              onNoteTap: _onNoteTap, // 传递笔记点击回调
             ),
           ),
         ),
@@ -856,6 +880,15 @@ class _CalendarMainPanelState extends State<CalendarMainPanel> {
       ),
     );
   }
+
+  Widget _buildNoteContentView() {
+    if (_selectedNote == null) {
+      return _buildDefaultView();
+    }
+
+    // 直接显示笔记内容，类似回收站的做法
+    return CalendarDocumentView(view: _selectedNote!);
+  }
 }
 
 // 统一的日记和日程展示组件
@@ -863,12 +896,14 @@ class CalendarContent extends StatefulWidget {
   final DateTime selectedDate;
   final String? viewId;
   final Function(ScheduleItem)? onScheduleTap; // 点击日程的回调
+  final Function(ViewPB)? onNoteTap; // 点击笔记的回调
 
   const CalendarContent({
     Key? key,
     required this.selectedDate,
     this.viewId,
     this.onScheduleTap,
+    this.onNoteTap,
   }) : super(key: key);
 
   @override
@@ -1008,10 +1043,10 @@ class _CalendarContentState extends State<CalendarContent> {
       style: HoverStyle(hoverColor: Theme.of(context).colorScheme.secondary),
       builder: (_, onHover) => GestureDetector(
         onTap: () {
-          // 点击笔记时打开该笔记
-          context.read<TabsBloc>().add(
-            TabsEvent.openTab(plugin: note.plugin(), view: note),
-          );
+          // 点击笔记时调用回调函数
+          if (widget.onNoteTap != null) {
+            widget.onNoteTap!(note);
+          }
         },
         child: Container(
           height: 32,
@@ -1063,4 +1098,208 @@ class _CalendarContentState extends State<CalendarContent> {
 class CalendarPluginConfig implements PluginConfig {
   @override
   bool get creatable => true;
+}
+
+// 日历文档视图组件 - 参考回收站的实现
+class CalendarDocumentView extends StatelessWidget {
+  const CalendarDocumentView({
+    super.key,
+    required this.view,
+  });
+
+  final ViewPB view;
+
+  @override
+  Widget build(BuildContext context) {
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) {
+            debugPrint('CalendarDocumentView - Creating DocumentBloc for view.id: ${view.id}');
+            return DocumentBloc(documentId: view.id)
+              ..add(const DocumentEvent.initial());
+          },
+        ),
+        BlocProvider(
+          create: (context) => ViewBloc(view: view)..add(const ViewEvent.initial()),
+        ),
+      ],
+      child: BlocBuilder<DocumentBloc, DocumentState>(
+        builder: (context, state) {
+          // 调试信息
+          debugPrint('CalendarDocumentView - State: isLoading=${state.isLoading}, error=${state.error}, editorState=${state.editorState != null}');
+          
+          if (state.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator.adaptive(),
+            );
+          }
+
+          final editorState = state.editorState;
+          final error = state.error;
+          if (error != null || editorState == null) {
+            debugPrint('CalendarDocumentView - Showing error view: error=$error');
+            return _buildErrorView(context, error);
+          }
+
+          debugPrint('CalendarDocumentView - Showing document view with ${editorState.document.root.children.length} nodes');
+          return _buildDocumentView(context, editorState);
+        },
+      ),
+    );
+  }
+
+  Widget _buildErrorView(BuildContext context, FlowyError? error) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(context),
+          const SizedBox(height: 24),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    '无法加载文档内容',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '此文档可能已被删除或损坏',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                    ),
+                  ),
+                  if (error != null) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.error.withOpacity(0.3),
+                          width: 1,
+                        ),
+                      ),
+                      child: Text(
+                        '错误信息: ${error.msg}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentView(BuildContext context, EditorState editorState) {
+    // 调试文档内容
+    debugPrint('CalendarDocumentView - Document content:');
+    for (int i = 0; i < editorState.document.root.children.length; i++) {
+      final node = editorState.document.root.children[i];
+      debugPrint('  Node $i: type=${node.type}, text="${node.delta?.toPlainText() ?? 'N/A'}"');
+    }
+    
+    // 检查文档是否为空或只有空内容
+    final hasContent = editorState.document.root.children.any((node) {
+      final text = node.delta?.toPlainText() ?? '';
+      return text.trim().isNotEmpty;
+    });
+    
+    debugPrint('CalendarDocumentView - Has meaningful content: $hasContent');
+    
+    // 设置编辑器为只读状态
+    editorState.editable = false;
+    
+    return Column(
+      children: [
+        _buildHeader(context),
+        const SizedBox(height: 16),
+        Expanded(
+          child: _buildAppFlowyEditor(context, editorState),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAppFlowyEditor(BuildContext context, EditorState editorState) {
+    final isRTL = context.read<AppearanceSettingsCubit>().state.layoutDirection ==
+        LayoutDirection.rtlLayout;
+    final textDirection = isRTL ? ui.TextDirection.rtl : ui.TextDirection.ltr;
+
+    return Directionality(
+      textDirection: textDirection,
+      child: AppFlowyEditorPage(
+        editorState: editorState,
+        autoFocus: false,
+        useViewInfoBloc: false,
+        styleCustomizer: EditorStyleCustomizer(
+          context: context,
+          width: MediaQuery.of(context).size.width,
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          editorState: editorState,
+        ),
+        placeholderText: (node) {
+          // 为空的段落节点提供占位符文本
+          if (node.type == ParagraphBlockKeys.type && 
+              (node.delta?.toPlainText() ?? '').trim().isEmpty) {
+            return '此文档暂无内容，点击编辑按钮开始添加内容';
+          }
+          return '';
+        },
+      ),
+    );
+  }
+
+
+
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 标题
+          Text(
+            view.name.isEmpty ? '无标题笔记' : view.name,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          // 创建时间
+          Text(
+            '创建时间：${_formatCreateTime(view.createTime.toInt())}',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCreateTime(int timestamp) {
+    final date = DateTime.fromMillisecondsSinceEpoch(timestamp * 1000);
+    return DateFormat('yyyy/MM/dd HH:mm').format(date);
+  }
 }
