@@ -86,9 +86,9 @@ class _FileLibraryPageState extends State<FileLibraryPage> {
     ];
 
     final cloudCategories = [
-      {'name': '百度云盘', 'icon': FlowySvgs.icon_document_s, 'count': 0},
-      {'name': '百度云盘', 'icon': FlowySvgs.icon_document_s, 'count': 0},
-      {'name': '坚果云云盘', 'icon': FlowySvgs.icon_document_s, 'count': 0},
+      {'name': '百度云盘', 'icon': FlowySvgs.baidu_cloud_disk_s, 'count': 0},
+      {'name': '阿里云云盘', 'icon': FlowySvgs.icon_document_s, 'count': 0},
+      {'name': '坚果云云盘', 'icon': FlowySvgs.nuts_cloud_disk_s, 'count': 0},
     ];
 
     return ListView(
