@@ -231,60 +231,142 @@ class _HomePageState extends State<HomePage> {
     return Container(
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        color: isLightMode ? Colors.grey.shade50 : const Color(0xFF2C2F33),
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(
-          color: isLightMode ? Colors.grey.shade200 : const Color(0xFF3A3D42),
-        ),
+        color: isLightMode ? const Color(0xFF2F3349) : const Color(0xFF2F3349),
+        borderRadius: BorderRadius.circular(16.0),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              const Spacer(),
-              // 添加关闭按钮（当AI聊天叠加层显示时可见）
-
-            ],
-          ),
-          const SizedBox(height: 16.0),
+          // 主要输入框
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
             decoration: BoxDecoration(
-              color: isLightMode ? Colors.white : const Color(0xFF36393F),
-              borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(
-                color: isLightMode ? Colors.grey.shade300 : const Color(0xFF4A4D52),
-              ),
+              color: const Color(0xFF3A3F5C),
+              borderRadius: BorderRadius.circular(12.0),
             ),
             child: Row(
               children: [
-                FlowySvg(
-                  FlowySvgs.icon_ai_s,
-                  size: const Size.square(16),
-                  color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
-                ),
-                const SizedBox(width: 12.0),
-                Text(
-                  "在小马笔记中问您想了解的事情...",
-                  style: TextStyle(
-                    color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
-                    fontSize: 14,
+                const SizedBox(width: 8.0),
+                Expanded(
+                  child: Text(
+                    "在小马笔记中可以问或找到每一件事...",
+                    style: TextStyle(
+                      color: Colors.grey.shade400,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12.0),
-          Text(
-            "在小马笔记中可以问或找到每一件事...",
-            style: TextStyle(
-              color: isLightMode ? Colors.grey.shade600 : const Color(0xFF9E9E9E),
-              fontSize: 14,
-            ),
+          const SizedBox(height: 16.0),
+          
+          // 功能按钮行
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              // 选择模型下拉框
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4A4F6C),
+                  borderRadius: BorderRadius.circular(8.0),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "选择模型",
+                      style: TextStyle(
+                        color: Colors.grey.shade300,
+                        fontSize: 12,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 16,
+                      color: Colors.grey.shade300,
+                    ),
+                  ],
+                ),
+              ),
+              
+              const Spacer(),
+              
+              // 右侧功能按钮
+              Row(
+                children: [
+                  _buildActionButton(
+                    icon: Icons.image_outlined,
+                    onTap: () {
+                      // 处理图片功能
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildActionButton(
+                    icon: Icons.language,
+                    onTap: () {
+                      // 处理语言功能
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildActionButton(
+                    icon: Icons.attach_file_outlined,
+                    onTap: () {
+                      // 处理附件功能
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _buildActionButton(
+                    icon: Icons.more_horiz,
+                    onTap: () {
+                      // 处理更多功能
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  // 发送按钮
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.orange,
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    child: const Icon(
+                      Icons.send,
+                      size: 16,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8.0),
+      child: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: const Color(0xFF4A4F6C),
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: Colors.grey.shade300,
+        ),
       ),
     );
   }
