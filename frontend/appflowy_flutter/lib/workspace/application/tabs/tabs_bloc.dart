@@ -232,8 +232,27 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
           await ViewBackendService.getViewAncestors(view.id)
               .fold((s) => s.items.map((e) => e.id).toList(), (f) => []);
       ViewExpander? viewExpander;
-      for (final id in ancestors) {
-        expandedViews[id] = true;
+      
+      // Get all ancestor views to check if they are spaces
+      final List<ViewPB> ancestorViews = await ViewBackendService.getViewAncestors(view.id)
+          .fold((s) => s.items, (f) => <ViewPB>[]);
+      
+      for (int i = 0; i < ancestors.length; i++) {
+        final id = ancestors[i];
+        final ancestorView = i < ancestorViews.length ? ancestorViews[i] : null;
+        
+        // For space views, only expand if they were already explicitly expanded by user
+        if (ancestorView != null && ancestorView.isSpace) {
+          // Only set to true if it was already true (user previously expanded it)
+          if (expandedViews[id] == true) {
+            expandedViews[id] = true;
+          }
+          // Don't force expand spaces that haven't been explicitly expanded
+        } else {
+          // For non-space ancestors, expand as usual
+          expandedViews[id] = true;
+        }
+        
         final expander = viewExpanderRegistry.getExpander(id);
         if (expander == null) continue;
         if (!expander.isViewExpanded && viewExpander == null) {

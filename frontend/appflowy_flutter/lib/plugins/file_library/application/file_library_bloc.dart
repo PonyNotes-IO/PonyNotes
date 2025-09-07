@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:appflowy_backend/protobuf/flowy-database2/media_entities.pbenum.dart';
 
 import 'file_library_models.dart';
 import 'file_library_service.dart';
@@ -27,6 +28,8 @@ class FileLibraryBloc extends Bloc<FileLibraryEvent, FileLibraryState> {
       categoryChanged: (category) => _onCategoryChanged(category, emit),
       refreshFiles: () => _onRefreshFiles(emit),
       deleteFile: (fileId) => _onDeleteFile(fileId, emit),
+      importPdfFile: () => _onImportPdfFile(emit),
+      openFile: (fileItem) => _onOpenFile(fileItem, emit),
     );
   }
 
@@ -62,6 +65,62 @@ class FileLibraryBloc extends Bloc<FileLibraryEvent, FileLibraryState> {
       selectedCategory: category,
       filteredFiles: filteredFiles,
     ),);
+  }
+
+  Future<void> _onImportPdfFile(Emitter<FileLibraryState> emit) async {
+    emit(state.copyWith(isImporting: true));
+
+    try {
+      final importedFile = await _service.importPdfFile();
+      if (importedFile != null) {
+        // 重新加载文件列表
+        final files = await _service.getAllFiles();
+        final filteredFiles = state.selectedCategory == FileLibraryCategory.all
+            ? files
+            : files
+                .where((file) => state.selectedCategory.matchesFileType(file.fileType))
+                .toList();
+
+        emit(state.copyWith(
+          isImporting: false,
+          files: files,
+          filteredFiles: filteredFiles,
+          successMessage: 'PDF文件导入成功：${importedFile.name}',
+        ));
+      } else {
+        emit(state.copyWith(
+          isImporting: false,
+          infoMessage: '用户取消了文件选择',
+        ));
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        isImporting: false,
+        error: '导入PDF文件失败：${e.toString()}',
+      ));
+    }
+  }
+
+  Future<void> _onOpenFile(
+    FileLibraryItem fileItem,
+    Emitter<FileLibraryState> emit,
+  ) async {
+    try {
+      if (fileItem.fileType == MediaFileTypePB.Document) {
+        await _service.openPdfFile(fileItem);
+        emit(state.copyWith(
+          successMessage: '正在打开文件：${fileItem.name}',
+        ));
+      } else {
+        emit(state.copyWith(
+          infoMessage: '暂不支持打开此类型文件',
+        ));
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        error: '打开文件失败：${e.toString()}',
+      ));
+    }
   }
 
   Future<void> _onRefreshFiles(Emitter<FileLibraryState> emit) async {
@@ -122,6 +181,8 @@ class FileLibraryEvent with _$FileLibraryEvent {
       _CategoryChanged;
   const factory FileLibraryEvent.refreshFiles() = _RefreshFiles;
   const factory FileLibraryEvent.deleteFile(String fileId) = _DeleteFile;
+  const factory FileLibraryEvent.importPdfFile() = _ImportPdfFile;
+  const factory FileLibraryEvent.openFile(FileLibraryItem fileItem) = _OpenFile;
 }
 
 @freezed
@@ -131,6 +192,9 @@ class FileLibraryState with _$FileLibraryState {
     @Default([]) List<FileLibraryItem> files,
     @Default([]) List<FileLibraryItem> filteredFiles,
     @Default(false) bool isLoading,
+    @Default(false) bool isImporting,
     String? error,
+    String? successMessage,
+    String? infoMessage,
   }) = _FileLibraryState;
 }

@@ -67,10 +67,10 @@ class FolderBloc extends Bloc<FolderEvent, FolderState> {
   Future<bool> _getFolderExpandStatus() async {
     return getIt<KeyValueStorage>().get(KVKeys.expandedViews).then((result) {
       if (result == null) {
-        return true;
+        return false;
       }
       final map = jsonDecode(result);
-      return map[state.type.name] ?? true;
+      return map[state.type.name] ?? false;
     });
   }
 }
@@ -95,6 +95,6 @@ class FolderState with _$FolderState {
   ) =>
       FolderState(
         type: type,
-        isExpanded: true,
+        isExpanded: false,
       );
 }

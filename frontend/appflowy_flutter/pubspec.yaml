@@ -114,6 +114,13 @@ dependencies:
   package_info_plus: ^8.0.2
   path: ^1.8.3
   path_provider: ^2.0.15
+  pdf: ^3.11.1
+  syncfusion_flutter_pdf: ^27.2.5
+  # Advanced PDF processing and rendering
+  pdf_render: ^1.4.11
+  printing: ^5.13.2
+  pdfx: ^2.6.0
+  google_mlkit_text_recognition: ^0.13.1
   percent_indicator: 4.2.3
   permission_handler: ^11.3.1
   pin_code_fields: ^8.0.1
