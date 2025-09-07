@@ -116,30 +116,19 @@ class DesktopHomeScreen extends StatelessWidget {
                   p.latestView != c.latestView || 
                   (p.workspaceSetting == null && c.workspaceSetting != null),
                 listener: (context, state) {
-                  final view = state.latestView;
-                    final currentPageManager =
-                        context.read<TabsBloc>().state.currentPageManager;
+                  final currentPageManager =
+                      context.read<TabsBloc>().state.currentPageManager;
 
                   // Only open views if the current plugin is blank
                   if (currentPageManager.plugin.pluginType == PluginType.blank) {
-                    if (view != null) {
-                      // Open the last opened view if it exists and is not a space
-                      getIt<TabsBloc>().add(
-                        TabsEvent.openPlugin(plugin: view.plugin()),
-                      );
-
-                    // switch to the space that contains the last opened view
-                    _switchToSpace(view);
-                    } else {
-                      // If no latest view, open the homepage by default
-                      final homePlugin = makePlugin(
-                        pluginType: PluginType.homepage,
-                        data: null,
-                      );
-                      getIt<TabsBloc>().add(
-                        TabsEvent.openPlugin(plugin: homePlugin),
-                      );
-                    }
+                    // Always open homepage by default instead of latest view
+                    final homePlugin = makePlugin(
+                      pluginType: PluginType.homepage,
+                      data: null,
+                    );
+                    getIt<TabsBloc>().add(
+                      TabsEvent.openPlugin(plugin: homePlugin),
+                    );
                   }
                 },
                 child: BlocBuilder<HomeSettingBloc, HomeSettingState>(

@@ -1,5 +1,4 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
-import 'package:appflowy/plugins/homepage/ai_chat_overlay.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
@@ -81,11 +80,10 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // AI聊天叠加层可见性状态
-  final ValueNotifier<bool> _isAIChatVisible = ValueNotifier<bool>(false);
+
 
   @override
   void dispose() {
-    _isAIChatVisible.dispose();
     super.dispose();
   }
 
@@ -246,99 +244,52 @@ class _HomePageState extends State<HomePage> {
             children: [
               const Spacer(),
               // 添加关闭按钮（当AI聊天叠加层显示时可见）
-              ValueListenableBuilder<bool>(
-                valueListenable: _isAIChatVisible,
-                builder: (context, isVisible, child) {
-                  if (!isVisible) return const SizedBox.shrink();
-                  return GestureDetector(
-                    onTap: _closeAIChat,
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.black.withValues(alpha: 0.3),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                  );
-                },
-              ),
+
             ],
           ),
           const SizedBox(height: 16.0),
-          GestureDetector(
-            onTap: () {
-              _openAIChat();
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: isLightMode ? Colors.white : const Color(0xFF36393F),
-                borderRadius: BorderRadius.circular(8.0),
-                border: Border.all(
-                  color: isLightMode ? Colors.grey.shade300 : const Color(0xFF4A4D52),
-                ),
-              ),
-              child: Row(
-                children: [
-                  FlowySvg(
-                    FlowySvgs.icon_ai_s,
-                    size: const Size.square(16),
-                    color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
-                  ),
-                  const SizedBox(width: 12.0),
-                  Text(
-                    "在小马笔记中问您想了解的事情...",
-                    style: TextStyle(
-                      color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            decoration: BoxDecoration(
+              color: isLightMode ? Colors.white : const Color(0xFF36393F),
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(
+                color: isLightMode ? Colors.grey.shade300 : const Color(0xFF4A4D52),
               ),
             ),
+            child: Row(
+              children: [
+                FlowySvg(
+                  FlowySvgs.icon_ai_s,
+                  size: const Size.square(16),
+                  color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
+                ),
+                const SizedBox(width: 12.0),
+                Text(
+                  "在小马笔记中问您想了解的事情...",
+                  style: TextStyle(
+                    color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 16.0),
-          Wrap(
-            spacing: 8.0,
-            children: [
-              _buildSuggestionChip("选择模型"),
-              _buildSuggestionChip("智能摘要"),
-              _buildSuggestionChip("数据分析"),
-              _buildSuggestionChip("创意写作"),
-            ],
+          const SizedBox(height: 12.0),
+          Text(
+            "在小马笔记中可以问或找到每一件事...",
+            style: TextStyle(
+              color: isLightMode ? Colors.grey.shade600 : const Color(0xFF9E9E9E),
+              fontSize: 14,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSuggestionChip(String text) {
-    final isLightMode = Theme.of(context).isLightMode;
-    return ActionChip(
-      label: Text(
-        text,
-        style: const TextStyle(fontSize: 12),
-      ),
-      onPressed: () {
-        _openAIChat();
-      },
-      backgroundColor: isLightMode ? Colors.white : const Color(0xFF36393F),
-      side: BorderSide(
-        color: isLightMode ? Colors.grey.shade300 : const Color(0xFF4A4D52),
-      ),
-      labelPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-    );
-  }
+
 
   Widget _buildRecentSection() {
     final isLightMode = Theme.of(context).isLightMode;
@@ -593,27 +544,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  void _openAIChat() {
-    try {
-      // 设置AI聊天为可见状态
-      _isAIChatVisible.value = true;
-      // 使用叠加层显示AI聊天
-      showAIChatOverlay(context, widget.userProfile!).then((_) {
-        // 当对话框关闭时，设置为不可见状态
-        _isAIChatVisible.value = false;
-      });
-    } catch (e) {
-      // 处理错误
-      debugPrint('打开AI聊天时发生错误: $e');
-      _isAIChatVisible.value = false;
-    }
-  }
 
-  void _closeAIChat() {
-    // 关闭AI聊天叠加层
-    Navigator.of(context).pop();
-    _isAIChatVisible.value = false;
-  }
 
   void _openCalendar() {
     try {
