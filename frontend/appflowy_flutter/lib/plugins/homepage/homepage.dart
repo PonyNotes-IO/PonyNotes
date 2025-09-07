@@ -1,17 +1,13 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
-import 'package:appflowy/generated/locale_keys.g.dart';
+import 'package:appflowy/plugins/homepage/ai_chat_overlay.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flowy_infra_ui/style_widget/text.dart';
-import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/util/theme_extension.dart';
-import 'package:get_it/get_it.dart';
 
 class HomePagePluginBuilder extends PluginBuilder {
   @override
@@ -60,6 +56,9 @@ class HomePagePluginWidgetBuilder extends PluginWidgetBuilder
   Widget tabBarItem(String pluginId, [bool shortForm = false]) => const SizedBox.shrink(); // 移除标签栏显示的"主页"
 
   @override
+  EdgeInsets get contentPadding => const EdgeInsets.fromLTRB(40, 0, 40, 28); // 只移除顶部内边距，保持左右和底部内边距
+
+  @override
   Widget buildWidget({
     required PluginContext context,
     required bool shrinkWrap,
@@ -81,6 +80,15 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // AI聊天叠加层可见性状态
+  final ValueNotifier<bool> _isAIChatVisible = ValueNotifier<bool>(false);
+
+  @override
+  void dispose() {
+    _isAIChatVisible.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
@@ -100,23 +108,91 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 32.0),
+        padding: const EdgeInsets.fromLTRB(0, 8.0, 0, 32.0),
         child: Column(
           children: [
             // 问候语 - 居中显示
             Center(child: _buildGreeting(greeting, userName)),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+
+            // 问AI标题
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                children: [
+                  const FlowySvg(
+                    FlowySvgs.icon_ai_s,
+                    size: Size.square(24),
+                  ),
+                  const SizedBox(width: 12.0),
+                  const Text(
+                    "问AI",
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
             // 三个区域并排展示
             Column(
               children: [
                 // 问AI区域
                 _buildAISection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
+
+                // 最近访问标题
+                Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.history,
+                        size: 24,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 12.0),
+                      const Text(
+                        "最近访问",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                 // 最近访问
                 _buildRecentSection(),
-                const SizedBox(height: 24),
+                const SizedBox(height: 32),
+
+                // 待办计划标题
+                Container(
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 24,
+                        color: Colors.grey,
+                      ),
+                      const SizedBox(width: 12.0),
+                      const Text(
+                        "待办计划",
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
 
                 // 待办计划
                 _buildTodoSection(),
@@ -168,17 +244,32 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              const FlowySvg(
-                FlowySvgs.icon_ai_s,
-                size: Size.square(20),
-              ),
-              const SizedBox(width: 8.0),
-              const Text(
-                "问AI",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+              const Spacer(),
+              // 添加关闭按钮（当AI聊天叠加层显示时可见）
+              ValueListenableBuilder<bool>(
+                valueListenable: _isAIChatVisible,
+                builder: (context, isVisible, child) {
+                  if (!isVisible) return const SizedBox.shrink();
+                  return GestureDetector(
+                    onTap: _closeAIChat,
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.black.withValues(alpha: 0.3),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 18,
+                        color: Colors.white,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -263,24 +354,6 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.access_time, 
-                size: 18, 
-                color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "最近访问",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           _buildRecentItem("添加笔记本", "创建您的第一个笔记本"),
         ],
       ),
@@ -351,24 +424,6 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                Icons.task_alt, 
-                size: 18, 
-                color: isLightMode ? Colors.grey : const Color(0xFF9E9E9E),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                "待办计划",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
           // 将日历和待办列表水平排列
           IntrinsicHeight(
             child: Row(
@@ -540,20 +595,24 @@ class _HomePageState extends State<HomePage> {
 
   void _openAIChat() {
     try {
-      final aiChatPlugin = makePlugin(
-        pluginType: PluginType.standaloneAiChat,
-        data: null,
-      );
-
-      getIt<TabsBloc>().add(
-        TabsEvent.openPlugin(
-          plugin: aiChatPlugin,
-        ),
-      );
+      // 设置AI聊天为可见状态
+      _isAIChatVisible.value = true;
+      // 使用叠加层显示AI聊天
+      showAIChatOverlay(context, widget.userProfile!).then((_) {
+        // 当对话框关闭时，设置为不可见状态
+        _isAIChatVisible.value = false;
+      });
     } catch (e) {
       // 处理错误
       debugPrint('打开AI聊天时发生错误: $e');
+      _isAIChatVisible.value = false;
     }
+  }
+
+  void _closeAIChat() {
+    // 关闭AI聊天叠加层
+    Navigator.of(context).pop();
+    _isAIChatVisible.value = false;
   }
 
   void _openCalendar() {
