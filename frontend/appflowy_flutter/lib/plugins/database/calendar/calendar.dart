@@ -1115,7 +1115,6 @@ class CalendarDocumentView extends StatelessWidget {
       providers: [
         BlocProvider(
           create: (context) {
-            debugPrint('CalendarDocumentView - Creating DocumentBloc for view.id: ${view.id}');
             return DocumentBloc(documentId: view.id)
               ..add(const DocumentEvent.initial());
           },
@@ -1126,9 +1125,6 @@ class CalendarDocumentView extends StatelessWidget {
       ],
       child: BlocBuilder<DocumentBloc, DocumentState>(
         builder: (context, state) {
-          // 调试信息
-          debugPrint('CalendarDocumentView - State: isLoading=${state.isLoading}, error=${state.error}, editorState=${state.editorState != null}');
-          
           if (state.isLoading) {
             return const Center(
               child: CircularProgressIndicator.adaptive(),
@@ -1138,11 +1134,9 @@ class CalendarDocumentView extends StatelessWidget {
           final editorState = state.editorState;
           final error = state.error;
           if (error != null || editorState == null) {
-            debugPrint('CalendarDocumentView - Showing error view: error=$error');
             return _buildErrorView(context, error);
           }
 
-          debugPrint('CalendarDocumentView - Showing document view with ${editorState.document.root.children.length} nodes');
           return _buildDocumentView(context, editorState);
         },
       ),
@@ -1211,20 +1205,11 @@ class CalendarDocumentView extends StatelessWidget {
   }
 
   Widget _buildDocumentView(BuildContext context, EditorState editorState) {
-    // 调试文档内容
-    debugPrint('CalendarDocumentView - Document content:');
-    for (int i = 0; i < editorState.document.root.children.length; i++) {
-      final node = editorState.document.root.children[i];
-      debugPrint('  Node $i: type=${node.type}, text="${node.delta?.toPlainText() ?? 'N/A'}"');
-    }
-    
     // 检查文档是否为空或只有空内容
     final hasContent = editorState.document.root.children.any((node) {
       final text = node.delta?.toPlainText() ?? '';
       return text.trim().isNotEmpty;
     });
-    
-    debugPrint('CalendarDocumentView - Has meaningful content: $hasContent');
     
     // 设置编辑器为只读状态
     editorState.editable = false;
