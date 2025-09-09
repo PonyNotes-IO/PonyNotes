@@ -1,5 +1,7 @@
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'import_page_widgets.dart';
 import 'package:appflowy/plugins/import_page/import_service.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
@@ -20,6 +22,8 @@ import 'dart:typed_data';
 import 'package:html2md/html2md.dart' as html2md;
 import 'package:archive/archive.dart';
 import 'enhanced_pdf_import_dialog.dart';
+import 'professional_html_parser.dart';
+import 'html_import_dialog.dart';
 
 class ImportPageScreen extends StatefulWidget {
   const ImportPageScreen({super.key});
@@ -251,62 +255,9 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
         (error) => throw Exception('获取当前工作空间失败: $error'),
       );
 
-      // 获取当前空间（使用第一个公共视图作为默认空间）
-      final workspaceService = WorkspaceService(
-        workspaceId: workspace.id,
-        userId: fixnum.Int64(1), // 使用默认用户ID，这个在实际使用中会被正确设置
-      );
-      
-      final publicViewsResult = await workspaceService.getPublicViews();
-      final publicViews = publicViewsResult.fold(
-        (views) => views,
-        (error) => throw Exception('获取公共视图失败: $error'),
-      );
-
-      // 查找"我的空间" - 明确查找名为"我的空间"的视图
-      ViewPB? mySpace;
-      
-      // 首先尝试找到名为"我的空间"的视图
-      Log.info('查找"我的空间"，可用视图: ${publicViews.map((v) => v.name).toList()}');
-      for (final view in publicViews) {
-        if (view.name == '我的空间') {
-          Log.info('找到"我的空间"视图，ID: ${view.id}');
-          mySpace = view;
-          break;
-        }
-      }
-      
-      // 如果没有找到"我的空间"，尝试查找标记为空间的视图
-      if (mySpace == null) {
-        Log.info('未找到"我的空间"，尝试查找标记为空间的视图');
-        for (final view in publicViews) {
-          if (view.extra.isNotEmpty) {
-            try {
-              final extra = jsonDecode(view.extra);
-              if (extra['is_space'] == true) {
-                Log.info('找到空间视图: ${view.name}，ID: ${view.id}');
-                mySpace = view;
-                break;
-              }
-            } catch (_) {
-              // 忽略解析错误，继续查找
-            }
-          }
-        }
-      }
-      
-      // 如果仍然没有找到空间，使用工作空间的第一个视图，或者创建一个默认空间
-      mySpace ??= publicViews.isNotEmpty 
-          ? publicViews.first 
-          : await _createDefaultSpace(workspaceService);
-
-      if (mySpace == null) {
-        throw Exception('无法找到或创建我的空间');
-      }
-
-      // 检查或创建"外部导入"子项目
-      Log.info('将在视图 "${mySpace.name}" (ID: ${mySpace.id}) 下创建"外部导入"');
-      final externalImportView = await _getOrCreateExternalImportView(mySpace);
+      // 直接在工作空间根目录下检查或创建"外部导入"项目
+      Log.info('在工作空间根目录下检查或创建"外部导入"项目');
+      final externalImportView = await _getOrCreateExternalImportView(workspace.id);
       
       // 使用现有的导入面板逻辑导入CSV文件
       final result = await ImportService.pickAndImportFile('csv');
@@ -321,19 +272,38 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
         ];
 
         // 导入到"外部导入"子项目下
-        await ImportBackendService.importPages(
+        final importResult = await ImportBackendService.importPages(
           externalImportView.id,
           importValues,
         );
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('成功将 ${result.fileName} 导入到外部导入项目'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        }
+        importResult.fold(
+          (views) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('成功将 ${result.fileName} 导入到外部导入项目'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+
+              // 如果有导入的视图，打开第一个
+              if (views.items.isNotEmpty) {
+                context.read<TabsBloc>().openPlugin(views.items.first);
+              }
+            }
+          },
+          (error) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('导入失败: $error'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          },
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -356,62 +326,9 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
         (error) => throw Exception('获取当前工作空间失败: $error'),
       );
 
-      // 获取当前空间（使用第一个公共视图作为默认空间）
-      final workspaceService = WorkspaceService(
-        workspaceId: workspace.id,
-        userId: fixnum.Int64(1), // 使用默认用户ID，这个在实际使用中会被正确设置
-      );
-      
-      final publicViewsResult = await workspaceService.getPublicViews();
-      final publicViews = publicViewsResult.fold(
-        (views) => views,
-        (error) => throw Exception('获取公共视图失败: $error'),
-      );
-
-      // 查找"我的空间" - 明确查找名为"我的空间"的视图
-      ViewPB? mySpace;
-      
-      // 首先尝试找到名为"我的空间"的视图
-      Log.info('查找"我的空间"，可用视图: ${publicViews.map((v) => v.name).toList()}');
-      for (final view in publicViews) {
-        if (view.name == '我的空间') {
-          Log.info('找到"我的空间"视图，ID: ${view.id}');
-          mySpace = view;
-          break;
-        }
-      }
-      
-      // 如果没有找到"我的空间"，尝试查找标记为空间的视图
-      if (mySpace == null) {
-        Log.info('未找到"我的空间"，尝试查找标记为空间的视图');
-        for (final view in publicViews) {
-          if (view.extra.isNotEmpty) {
-            try {
-              final extra = jsonDecode(view.extra);
-              if (extra['is_space'] == true) {
-                Log.info('找到空间视图: ${view.name}，ID: ${view.id}');
-                mySpace = view;
-                break;
-              }
-            } catch (_) {
-              // 忽略解析错误，继续查找
-            }
-          }
-        }
-      }
-      
-      // 如果仍然没有找到空间，使用工作空间的第一个视图，或者创建一个默认空间
-      mySpace ??= publicViews.isNotEmpty 
-          ? publicViews.first 
-          : await _createDefaultSpace(workspaceService);
-
-      if (mySpace == null) {
-        throw Exception('无法找到或创建我的空间');
-      }
-
-      // 检查或创建"外部导入"子项目
-      Log.info('将在视图 "${mySpace.name}" (ID: ${mySpace.id}) 下创建"外部导入"');
-      final externalImportView = await _getOrCreateExternalImportView(mySpace);
+      // 直接在工作空间根目录下检查或创建"外部导入"项目
+      Log.info('在工作空间根目录下检查或创建"外部导入"项目');
+      final externalImportView = await _getOrCreateExternalImportView(workspace.id);
       
       // 选择并读取文本/Markdown文件
       final result = await getIt<FilePickerService>().pickFiles(
@@ -450,21 +367,40 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
 
         if (importValues.isNotEmpty) {
           // 导入到"外部导入"子项目下
-          await ImportBackendService.importPages(
+          final importResult = await ImportBackendService.importPages(
             externalImportView.id,
             importValues,
           );
 
-          if (mounted) {
-            final fileCount = importValues.length;
-            final fileNames = result.files.map((f) => f.name).join(', ');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('成功导入 $fileCount 个文件到外部导入项目：$fileNames'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
+          importResult.fold(
+            (views) {
+              if (mounted) {
+                final fileCount = importValues.length;
+                final fileNames = result.files.map((f) => f.name).join(', ');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('成功导入 $fileCount 个文件到外部导入项目：$fileNames'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+
+                // 如果有导入的视图，打开第一个
+                if (views.items.isNotEmpty) {
+                  context.read<TabsBloc>().openPlugin(views.items.first);
+                }
+              }
+            },
+            (error) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('导入失败: $error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          );
         }
       }
     } catch (e) {
@@ -479,39 +415,25 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
     }
   }
 
-  Future<ViewPB?> _createDefaultSpace(WorkspaceService workspaceService) async {
-    try {
-      final result = await workspaceService.createView(
-        name: '我的空间',
-        viewSection: ViewSectionPB.Public,
-        layout: ViewLayoutPB.Document,
-        extra: jsonEncode({
-          'is_space': true,
-          'space_icon': '🏠',
-          'space_icon_color': '#FF6B6B',
-          'space_permission': 0,
-          'space_created_at': DateTime.now().millisecondsSinceEpoch,
-        }),
-      );
-      return result.fold(
-        (view) => view,
-        (error) {
-          Log.error('创建默认空间失败: $error');
-          return null;
-        },
-      );
-    } catch (e) {
-      Log.error('创建默认空间异常: $e');
-      return null;
-    }
-  }
 
-  Future<ViewPB> _getOrCreateExternalImportView(ViewPB mySpace) async {
+  Future<ViewPB> _getOrCreateExternalImportView(String workspaceId) async {
     const externalImportName = '外部导入';
     
-    // 检查是否已在"我的空间"下存在"外部导入"子项目
-    Log.info('检查是否已存在"外部导入"，当前子视图: ${mySpace.childViews.map((v) => v.name).toList()}');
-    final existingView = mySpace.childViews.firstWhere(
+    // 获取工作空间根目录下的所有公共视图
+    final workspaceService = WorkspaceService(
+      workspaceId: workspaceId,
+      userId: fixnum.Int64(1),
+    );
+    
+    final publicViewsResult = await workspaceService.getPublicViews();
+    final publicViews = publicViewsResult.fold(
+      (views) => views,
+      (error) => throw Exception('获取工作空间视图失败: $error'),
+    );
+    
+    // 检查是否已在工作空间根目录下存在"外部导入"项目
+    Log.info('检查工作空间根目录下是否已存在"外部导入"，当前视图: ${publicViews.map((v) => v.name).toList()}');
+    final existingView = publicViews.firstWhere(
       (view) => view.name == externalImportName,
       orElse: () => ViewPB(),
     );
@@ -521,10 +443,10 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
       return existingView;
     }
 
-    // 在"我的空间"下创建"外部导入"子项目
-    Log.info('创建新的"外部导入"子项目');
+    // 在工作空间根目录下创建"外部导入"项目
+    Log.info('在工作空间根目录下创建新的"外部导入"项目');
     final result = await ViewBackendService.createView(
-      parentViewId: mySpace.id,
+      parentViewId: workspaceId,
       name: externalImportName,
       layoutType: ViewLayoutPB.Document,
     );
@@ -544,62 +466,9 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
         (error) => throw Exception('获取当前工作空间失败: $error'),
       );
 
-      // 获取当前空间（使用第一个公共视图作为默认空间）
-      final workspaceService = WorkspaceService(
-        workspaceId: workspace.id,
-        userId: fixnum.Int64(1), // 使用默认用户ID，这个在实际使用中会被正确设置
-      );
-      
-      final publicViewsResult = await workspaceService.getPublicViews();
-      final publicViews = publicViewsResult.fold(
-        (views) => views,
-        (error) => throw Exception('获取公共视图失败: $error'),
-      );
-
-      // 查找"我的空间" - 明确查找名为"我的空间"的视图
-      ViewPB? mySpace;
-      
-      // 首先尝试找到名为"我的空间"的视图
-      Log.info('查找"我的空间"，可用视图: ${publicViews.map((v) => v.name).toList()}');
-      for (final view in publicViews) {
-        if (view.name == '我的空间') {
-          Log.info('找到"我的空间"视图，ID: ${view.id}');
-          mySpace = view;
-          break;
-        }
-      }
-      
-      // 如果没有找到"我的空间"，尝试查找标记为空间的视图
-      if (mySpace == null) {
-        Log.info('未找到"我的空间"，尝试查找标记为空间的视图');
-        for (final view in publicViews) {
-          if (view.extra.isNotEmpty) {
-            try {
-              final extra = jsonDecode(view.extra);
-              if (extra['is_space'] == true) {
-                Log.info('找到空间视图: ${view.name}，ID: ${view.id}');
-                mySpace = view;
-                break;
-              }
-            } catch (_) {
-              // 忽略解析错误，继续查找
-            }
-          }
-        }
-      }
-      
-      // 如果仍然没有找到空间，使用工作空间的第一个视图，或者创建一个默认空间
-      mySpace ??= publicViews.isNotEmpty 
-          ? publicViews.first 
-          : await _createDefaultSpace(workspaceService);
-
-      if (mySpace == null) {
-        throw Exception('无法找到或创建我的空间');
-      }
-
-      // 检查或创建"外部导入"子项目
-      Log.info('将在视图 "${mySpace.name}" (ID: ${mySpace.id}) 下创建"外部导入"');
-      final externalImportView = await _getOrCreateExternalImportView(mySpace);
+      // 直接在工作空间根目录下检查或创建"外部导入"项目
+      Log.info('在工作空间根目录下检查或创建"外部导入"项目');
+      final externalImportView = await _getOrCreateExternalImportView(workspace.id);
 
       // 显示增强的PDF导入对话框
       if (mounted) {
@@ -657,43 +526,25 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
   
   Future<void> _handleHtmlImport() async {
     try {
-      // 获取当前工作空间和"我的空间"
+      // 先显示导入选项对话框
+      final selectedMode = await showDialog<HtmlImportMode>(
+        context: context,
+        builder: (context) => const HtmlImportDialog(),
+      );
+
+      // 用户取消了对话框
+      if (selectedMode == null) return;
+
+      // 获取当前工作空间
       final workspaceResult = await FolderEventReadCurrentWorkspace().send();
       final workspace = workspaceResult.fold(
         (workspace) => workspace,
         (error) => throw Exception('获取当前工作空间失败: $error'),
       );
 
-      final workspaceService = WorkspaceService(
-        workspaceId: workspace.id,
-        userId: fixnum.Int64(1),
-      );
-      
-      final publicViewsResult = await workspaceService.getPublicViews();
-      final publicViews = publicViewsResult.fold(
-        (views) => views,
-        (error) => throw Exception('获取公共视图失败: $error'),
-      );
-
-      // 查找"我的空间"
-      ViewPB? mySpace;
-      for (final view in publicViews) {
-        if (view.name == '我的空间') {
-          mySpace = view;
-          break;
-        }
-      }
-      
-      mySpace ??= publicViews.isNotEmpty 
-          ? publicViews.first 
-          : await _createDefaultSpace(workspaceService);
-
-      if (mySpace == null) {
-        throw Exception('无法找到或创建我的空间');
-      }
-
-      // 确保有"外部导入"项目
-      final externalImportView = await _getOrCreateExternalImportView(mySpace);
+      // 直接在工作空间根目录下检查或创建"外部导入"项目
+      Log.info('在工作空间根目录下检查或创建"外部导入"项目');
+      final externalImportView = await _getOrCreateExternalImportView(workspace.id);
 
       // 选择HTML文件
       final result = await getIt<FilePickerService>().pickFiles(
@@ -713,22 +564,38 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
           final name = p.basenameWithoutExtension(fileName);
           
           // 读取HTML文件内容
-          Log.info('📄 开始HTML导入处理: $name');
+          Log.info('📄 开始HTML导入处理: $name (模式: ${selectedMode.name})');
           final htmlContent = await File(path).readAsString();
           
-          // 将HTML转换为Markdown
+          // 根据选择的模式处理HTML
           String markdownContent;
-          try {
-            markdownContent = html2md.convert(htmlContent);
-            Log.info('✅ HTML转Markdown成功，内容长度: ${markdownContent.length}');
-          } catch (e) {
-            Log.error('❌ HTML转Markdown失败: $e');
-            // 回退方案：直接清理HTML标签
-            markdownContent = _cleanHtmlToText(htmlContent, name);
+          switch (selectedMode) {
+            case HtmlImportMode.smartParse:
+              markdownContent = ProfessionalHtmlParser.convertHtmlToMarkdown(htmlContent, name);
+              Log.info('✅ 智能HTML解析完成，内容长度: ${markdownContent.length}');
+              break;
+              
+            case HtmlImportMode.showSource:
+              markdownContent = ProfessionalHtmlParser.createHtmlViewerContent(name, htmlContent);
+              Log.info('✅ HTML源代码显示内容创建完成，内容长度: ${markdownContent.length}');
+              break;
+              
+            case HtmlImportMode.legacyParse:
+              try {
+                markdownContent = html2md.convert(htmlContent);
+                Log.info('✅ 传统HTML转Markdown成功，内容长度: ${markdownContent.length}');
+              } catch (e) {
+                Log.error('❌ 传统HTML转Markdown失败: $e');
+                // 回退方案：直接清理HTML标签
+                markdownContent = _cleanHtmlToText(htmlContent, name);
+              }
+              break;
           }
           
-          // 优化Markdown内容
-          markdownContent = _optimizeMarkdownContent(markdownContent, name);
+          // 优化Markdown内容（除了源代码显示模式）
+          if (selectedMode != HtmlImportMode.showSource) {
+            markdownContent = _optimizeMarkdownContent(markdownContent, name);
+          }
           
           Log.info('📋 最终Markdown内容 (前500字符): ${markdownContent.substring(0, markdownContent.length > 500 ? 500 : markdownContent.length)}...');
           
@@ -754,21 +621,41 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
 
         if (importValues.isNotEmpty) {
           // 导入到"外部导入"子项目下
-          await ImportBackendService.importPages(
+          final importResult = await ImportBackendService.importPages(
             externalImportView.id,
             importValues,
           );
 
-          if (mounted) {
-            final fileCount = importValues.length;
-            final fileNames = result.files.map((f) => f.name).join(', ');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('成功导入 $fileCount 个HTML文件到外部导入项目：$fileNames'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
+          importResult.fold(
+            (views) {
+              if (mounted) {
+                final fileCount = importValues.length;
+                final fileNames = result.files.map((f) => f.name).join(', ');
+                final modeDescription = _getImportModeDescription(selectedMode);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('成功使用$modeDescription导入 $fileCount 个HTML文件到外部导入项目：$fileNames'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+
+                // 如果有导入的视图，打开第一个
+                if (views.items.isNotEmpty) {
+                  context.read<TabsBloc>().openPlugin(views.items.first);
+                }
+              }
+            },
+            (error) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('导入失败: $error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          );
         }
       }
     } catch (e) {
@@ -781,6 +668,17 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
           ),
         );
       }
+    }
+  }
+
+  String _getImportModeDescription(HtmlImportMode mode) {
+    switch (mode) {
+      case HtmlImportMode.smartParse:
+        return '智能解析';
+      case HtmlImportMode.showSource:
+        return 'HTML源代码显示';
+      case HtmlImportMode.legacyParse:
+        return '传统解析';
     }
   }
 
@@ -828,43 +726,16 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
 
   Future<void> _handleWordImport() async {
     try {
-      // 获取当前工作空间和"我的空间"
+      // 获取当前工作空间
       final workspaceResult = await FolderEventReadCurrentWorkspace().send();
       final workspace = workspaceResult.fold(
         (workspace) => workspace,
         (error) => throw Exception('获取当前工作空间失败: $error'),
       );
 
-      final workspaceService = WorkspaceService(
-        workspaceId: workspace.id,
-        userId: fixnum.Int64(1),
-      );
-      
-      final publicViewsResult = await workspaceService.getPublicViews();
-      final publicViews = publicViewsResult.fold(
-        (views) => views,
-        (error) => throw Exception('获取公共视图失败: $error'),
-      );
-
-      // 查找"我的空间"
-      ViewPB? mySpace;
-      for (final view in publicViews) {
-        if (view.name == '我的空间') {
-          mySpace = view;
-          break;
-        }
-      }
-      
-      mySpace ??= publicViews.isNotEmpty 
-          ? publicViews.first 
-          : await _createDefaultSpace(workspaceService);
-
-      if (mySpace == null) {
-        throw Exception('无法找到或创建我的空间');
-      }
-
-      // 确保有"外部导入"项目
-      final externalImportView = await _getOrCreateExternalImportView(mySpace);
+      // 直接在工作空间根目录下检查或创建"外部导入"项目
+      Log.info('在工作空间根目录下检查或创建"外部导入"项目');
+      final externalImportView = await _getOrCreateExternalImportView(workspace.id);
 
       // 选择Word文件
       final result = await getIt<FilePickerService>().pickFiles(
@@ -935,21 +806,40 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
 
         if (importValues.isNotEmpty) {
           // 导入到"外部导入"子项目下
-          await ImportBackendService.importPages(
+          final importResult = await ImportBackendService.importPages(
             externalImportView.id,
             importValues,
           );
 
-          if (mounted) {
-            final fileCount = importValues.length;
-            final fileNames = result.files.map((f) => f.name).join(', ');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('成功导入 $fileCount 个Word文件到外部导入项目：$fileNames'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          }
+          importResult.fold(
+            (views) {
+              if (mounted) {
+                final fileCount = importValues.length;
+                final fileNames = result.files.map((f) => f.name).join(', ');
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('成功导入 $fileCount 个Word文件到外部导入项目：$fileNames'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+
+                // 如果有导入的视图，打开第一个
+                if (views.items.isNotEmpty) {
+                  context.read<TabsBloc>().openPlugin(views.items.first);
+                }
+              }
+            },
+            (error) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('导入失败: $error'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          );
         }
       }
     } catch (e) {
@@ -1002,8 +892,8 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
         throw Exception('无法找到document.xml文件');
       }
       
-      // 读取XML内容
-      final xmlContent = String.fromCharCodes(documentXml.content as List<int>);
+      // 读取XML内容，使用正确的UTF-8解码
+      final xmlContent = utf8.decode(documentXml.content as List<int>, allowMalformed: true);
       
       // 从XML中提取文本内容
       return _extractTextFromDocumentXml(xmlContent);
@@ -1016,49 +906,80 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
   /// 从document.xml中提取纯文本
   String _extractTextFromDocumentXml(String xmlContent) {
     try {
-      // 简单的XML文本提取：找到所有<w:t>标签中的内容
+      // 改进的XML文本提取：处理更多的文本标签和编码问题
+      final textBuffer = StringBuffer();
+      
+      // 1. 提取<w:t>标签中的内容（主要文本内容）
       final RegExp textPattern = RegExp(r'<w:t[^>]*>([^<]*)</w:t>');
       final matches = textPattern.allMatches(xmlContent);
       
-      final textBuffer = StringBuffer();
       for (final match in matches) {
         final text = match.group(1);
         if (text != null && text.trim().isNotEmpty) {
-          textBuffer.write(text);
+          // 解码XML实体
+          final decodedText = _decodeXmlEntities(text);
+          textBuffer.write(decodedText);
           textBuffer.write(' '); // 在文本片段之间添加空格
         }
       }
       
-      // 处理段落分隔：查找<w:p>标签，在段落之间添加换行
-      String result = textBuffer.toString();
-      
-      // 简单的段落处理：寻找可能的段落边界标记
-      final RegExp paragraphPattern = RegExp(r'<w:p[^>]*>');
-      final paragraphMatches = paragraphPattern.allMatches(xmlContent);
-      
-      if (paragraphMatches.length > 1) {
-        // 如果检测到多个段落，尝试在适当位置添加换行
-        result = result.replaceAll(RegExp(r'\s+'), ' '); // 规范化空格
+      // 2. 如果没有找到<w:t>标签，尝试提取其他可能的文本标签
+      if (textBuffer.isEmpty) {
+        // 尝试提取<w:instrText>标签（域代码文本）
+        final RegExp instrTextPattern = RegExp(r'<w:instrText[^>]*>([^<]*)</w:instrText>');
+        final instrMatches = instrTextPattern.allMatches(xmlContent);
         
-        // 简单的段落分割策略：每80个字符左右寻找句号后换行
-        final words = result.split(' ');
-        final lines = <String>[];
-        String currentLine = '';
-        
-        for (final word in words) {
-          if (currentLine.length + word.length > 80 && currentLine.contains('。')) {
-            lines.add(currentLine.trim());
-            currentLine = word;
-          } else {
-            currentLine += '$word ';
+        for (final match in instrMatches) {
+          final text = match.group(1);
+          if (text != null && text.trim().isNotEmpty) {
+            final decodedText = _decodeXmlEntities(text);
+            textBuffer.write(decodedText);
+            textBuffer.write(' ');
           }
         }
+      }
+      
+      // 改进的段落处理：基于XML结构重建文本
+      String result = _reconstructTextWithStructure(xmlContent, textBuffer.toString());
+      
+      // 如果结构化重建失败，使用简单的文本处理
+      if (result.trim().isEmpty) {
+        result = textBuffer.toString();
         
-        if (currentLine.trim().isNotEmpty) {
-          lines.add(currentLine.trim());
+        // 规范化空格和换行
+        result = result.replaceAll(RegExp(r'\s+'), ' ').trim();
+        
+        // 简单的段落分割：基于句号和长度
+        if (result.length > 100) {
+          final sentences = result.split(RegExp(r'[。！？]'));
+          final paragraphs = <String>[];
+          String currentParagraph = '';
+          
+          for (final sentence in sentences) {
+            final trimmed = sentence.trim();
+            if (trimmed.isEmpty) continue;
+            
+            if (currentParagraph.length + trimmed.length > 200) {
+              if (currentParagraph.isNotEmpty) {
+                paragraphs.add(currentParagraph.trim());
+                currentParagraph = trimmed;
+              }
+            } else {
+              currentParagraph += trimmed;
+              if (sentence != sentences.last) {
+                currentParagraph += sentence.endsWith('。') ? '。' : 
+                                   sentence.endsWith('！') ? '！' : 
+                                   sentence.endsWith('？') ? '？' : '。';
+              }
+            }
+          }
+          
+          if (currentParagraph.trim().isNotEmpty) {
+            paragraphs.add(currentParagraph.trim());
+          }
+          
+          result = paragraphs.join('\n\n');
         }
-        
-        result = lines.join('\n\n');
       }
       
       return result.trim();
@@ -1226,6 +1147,85 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
 
 如果问题持续，请联系技术支持。
 ''';
+  }
+
+  /// 基于XML结构重建文本，保持段落和格式
+  String _reconstructTextWithStructure(String xmlContent, String extractedText) {
+    try {
+      final paragraphs = <String>[];
+      
+      // 找到所有段落<w:p>
+      final RegExp paragraphPattern = RegExp(r'<w:p[^>]*>(.*?)</w:p>', dotAll: true);
+      final paragraphMatches = paragraphPattern.allMatches(xmlContent);
+      
+      for (final paragraphMatch in paragraphMatches) {
+        final paragraphXml = paragraphMatch.group(1) ?? '';
+        
+        // 从段落中提取文本
+        final RegExp textPattern = RegExp(r'<w:t[^>]*>([^<]*)</w:t>');
+        final textMatches = textPattern.allMatches(paragraphXml);
+        
+        final paragraphBuffer = StringBuffer();
+        for (final textMatch in textMatches) {
+          final text = textMatch.group(1);
+          if (text != null && text.trim().isNotEmpty) {
+            final decodedText = _decodeXmlEntities(text);
+            paragraphBuffer.write(decodedText);
+          }
+        }
+        
+        final paragraphText = paragraphBuffer.toString().trim();
+        if (paragraphText.isNotEmpty) {
+          // 检查是否是表格行
+          if (paragraphXml.contains('<w:tbl>') || paragraphXml.contains('<w:tc>')) {
+            // 表格内容，添加特殊格式
+            paragraphs.add('| $paragraphText |');
+          } else if (_isLikelyListItem(paragraphText)) {
+            // 列表项
+            paragraphs.add(_formatAsListItem(paragraphText));
+          } else {
+            // 普通段落
+            paragraphs.add(paragraphText);
+          }
+        }
+      }
+      
+      // 如果没有找到段落，返回空字符串让调用者使用备用方法
+      if (paragraphs.isEmpty) {
+        return '';
+      }
+      
+      return paragraphs.join('\n\n');
+    } catch (e) {
+      Log.error('结构化文本重建失败: $e');
+      return ''; // 返回空字符串，让调用者使用备用方法
+    }
+  }
+
+  /// 解码XML实体
+  String _decodeXmlEntities(String text) {
+    return text
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&quot;', '"')
+        .replaceAll('&apos;', "'")
+        // 处理数字字符引用
+        .replaceAllMapped(RegExp(r'&#(\d+);'), (match) {
+          final codePoint = int.tryParse(match.group(1)!);
+          if (codePoint != null && codePoint > 0 && codePoint <= 0x10FFFF) {
+            return String.fromCharCode(codePoint);
+          }
+          return match.group(0)!;
+        })
+        // 处理十六进制字符引用
+        .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (match) {
+          final codePoint = int.tryParse(match.group(1)!, radix: 16);
+          if (codePoint != null && codePoint > 0 && codePoint <= 0x10FFFF) {
+            return String.fromCharCode(codePoint);
+          }
+          return match.group(0)!;
+        });
   }
   
 }

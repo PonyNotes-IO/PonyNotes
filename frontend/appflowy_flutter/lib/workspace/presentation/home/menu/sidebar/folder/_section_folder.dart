@@ -161,6 +161,10 @@ class _SectionFolderState extends State<SectionFolder> {
       return [];
     }
 
+    // 为"我的空间"的子项目设置适当的缩进级别
+    final bool isMySpaceSection = widget.title == "我的空间";
+    final int itemLevel = isMySpaceSection ? 1 : 0; // 我的空间下的项目缩进一级
+
     return widget.views.map(
       (view) => ViewItem(
         key: ValueKey('${widget.spaceType.name} ${view.id}'),
@@ -168,7 +172,7 @@ class _SectionFolderState extends State<SectionFolder> {
         engagedInExpanding: true,
         isFirstChild: view.id == widget.views.first.id,
         view: view,
-        level: 0,
+        level: itemLevel, // 使用计算得出的缩进级别
         leftPadding: HomeSpaceViewSizes.leftPadding,
         isFeedback: false,
         isHovered: isHovered,

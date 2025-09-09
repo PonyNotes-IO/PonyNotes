@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'lib/plugins/document_loader/hybrid_pdf_service.dart';
+import 'lib/plugins/document_loader/pdf_import_service.dart';
 
 /// 🎯 提取PDF并保存为Markdown文件的脚本
 Future<void> main() async {
@@ -17,53 +17,49 @@ Future<void> main() async {
     }
     
     // 处理PDF
-    final result = await HybridPdfService.processPdf(pdfPath);
+    final stopwatch = Stopwatch()..start();
+    final markdownContent = await PdfImportService.convertPdfToMarkdown(pdfPath);
+    stopwatch.stop();
     
     // 生成输出文件名
     final pdfFileName = pdfPath.split('/').last.replaceAll('.pdf', '');
     final outputPath = '/Users/kuncao/github.com/PonyNotes-IO/PonyNotes/frontend/appflowy_flutter/${pdfFileName}_extracted.md';
     
-    // 创建Markdown内容
-    final markdownContent = '''# ${pdfFileName}
+    // 添加处理信息到Markdown内容
+    final enhancedContent = '''# ${pdfFileName}
 
 > 📄 **原始文件**: ${pdfPath.split('/').last}  
-> ⚡ **处理方法**: ${result.method}  
-> 🕐 **处理时间**: ${result.processingTime.inMilliseconds}ms  
-> 📊 **内容长度**: ${result.content.length} 字符  
-> 📋 **表格数量**: ${result.tableCount}  
-> 🖼️ **图像数量**: ${result.imageCount}  
-> ✅ **处理状态**: ${result.hasErrors ? '有错误' : '成功'}
+> ⚡ **处理方法**: PdfImportService (Syncfusion)  
+> 🕐 **处理时间**: ${stopwatch.elapsedMilliseconds}ms  
+> 📊 **内容长度**: ${markdownContent.length} 字符  
+> ✅ **处理状态**: 成功
 
 ---
 
-## 提取的内容
-
-${result.content}
+${markdownContent}
 
 ---
 
-*由 HybridPdfService 自动提取于 ${DateTime.now().toString()}*
+*由 PdfImportService 自动提取于 ${DateTime.now().toString()}*
 ''';
 
     // 保存到文件
     final outputFile = File(outputPath);
-    await outputFile.writeAsString(markdownContent);
+    await outputFile.writeAsString(enhancedContent);
     
     print('✅ 提取完成！');
     print('📄 输出文件: $outputPath');
     print('📊 内容统计:');
-    print('   - 处理方法: ${result.method}');
-    print('   - 处理时间: ${result.processingTime.inMilliseconds}ms');
-    print('   - 内容长度: ${result.content.length} 字符');
-    print('   - 表格数量: ${result.tableCount}');
-    print('   - 图像数量: ${result.imageCount}');
+    print('   - 处理方法: PdfImportService (Syncfusion)');
+    print('   - 处理时间: ${stopwatch.elapsedMilliseconds}ms');
+    print('   - 内容长度: ${markdownContent.length} 字符');
     print('   - 文件大小: ${(await outputFile.stat()).size} bytes');
     
     // 显示内容预览
-    if (result.content.isNotEmpty) {
-      final preview = result.content.length > 300 
-          ? result.content.substring(0, 300) + '...'
-          : result.content;
+    if (markdownContent.isNotEmpty) {
+      final preview = markdownContent.length > 300 
+          ? markdownContent.substring(0, 300) + '...'
+          : markdownContent;
       print('\n📋 内容预览:');
       print('$preview');
     }
