@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
 import '../config/ai_config.dart';
 
 /// AI聊天消息模型
@@ -73,7 +74,12 @@ class AIChatService {
   /// 初始化服务
   Future<void> initialize() async {
     await _configService.loadConfig();
-    _httpClient = http.Client();
+    
+    // 创建配置了连接设置的HTTP客户端
+    final httpClient = HttpClient();
+    httpClient.connectionTimeout = const Duration(seconds: 30);
+    httpClient.idleTimeout = const Duration(seconds: 60);
+    _httpClient = IOClient(httpClient);
   }
 
   /// 释放资源
@@ -133,37 +139,74 @@ class AIChatService {
 
     debugPrint('🚀 发送请求到 ${provider.displayName}: ${config.apiBase}/chat/completions');
 
-    final response = await _httpClient!.post(
-      Uri.parse('${config.apiBase}/chat/completions'),
-      headers: headers,
-      body: jsonEncode(body),
-    ).timeout(const Duration(seconds: 30));
+    // 添加重试机制
+    int retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        final response = await _httpClient!.post(
+          Uri.parse('${config.apiBase}/chat/completions'),
+          headers: headers,
+          body: jsonEncode(body),
+        ).timeout(const Duration(seconds: 60));
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(utf8.decode(response.bodyBytes));
-      final content = responseData['choices']?[0]?['message']?['content'] ?? '';
-      
-      debugPrint('✅ ${provider.displayName} 响应成功');
-      
-      return AIChatResponse(
-        content: content,
-        metadata: {
-          'provider': provider.displayName,
-          'model': config.modelName,
-          'usage': responseData['usage'],
-        },
-      );
-    } else {
-      final errorData = jsonDecode(utf8.decode(response.bodyBytes));
-      final errorMessage = errorData['error']?['message'] ?? '未知错误';
-      
-      debugPrint('❌ ${provider.displayName} 请求失败: ${response.statusCode} - $errorMessage');
-      
-      return AIChatResponse(
-        content: '',
-        error: '${provider.displayName} 请求失败: $errorMessage',
-      );
+        if (response.statusCode == 200) {
+          final responseData = jsonDecode(utf8.decode(response.bodyBytes));
+          final content = responseData['choices']?[0]?['message']?['content'] ?? '';
+          
+          debugPrint('✅ ${provider.displayName} 响应成功');
+          
+          return AIChatResponse(
+            content: content,
+            metadata: {
+              'provider': provider.displayName,
+              'model': config.modelName,
+              'usage': responseData['usage'],
+            },
+          );
+        } else {
+          final errorData = jsonDecode(utf8.decode(response.bodyBytes));
+          final errorMessage = errorData['error']?['message'] ?? '未知错误';
+          
+          debugPrint('❌ ${provider.displayName} 请求失败: ${response.statusCode} - $errorMessage');
+          
+          // 如果是服务器错误且还有重试次数，则重试
+          if (response.statusCode >= 500 && retryCount < maxRetries - 1) {
+            retryCount++;
+            debugPrint('🔄 ${provider.displayName} 重试第 $retryCount 次...');
+            await Future.delayed(Duration(milliseconds: 1000 * retryCount));
+            continue;
+          }
+          
+          return AIChatResponse(
+            content: '',
+            error: '${provider.displayName} 请求失败: $errorMessage',
+          );
+        }
+      } catch (e) {
+        debugPrint('❌ ${provider.displayName} 连接错误: $e');
+        
+        // 如果是连接错误且还有重试次数，则重试
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          debugPrint('🔄 ${provider.displayName} 连接重试第 $retryCount 次...');
+          await Future.delayed(Duration(milliseconds: 2000 * retryCount));
+          continue;
+        }
+        
+        return AIChatResponse(
+          content: '',
+          error: '${provider.displayName} 连接失败: ${e.toString()}',
+        );
+      }
     }
+    
+    // 如果所有重试都失败了
+    return AIChatResponse(
+      content: '',
+      error: '${provider.displayName} 请求失败，已重试 $maxRetries 次',
+    );
   }
 
   /// 发送流式消息
@@ -177,55 +220,92 @@ class AIChatService {
 
     debugPrint('🌊 发送流式请求到 ${provider.displayName}');
 
-    final request = http.Request('POST', Uri.parse('${config.apiBase}/chat/completions'));
-    request.headers.addAll(headers);
-    request.body = jsonEncode(body);
+    // 添加重试机制
+    int retryCount = 0;
+    const maxRetries = 3;
+    
+    while (retryCount < maxRetries) {
+      try {
+        final request = http.Request('POST', Uri.parse('${config.apiBase}/chat/completions'));
+        request.headers.addAll(headers);
+        request.body = jsonEncode(body);
 
-    final streamedResponse = await _httpClient!.send(request).timeout(const Duration(seconds: 60));
+        final streamedResponse = await _httpClient!.send(request).timeout(const Duration(seconds: 90));
 
-    if (streamedResponse.statusCode == 200) {
-      final responseBuffer = StringBuffer();
-      
-      await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
-        final lines = chunk.split('\n');
-        for (final line in lines) {
-          if (line.startsWith('data: ')) {
-            final data = line.substring(6);
-            if (data.trim() == '[DONE]') break;
-            
-            try {
-              final jsonData = jsonDecode(data);
-              final content = jsonData['choices']?[0]?['delta']?['content'];
-              if (content != null) {
-                responseBuffer.write(content);
+        if (streamedResponse.statusCode == 200) {
+          final responseBuffer = StringBuffer();
+          
+          await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+            final lines = chunk.split('\n');
+            for (final line in lines) {
+              if (line.startsWith('data: ')) {
+                final data = line.substring(6);
+                if (data.trim() == '[DONE]') break;
+                
+                try {
+                  final jsonData = jsonDecode(data);
+                  final content = jsonData['choices']?[0]?['delta']?['content'];
+                  if (content != null) {
+                    responseBuffer.write(content);
+                  }
+                } catch (e) {
+                  // 忽略解析错误，继续处理下一行
+                }
               }
-            } catch (e) {
-              // 忽略解析错误，继续处理下一行
             }
           }
+
+          final finalContent = responseBuffer.toString();
+          debugPrint('✅ ${provider.displayName} 流式响应完成，长度: ${finalContent.length}');
+
+          return AIChatResponse(
+            content: finalContent,
+            metadata: {
+              'provider': provider.displayName,
+              'model': config.modelName,
+              'stream': true,
+            },
+          );
+        } else {
+          final errorResponse = await streamedResponse.stream.bytesToString();
+          debugPrint('❌ ${provider.displayName} 流式请求失败: ${streamedResponse.statusCode} - $errorResponse');
+          
+          // 如果是服务器错误且还有重试次数，则重试
+          if (streamedResponse.statusCode >= 500 && retryCount < maxRetries - 1) {
+            retryCount++;
+            debugPrint('🔄 ${provider.displayName} 重试第 $retryCount 次...');
+            await Future.delayed(Duration(milliseconds: 1000 * retryCount)); // 递增延迟
+            continue;
+          }
+          
+          return AIChatResponse(
+            content: '',
+            error: '${provider.displayName} 流式请求失败: HTTP ${streamedResponse.statusCode}',
+          );
         }
+      } catch (e) {
+        debugPrint('❌ ${provider.displayName} 连接错误: $e');
+        
+        // 如果是连接错误且还有重试次数，则重试
+        if (retryCount < maxRetries - 1) {
+          retryCount++;
+          debugPrint('🔄 ${provider.displayName} 连接重试第 $retryCount 次...');
+          await Future.delayed(Duration(milliseconds: 2000 * retryCount)); // 递增延迟
+          continue;
+        }
+        
+        return AIChatResponse(
+          content: '',
+          error: '${provider.displayName} 连接失败: ${e.toString()}',
+        );
       }
-
-      final finalContent = responseBuffer.toString();
-      debugPrint('✅ ${provider.displayName} 流式响应完成，长度: ${finalContent.length}');
-
-      return AIChatResponse(
-        content: finalContent,
-        metadata: {
-          'provider': provider.displayName,
-          'model': config.modelName,
-          'stream': true,
-        },
-      );
-    } else {
-      final errorResponse = await streamedResponse.stream.bytesToString();
-      debugPrint('❌ ${provider.displayName} 流式请求失败: ${streamedResponse.statusCode} - $errorResponse');
-      
-      return AIChatResponse(
-        content: '',
-        error: '${provider.displayName} 流式请求失败',
-      );
     }
+    
+    // 如果所有重试都失败了
+    return AIChatResponse(
+      content: '',
+      error: '${provider.displayName} 请求失败，已重试 $maxRetries 次',
+    );
   }
 
   /// 构建请求头

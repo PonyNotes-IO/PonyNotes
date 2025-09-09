@@ -3,9 +3,7 @@ import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
-import 'package:appflowy_backend/protobuf/flowy-ai/entities.pb.dart';
-import 'package:appflowy/ai/service/ai_model_state_notifier.dart';
-import 'package:appflowy/ai/widgets/prompt_input/select_model_menu.dart';
+import 'package:appflowy/plugins/homepage/widgets/simple_model_selector.dart';
 import 'package:appflowy/plugins/interactive_ai_chat/interactive_ai_chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
@@ -84,29 +82,16 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _aiInputController = TextEditingController();
   final FocusNode _aiInputFocusNode = FocusNode();
-  late AIModelStateNotifier _aiModelStateNotifier;
-  AIModelPB? _selectedModel;
 
   @override
   void initState() {
     super.initState();
-    _aiModelStateNotifier = AIModelStateNotifier(objectId: 'homepage');
-    _aiModelStateNotifier.addListener(
-      onAvailableModelsChanged: (models, selectedModel) {
-        if (mounted) {
-          setState(() {
-            _selectedModel = selectedModel;
-          });
-        }
-      },
-    );
   }
 
   @override
   void dispose() {
     _aiInputController.dispose();
     _aiInputFocusNode.dispose();
-    _aiModelStateNotifier.dispose();
     super.dispose();
   }
 
@@ -123,7 +108,6 @@ class _HomePageState extends State<HomePage> {
         pluginType: PluginType.standaloneAiChat,
         data: {
           'initialText': text,
-          'selectedModel': _selectedModel,
         },
       );
 
@@ -367,8 +351,11 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // 选择模型下拉框
-              SelectModelMenu(
-                aiModelStateNotifier: _aiModelStateNotifier,
+              SimpleModelSelector(
+                onModelChanged: (model) {
+                  // 处理模型变更
+                  debugPrint('选择了模型: $model');
+                },
               ),
               
               // 右侧功能按钮

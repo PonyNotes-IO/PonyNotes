@@ -12,6 +12,7 @@ import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/config/ai_config.dart';
 
 import 'browse_prompts_button.dart';
 
@@ -700,10 +701,159 @@ class _PromptBottomActions extends StatelessWidget {
   }
 
   Widget _selectModelButton(BuildContext context) {
-    return SelectModelMenu(
-      aiModelStateNotifier:
-          context.read<AIPromptInputBloc>().aiModelStateNotifier,
+    // 使用简化的模型选择器，类似主页样式
+    return BlocBuilder<AIPromptInputBloc, AIPromptInputState>(
+      builder: (context, state) {
+        return _buildSimpleModelSelector(context);
+      },
     );
+  }
+
+  Widget _buildSimpleModelSelector(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    return FutureBuilder(
+      future: _loadAIConfig(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            height: DesktopAIPromptSizes.actionBarButtonSize,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          );
+        }
+        
+        final configData = snapshot.data;
+        final availableProviders = configData?['providers'] as List<String>? ?? ['DeepSeek', '通义千问', '豆包'];
+        final selectedModel = configData?['selected'] as String? ?? availableProviders.first;
+        
+        return Container(
+          height: DesktopAIPromptSizes.actionBarButtonSize,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: theme.dividerColor.withOpacity(0.5)),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              value: availableProviders.contains(selectedModel) ? selectedModel : availableProviders.first,
+              isDense: true,
+              items: availableProviders.map((model) {
+                return DropdownMenuItem<String>(
+                  value: model,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getModelIcon(model),
+                        size: 16,
+                        color: theme.primaryColor,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        model,
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (model) async {
+                if (model != null) {
+                  await _saveSelectedModel(model);
+                  // 模型选择已更新，无需手动触发重建
+                  // FutureBuilder会自动处理状态更新
+                }
+              },
+              dropdownColor: theme.colorScheme.surface,
+              style: TextStyle(
+                color: theme.textTheme.bodyMedium?.color,
+                fontSize: 13,
+              ),
+              icon: Icon(
+                Icons.arrow_drop_down,
+                size: 16,
+                color: theme.hintColor,
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+  
+  Future<Map<String, dynamic>> _loadAIConfig() async {
+    try {
+      // 导入AI配置服务
+      final configService = AIConfigService.instance;
+      await configService.loadConfig();
+      
+      final availableProviders = configService.getAvailableProviders();
+      final currentProvider = configService.currentProvider;
+      
+      final providerNames = availableProviders.map((provider) {
+        switch (provider) {
+          case AIProvider.deepseek:
+            return 'DeepSeek';
+          case AIProvider.qwen:
+            return '通义千问';
+          case AIProvider.doubao:
+            return '豆包';
+        }
+      }).toList();
+      
+      final selectedName = switch (currentProvider) {
+        AIProvider.deepseek => 'DeepSeek',
+        AIProvider.qwen => '通义千问',
+        AIProvider.doubao => '豆包',
+      };
+      
+      return {
+        'providers': providerNames.isNotEmpty ? providerNames : ['DeepSeek', '通义千问', '豆包'],
+        'selected': selectedName,
+      };
+    } catch (e) {
+      return {
+        'providers': ['DeepSeek', '通义千问', '豆包'],
+        'selected': 'DeepSeek',
+      };
+    }
+  }
+  
+  Future<void> _saveSelectedModel(String model) async {
+    try {
+      final configService = AIConfigService.instance;
+      
+      final provider = switch (model) {
+        'DeepSeek' => AIProvider.deepseek,
+        '通义千问' => AIProvider.qwen,
+        '豆包' => AIProvider.doubao,
+        _ => AIProvider.deepseek,
+      };
+      
+      configService.setProvider(provider);
+      print('Selected AI model: $model');
+    } catch (e) {
+      print('Failed to save AI model selection: $e');
+    }
+  }
+
+  IconData _getModelIcon(String model) {
+    switch (model) {
+      case 'DeepSeek':
+        return Icons.psychology;
+      case '通义千问':
+        return Icons.auto_awesome;
+      case '豆包':
+        return Icons.rocket_launch;
+      default:
+        return Icons.smart_toy;
+    }
   }
 
   Widget _buildBrowsePromptsButton() {

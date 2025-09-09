@@ -102,7 +102,7 @@ class AIService {
           'Authorization': 'Bearer $apiKey',
         },
         body: jsonEncode({
-          'model': 'qwen-turbo',  // 通义千问的模型名称
+          'model': modelName,  // 使用配置中的模型名称
           'messages': [
             {
               'role': 'user',
@@ -331,7 +331,7 @@ class AIService {
       });
       
       request.body = jsonEncode({
-        'model': 'qwen-turbo',
+        'model': modelName,  // 使用配置中的模型名称
         'messages': [
           {
             'role': 'user',
