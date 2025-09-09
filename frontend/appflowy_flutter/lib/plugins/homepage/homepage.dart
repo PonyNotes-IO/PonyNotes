@@ -6,7 +6,6 @@ import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
-import 'package:appflowy/util/theme_extension.dart';
 
 class HomePagePluginBuilder extends PluginBuilder {
   @override
@@ -79,9 +78,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // AI聊天叠加层可见性状态
-
-
   @override
   void dispose() {
     super.dispose();
@@ -101,124 +97,140 @@ class _HomePageState extends State<HomePage> {
       greeting = "晚上好";
     }
 
-    final userName = widget.userProfile?.name ?? "用户";
+    final userName = widget.userProfile?.name ?? "燕萍";
 
     return Container(
       color: Theme.of(context).colorScheme.surface,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(0, 8.0, 0, 32.0),
+        padding: const EdgeInsets.fromLTRB(0, 80.0, 0, 32.0),
         child: Column(
           children: [
-            // 问候语 - 居中显示
-            Center(child: _buildGreeting(greeting, userName)),
-            const SizedBox(height: 16),
+            // 问候语区域 - 右对齐，与头像一起
+            _buildGreetingSection(greeting, userName),
+            const SizedBox(height: 50),
 
-            // 问AI标题
+            // 问AI区域标题
             Container(
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Row(
                 children: [
-                  const FlowySvg(
-                    FlowySvgs.icon_ai_s,
-                    size: Size.square(24),
+                  Image.asset(
+                    'assets/images/home_ai_icon.png',
+                    width: 22,
+                    height: 18,
                   ),
-                  const SizedBox(width: 12.0),
+                  const SizedBox(width: 8.0),
                   const Text(
                     "问AI",
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF636363),
                     ),
                   ),
                 ],
               ),
             ),
 
-            // 三个区域并排展示
-            Column(
-              children: [
-                // 问AI区域
-                _buildAISection(),
-                const SizedBox(height: 32),
+            // 问AI区域
+            _buildAISection(),
+            const SizedBox(height: 50),
 
-                // 最近访问标题
-                Container(
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.history,
-                        size: 24,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 12.0),
-                      const Text(
-                        "最近访问",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+            // 最近访问标题
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.access_time,
+                    size: 18,
+                    color: Color(0xFF636363),
                   ),
-                ),
-
-                // 最近访问
-                _buildRecentSection(),
-                const SizedBox(height: 32),
-
-                // 待办计划标题
-                Container(
-                  alignment: Alignment.centerLeft,
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        size: 24,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(width: 12.0),
-                      const Text(
-                        "待办计划",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 8.0),
+                  const Text(
+                    "最近访问",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF636363),
+                    ),
                   ),
-                ),
-
-                // 待办计划
-                _buildTodoSection(),
-              ],
+                ],
+              ),
             ),
+
+            // 最近访问
+            _buildRecentSection(),
+            const SizedBox(height: 50),
+
+            // 待办计划标题
+            Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 18,
+                    color: Color(0xFF636363),
+                  ),
+                  const SizedBox(width: 8.0),
+                  const Text(
+                    "待办计划",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF636363),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // 待办计划
+            _buildTodoSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildGreeting(String greeting, String userName) {
-    return Center(
+  Widget _buildGreetingSection(String greeting, String userName) {
+    return SizedBox(
+      width: double.infinity,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          const FlowySvg(
-            FlowySvgs.app_logo_xl,
-            size: Size.square(60),
-            blendMode: null,
+          // 头像区域
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: const Color(0xFFECECEC),
+                width: 0.59,
+              ),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/home_avatar.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
+              ),
+            ),
           ),
-          const SizedBox(width: 16), // logo和文字之间的间距
+          const SizedBox(width: 20),
+          // 问候语文字
           Text(
-            "$greeting, $userName~",
+            "$greeting，$userName～",
             style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w500,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF333333),
             ),
           ),
         ],
@@ -227,72 +239,65 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildAISection() {
-    final isLightMode = Theme.of(context).isLightMode;
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(20.0),
       decoration: BoxDecoration(
-        color: isLightMode ? const Color(0xFF2F3349) : const Color(0xFF2F3349),
-        borderRadius: BorderRadius.circular(16.0),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        border: Border.all(
+          color: const Color(0xFFE9E9E9),
+          width: 1,
+        ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 主要输入框
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-            decoration: BoxDecoration(
-              color: const Color(0xFF3A3F5C),
-              borderRadius: BorderRadius.circular(12.0),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 8.0),
-                Expanded(
-                  child: Text(
-                    "在小马笔记中可以问或找到每一件事...",
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
+          // 提示文本
+          const Text(
+            "在小马笔记可以问或找到每一件事…",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF888888),
             ),
           ),
-          const SizedBox(height: 16.0),
+          const SizedBox(height: 70),
           
           // 功能按钮行
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // 选择模型下拉框
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF4A4F6C),
-                  borderRadius: BorderRadius.circular(8.0),
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4.0),
+                  border: Border.all(
+                    color: const Color(0xFFCDCDCD),
+                    width: 1,
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
+                    const Text(
                       "选择模型",
                       style: TextStyle(
-                        color: Colors.grey.shade300,
-                        fontSize: 12,
+                        color: Color(0xFF636363),
+                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    Icon(
+                    const Icon(
                       Icons.keyboard_arrow_down,
-                      size: 16,
-                      color: Colors.grey.shade300,
+                      size: 12,
+                      color: Color(0xFF636363),
                     ),
                   ],
                 ),
               ),
-              
-              const Spacer(),
               
               // 右侧功能按钮
               Row(
@@ -303,34 +308,42 @@ class _HomePageState extends State<HomePage> {
                       // 处理图片功能
                     },
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 20),
                   _buildActionButton(
                     icon: Icons.language,
                     onTap: () {
                       // 处理语言功能
                     },
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 20),
                   _buildActionButton(
                     icon: Icons.attach_file_outlined,
                     onTap: () {
                       // 处理附件功能
                     },
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 20),
                   _buildActionButton(
                     icon: Icons.more_horiz,
                     onTap: () {
                       // 处理更多功能
                     },
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 20),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: const Color(0xFFD8D8D8),
+                  ),
+                  const SizedBox(width: 20),
                   // 发送按钮
                   Container(
-                    width: 32,
-                    height: 32,
+                    width: 35,
+                    height: 35,
                     decoration: BoxDecoration(
-                      color: Colors.orange,
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFFF8D69), Color(0xFFFF8D69)],
+                      ),
                       borderRadius: BorderRadius.circular(8.0),
                     ),
                     child: const Icon(
@@ -356,83 +369,71 @@ class _HomePageState extends State<HomePage> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(8.0),
       child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: const Color(0xFF4A4F6C),
-          borderRadius: BorderRadius.circular(8.0),
+        width: 25,
+        height: 25,
+        decoration: const BoxDecoration(
+          color: Colors.transparent,
         ),
         child: Icon(
           icon,
-          size: 16,
-          color: Colors.grey.shade300,
+          size: 25,
+          color: const Color(0xFF636363),
         ),
       ),
     );
   }
-
-
 
   Widget _buildRecentSection() {
-    final isLightMode = Theme.of(context).isLightMode;
     return Container(
-      padding: const EdgeInsets.all(16.0),
+      width: 132,
+      height: 132,
       decoration: BoxDecoration(
-        color: isLightMode ? Colors.white : const Color(0xFF2C2F33),
-        borderRadius: BorderRadius.circular(12.0),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
         border: Border.all(
-          color: isLightMode ? Colors.grey.shade200 : const Color(0xFF3A3D42),
+          color: const Color(0xFFE9E9E9),
+          width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          _buildRecentItem("添加笔记本", "创建您的第一个笔记本"),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentItem(String title, String subtitle) {
-    final isLightMode = Theme.of(context).isLightMode;
-    return Container(
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: isLightMode ? Colors.grey.shade50 : const Color(0xFF36393F),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: isLightMode ? Colors.blue.shade100 : const Color(0xFF4F5B62),
-              borderRadius: BorderRadius.circular(8.0),
-            ),
-            child: Icon(
-              Icons.add, 
-              color: isLightMode ? Colors.blue : const Color(0xFF7289DA),
+          // 顶部灰色区域
+          Positioned(
+            top: 1,
+            left: 1,
+            child: Container(
+              width: 130,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: Color(0xFFF8F8F8),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(9),
+                  topRight: Radius.circular(9),
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
+          // 内容区域 - 左对齐显示图标和文字
+          Positioned(
+            top: 60,
+            left: 17,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
+                // 添加图标
+                const Icon(
+                  Icons.add,
+                  size: 25,
+                  color: Color(0xFF888888),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
+                const SizedBox(height: 18),
+                // 文字
+                const Text(
+                  "添加笔记本",
                   style: TextStyle(
-                    fontSize: 12,
-                    color: isLightMode ? Colors.grey.shade600 : const Color(0xFF9E9E9E),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF888888),
                   ),
                 ),
               ],
@@ -444,189 +445,325 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildTodoSection() {
-    final isLightMode = Theme.of(context).isLightMode;
     return Container(
+      width: double.infinity,
+      constraints: const BoxConstraints(
+        minHeight: 266,
+        maxHeight: 320,
+      ),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: isLightMode ? Colors.white : const Color(0xFF2C2F33),
-        borderRadius: BorderRadius.circular(12.0),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
         border: Border.all(
-          color: isLightMode ? Colors.grey.shade200 : const Color(0xFF3A3D42),
+          color: const Color(0xFFE9E9E9),
+          width: 1,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // 将日历和待办列表水平排列
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // 日历部分 - 占据较小的固定宽度
-                SizedBox(
-                  width: 240,
-                  child: _buildCalendarSection(),
-                ),
-                // 分割线 - 自动适应高度并居中
-                Container(
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: isLightMode ? Colors.grey.shade300 : const Color(0xFF4A4D52),
-                  ),
-                ),
-                // 待办列表部分 - 占据剩余空间
-                Expanded(
-                  child: _buildTodoList(),
-                ),
-              ],
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 日历部分
+            Expanded(
+              flex: 1,
+              child: _buildCalendarSection(),
             ),
-          ),
-        ],
+            // 分割线
+            Container(
+              width: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 15),
+              color: const Color(0xFFE9E9E9),
+            ),
+            // 待办列表部分
+            Expanded(
+              flex: 2,
+              child: _buildTodoList(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildCalendarSection() {
-    final isLightMode = Theme.of(context).isLightMode;
-    return Container(
-      padding: const EdgeInsets.all(16.0),
-      decoration: BoxDecoration(
-        color: isLightMode ? Colors.grey.shade50 : const Color(0xFF36393F),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: isLightMode ? Colors.grey.shade400 : const Color(0xFF4F5B62),
-              borderRadius: BorderRadius.circular(4.0),
-            ),
-            child: const Text(
-              "MAY",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "26",
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            "用日历连接你的生活",
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            "创建待办计划，创建日记，记录你的每个点滴故事....",
-            style: TextStyle(
-              fontSize: 12,
-              color: isLightMode ? Colors.grey.shade600 : const Color(0xFF9E9E9E),
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          TextButton(
-            onPressed: () {
-              _openCalendar();
-            },
-            child: const Text(
-              "链接我的日历",
-              style: TextStyle(
-                color: Colors.orange,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTodoList() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 图标
+        Container(
+          width: 58,
+          height: 51,
+          decoration: const BoxDecoration(
+            color: Color(0xFFECD4CC),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.calendar_today,
+              size: 40,
+              color: Color(0xFF888888),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        // 标题
         const Text(
-          "待办",
+          "用日历连接你的生活",
           style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF888888),
           ),
         ),
         const SizedBox(height: 12),
-        _buildTodoItem("今天", "7月11日", [
-          "8:00 起床与晨总会",
-          "11:00 课研分享会",
-        ]),
-        const SizedBox(height: 12),
-        _buildTodoItem("明天", "7月12日", [
-          "17:00 喝茶",
-          "19:00 年会",
-        ]),
+        // 描述
+        const Text(
+          "创建待办计划，创建日记，记录你的每个点滴故事.....",
+          style: TextStyle(
+            fontSize: 14,
+            color: Color(0xFF888888),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 35),
+        // 链接按钮
+        GestureDetector(
+          onTap: () {
+            _openCalendar();
+          },
+          child: const Text(
+            "链接我的日历",
+            style: TextStyle(
+              color: Color(0xFFFF8D69),
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildTodoItem(String day, String date, List<String> tasks) {
-    final isLightMode = Theme.of(context).isLightMode;
-    return Container(
-      padding: const EdgeInsets.all(12.0),
-      decoration: BoxDecoration(
-        color: isLightMode ? Colors.grey.shade50 : const Color(0xFF4A4D52),
-        borderRadius: BorderRadius.circular(8.0),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _buildTodoList() {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 30.0),
+        child: SingleChildScrollView(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                day,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+              // 左侧：待办标题和日期
+              SizedBox(
+                width: 50,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "待办",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF333333),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // 今天
+                    const Text(
+                      "今天",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                    const Text(
+                      "7月11日",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    // 周六
+                    const Text(
+                      "周六",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                    const Text(
+                      "7月12日",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              Text(
-                date,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: isLightMode ? Colors.grey.shade600 : const Color(0xFF9E9E9E),
+              // 中间：竖线
+              Container(
+                width: 18,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 69),
+                    Container(
+                      width: 2,
+                      height: 51,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8D8D8),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(height: 31),
+                    Container(
+                      width: 2,
+                      height: 51,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD8D8D8),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // 右侧：时间和事件
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const SizedBox(height: 68),
+                    // 今天的事件
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 35,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "8:00",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "11:00",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "起床与张总开会",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "读研分享会",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 32),
+                    // 周六的事件
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 35,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "17:00",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "19:00",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                "喝茶",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                "年会",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFF888888),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          ...tasks.map((task) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  task,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isLightMode ? Colors.grey.shade700 : const Color(0xFFB0B0B0),
-                  ),
-                ),
-              )),
-        ],
+        ),
       ),
     );
   }
-
-
 
   void _openCalendar() {
     try {
@@ -644,4 +781,4 @@ class _HomePageState extends State<HomePage> {
       // 处理错误
     }
   }
-} 
+}

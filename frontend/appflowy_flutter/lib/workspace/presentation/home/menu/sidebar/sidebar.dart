@@ -349,7 +349,7 @@ class _SidebarState extends State<_Sidebar> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const VSpace(16),
+            const VSpace(48),
             // PonyNotes custom header
             Container(
                 height: HomeSizes.workspaceSectionHeight,

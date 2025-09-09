@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:appflowy/mobile/application/mobile_router.dart';
+import 'package:flutter/foundation.dart';
 import 'package:appflowy/plugins/document/application/document_appearance_cubit.dart';
 import 'package:appflowy/shared/clipboard_state.dart';
 import 'package:appflowy/shared/easy_localiation_service.dart';
@@ -239,7 +240,7 @@ class _ApplicationWidgetState extends State<ApplicationWidget> {
                     }
                   },
                   child: MaterialApp.router(
-                    debugShowCheckedModeBanner: false,
+                    debugShowCheckedModeBanner: kDebugMode,
                     theme: state.lightTheme,
                     darkTheme: state.darkTheme,
                     themeMode: state.themeMode,

@@ -60,14 +60,16 @@ Future<List<IconGroup>> loadIconGroups() async {
   }
 
   final stopwatch = Stopwatch()..start();
-  final jsonString = await rootBundle.loadString('assets/icons/icons.json');
   try {
+    final jsonString = await rootBundle.loadString('assets/icons/icons.json');
     final json = jsonDecode(jsonString) as Map<String, dynamic>;
     final iconGroups = json.entries.map(IconGroup.fromMapEntry).toList();
     kIconGroups = iconGroups;
     return iconGroups;
   } catch (e) {
     Log.error('Failed to decode icons.json', e);
+    // 返回空列表避免崩溃
+    kIconGroups = [];
     return [];
   } finally {
     stopwatch.stop();
