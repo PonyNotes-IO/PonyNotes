@@ -8,6 +8,8 @@ import 'package:appflowy/plugins/ai_chat/presentation/chat_page/text_message_wid
 import 'package:appflowy/plugins/util.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
+import 'package:appflowy_backend/protobuf/flowy-ai/entities.pb.dart';
+import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
@@ -19,10 +21,12 @@ class StandaloneAiChatPage extends StatefulWidget {
     super.key,
     required this.userProfile,
     this.initialText,
+    this.selectedModel,
   });
 
   final UserProfilePB userProfile;
   final String? initialText;
+  final AIModelPB? selectedModel;
 
   @override
   State<StandaloneAiChatPage> createState() => _StandaloneAiChatPageState();
@@ -62,6 +66,13 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
         _isInitialized = true;
       });
       
+      // 如果有选中的模型，先设置模型
+      if (widget.selectedModel != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _setSelectedModel();
+        });
+      }
+      
       // 如果有初始文本，在初始化完成后发送
       if (widget.initialText != null && widget.initialText!.isNotEmpty) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -76,6 +87,24 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     // 由于独立AI聊天是临时的，我们不需要预先创建数据库记录
     // 聊天记录会在第一条消息发送时自动创建
     // 这样可以避免不必要的数据库操作和潜在的错误
+  }
+
+  /// 设置选中的模型
+  void _setSelectedModel() {
+    if (!mounted || widget.selectedModel == null) {
+      return;
+    }
+
+    try {
+      AIEventUpdateSelectedModel(
+        UpdateSelectedModelPB(
+          source: chatId, // 使用chatId作为source
+          selectedModel: widget.selectedModel!,
+        ),
+      ).send();
+    } catch (e) {
+      debugPrint('设置选中模型失败: $e');
+    }
   }
 
   /// 发送初始消息

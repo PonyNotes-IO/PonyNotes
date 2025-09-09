@@ -3,6 +3,10 @@ import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
+import 'package:appflowy_backend/protobuf/flowy-ai/entities.pb.dart';
+import 'package:appflowy/ai/service/ai_model_state_notifier.dart';
+import 'package:appflowy/ai/widgets/prompt_input/select_model_menu.dart';
+import 'package:appflowy/plugins/interactive_ai_chat/interactive_ai_chat_page.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
@@ -80,11 +84,29 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _aiInputController = TextEditingController();
   final FocusNode _aiInputFocusNode = FocusNode();
+  late AIModelStateNotifier _aiModelStateNotifier;
+  AIModelPB? _selectedModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _aiModelStateNotifier = AIModelStateNotifier(objectId: 'homepage');
+    _aiModelStateNotifier.addListener(
+      onAvailableModelsChanged: (models, selectedModel) {
+        if (mounted) {
+          setState(() {
+            _selectedModel = selectedModel;
+          });
+        }
+      },
+    );
+  }
 
   @override
   void dispose() {
     _aiInputController.dispose();
     _aiInputFocusNode.dispose();
+    _aiModelStateNotifier.dispose();
     super.dispose();
   }
 
@@ -99,7 +121,10 @@ class _HomePageState extends State<HomePage> {
     try {
       final standaloneAiChatPlugin = makePlugin(
         pluginType: PluginType.standaloneAiChat,
-        data: text, // 将输入的文本作为初始消息
+        data: {
+          'initialText': text,
+          'selectedModel': _selectedModel,
+        },
       );
 
       // 在新标签页中打开独立AI聊天
@@ -163,6 +188,19 @@ class _HomePageState extends State<HomePage> {
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                       color: Color(0xFF636363),
+                    ),
+                  ),
+                  const Spacer(),
+                  // AI聊天按钮
+                  ElevatedButton.icon(
+                    onPressed: _openInteractiveAIChat,
+                    icon: const Icon(Icons.chat_bubble_outline, size: 16),
+                    label: const Text('AI聊天'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      textStyle: const TextStyle(fontSize: 14),
                     ),
                   ),
                 ],
@@ -329,34 +367,8 @@ class _HomePageState extends State<HomePage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // 选择模型下拉框
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 5.0),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(4.0),
-                  border: Border.all(
-                    color: const Color(0xFFCDCDCD),
-                    width: 1,
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      "选择模型",
-                      style: TextStyle(
-                        color: Color(0xFF636363),
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 12,
-                      color: Color(0xFF636363),
-                    ),
-                  ],
-                ),
+              SelectModelMenu(
+                aiModelStateNotifier: _aiModelStateNotifier,
               ),
               
               // 右侧功能按钮
@@ -844,5 +856,13 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       // 处理错误
     }
+  }
+
+  void _openInteractiveAIChat() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const InteractiveAIChatPage(),
+      ),
+    );
   }
 }

@@ -2,6 +2,7 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
+import 'package:appflowy_backend/protobuf/flowy-ai/entities.pb.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
 import 'package:flutter/material.dart';
 
@@ -10,9 +11,20 @@ import 'standalone_ai_chat_page.dart';
 class StandaloneAiChatPluginBuilder extends PluginBuilder {
   @override
   Plugin build(dynamic data) {
+    String? initialText;
+    AIModelPB? selectedModel;
+    
+    if (data is String) {
+      initialText = data;
+    } else if (data is Map<String, dynamic>) {
+      initialText = data['initialText'] as String?;
+      selectedModel = data['selectedModel'] as AIModelPB?;
+    }
+    
     return StandaloneAiChatPlugin(
       pluginType: pluginType,
-      initialText: data is String ? data : null,
+      initialText: initialText,
+      selectedModel: selectedModel,
     );
   }
 
@@ -38,14 +50,17 @@ class StandaloneAiChatPlugin extends Plugin {
   StandaloneAiChatPlugin({
     required PluginType pluginType,
     this.initialText,
+    this.selectedModel,
   }) : _pluginType = pluginType;
 
   final PluginType _pluginType;
   final String? initialText;
+  final AIModelPB? selectedModel;
 
   @override
   PluginWidgetBuilder get widgetBuilder => StandaloneAiChatPluginDisplay(
     initialText: initialText,
+    selectedModel: selectedModel,
   );
 
   @override
@@ -56,9 +71,10 @@ class StandaloneAiChatPlugin extends Plugin {
 }
 
 class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
-  StandaloneAiChatPluginDisplay({this.initialText});
+  StandaloneAiChatPluginDisplay({this.initialText, this.selectedModel});
   
   final String? initialText;
+  final AIModelPB? selectedModel;
 
   @override
   String? get viewName => '问AI';
@@ -90,6 +106,7 @@ class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
       key: const ValueKey('StandaloneAiChatPage'),
       userProfile: userProfile,
       initialText: initialText,
+      selectedModel: selectedModel,
     );
   }
 
