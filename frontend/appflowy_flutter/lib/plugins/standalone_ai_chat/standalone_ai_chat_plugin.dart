@@ -1,9 +1,7 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
-import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
 import 'package:flutter/material.dart';
 
@@ -12,7 +10,10 @@ import 'standalone_ai_chat_page.dart';
 class StandaloneAiChatPluginBuilder extends PluginBuilder {
   @override
   Plugin build(dynamic data) {
-    return StandaloneAiChatPlugin(pluginType: pluginType);
+    return StandaloneAiChatPlugin(
+      pluginType: pluginType,
+      initialText: data is String ? data : null,
+    );
   }
 
   @override
@@ -34,13 +35,18 @@ class StandaloneAiChatPluginConfig implements PluginConfig {
 }
 
 class StandaloneAiChatPlugin extends Plugin {
-  StandaloneAiChatPlugin({required PluginType pluginType})
-      : _pluginType = pluginType;
+  StandaloneAiChatPlugin({
+    required PluginType pluginType,
+    this.initialText,
+  }) : _pluginType = pluginType;
 
   final PluginType _pluginType;
+  final String? initialText;
 
   @override
-  PluginWidgetBuilder get widgetBuilder => StandaloneAiChatPluginDisplay();
+  PluginWidgetBuilder get widgetBuilder => StandaloneAiChatPluginDisplay(
+    initialText: initialText,
+  );
 
   @override
   PluginId get id => "StandaloneAiChatStack";
@@ -50,6 +56,10 @@ class StandaloneAiChatPlugin extends Plugin {
 }
 
 class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
+  StandaloneAiChatPluginDisplay({this.initialText});
+  
+  final String? initialText;
+
   @override
   String? get viewName => '问AI';
 
@@ -79,6 +89,7 @@ class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
     return StandaloneAiChatPage(
       key: const ValueKey('StandaloneAiChatPage'),
       userProfile: userProfile,
+      initialText: initialText,
     );
   }
 

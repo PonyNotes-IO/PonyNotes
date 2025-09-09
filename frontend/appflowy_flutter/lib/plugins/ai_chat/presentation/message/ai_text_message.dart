@@ -183,20 +183,16 @@ class ChatAIMessageWidget extends StatelessWidget {
   }
 
   void _handleMessageState(ChatAIMessageState state, BuildContext context) {
-    if (state.stream?.error?.isEmpty != false) {
-      state.messageState.maybeMap(
-        aiFollowUp: (messageState) {
-          context
-              .read<ChatBloc>()
-              .add(ChatEvent.onAIFollowUp(messageState.followUpData));
-        },
-        orElse: () {
-          // do nothing
-        },
-      );
-
-      return;
-    }
+    state.messageState.maybeMap(
+      aiFollowUp: (messageState) {
+        context
+            .read<ChatBloc>()
+            .add(ChatEvent.onAIFollowUp(messageState.followUpData));
+      },
+      orElse: () {
+        // do nothing
+      },
+    );
     context.read<ChatBloc>().add(ChatEvent.deleteMessage(message));
   }
 }

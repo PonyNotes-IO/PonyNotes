@@ -5,27 +5,24 @@ import 'package:appflowy/plugins/ai_chat/application/chat_select_message_bloc.da
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_animation_list_widget.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_footer.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/text_message_widget.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_message_widget.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/scroll_to_bottom.dart';
 import 'package:appflowy/plugins/util.dart';
-import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart' hide ChatMessage;
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 import 'package:flowy_infra/uuid.dart';
 
 class StandaloneAiChatPage extends StatefulWidget {
   const StandaloneAiChatPage({
     super.key,
     required this.userProfile,
+    this.initialText,
   });
 
   final UserProfilePB userProfile;
+  final String? initialText;
 
   @override
   State<StandaloneAiChatPage> createState() => _StandaloneAiChatPageState();
@@ -64,6 +61,13 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
       setState(() {
         _isInitialized = true;
       });
+      
+      // 如果有初始文本，在初始化完成后发送
+      if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _sendInitialMessage();
+        });
+      }
     }
   }
 
@@ -72,6 +76,23 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     // 由于独立AI聊天是临时的，我们不需要预先创建数据库记录
     // 聊天记录会在第一条消息发送时自动创建
     // 这样可以避免不必要的数据库操作和潜在的错误
+  }
+
+  /// 发送初始消息
+  void _sendInitialMessage() {
+    if (!mounted || widget.initialText == null || widget.initialText!.isEmpty) {
+      return;
+    }
+
+    try {
+      final chatBloc = context.read<ChatBloc>();
+      chatBloc.add(ChatEvent.sendMessage(
+        message: widget.initialText!,
+      ));
+    } catch (e) {
+      // 静默处理错误，不影响用户体验
+      debugPrint('发送初始消息时出错: $e');
+    }
   }
 
   @override

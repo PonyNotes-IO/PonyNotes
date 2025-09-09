@@ -78,9 +78,45 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final TextEditingController _aiInputController = TextEditingController();
+  final FocusNode _aiInputFocusNode = FocusNode();
+
   @override
   void dispose() {
+    _aiInputController.dispose();
+    _aiInputFocusNode.dispose();
     super.dispose();
+  }
+
+  void _handleSendMessage() {
+    final text = _aiInputController.text.trim();
+    if (text.isEmpty) return;
+
+    // 清空输入框
+    _aiInputController.clear();
+    
+    // 创建独立的AI聊天插件
+    try {
+      final standaloneAiChatPlugin = makePlugin(
+        pluginType: PluginType.standaloneAiChat,
+        data: text, // 将输入的文本作为初始消息
+      );
+
+      // 在新标签页中打开独立AI聊天
+      getIt<TabsBloc>().add(
+        TabsEvent.openPlugin(
+          plugin: standaloneAiChatPlugin,
+        ),
+      );
+    } catch (e) {
+      // 显示错误消息
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('打开AI聊天时发生错误: $e'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
   }
 
   @override
@@ -253,16 +289,40 @@ class _HomePageState extends State<HomePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 提示文本
-          const Text(
-            "在小马笔记可以问或找到每一件事…",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF888888),
+          // AI输入框
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8F8F8),
+              borderRadius: BorderRadius.circular(8.0),
+              border: Border.all(
+                color: const Color(0xFFE9E9E9),
+                width: 1,
+              ),
+            ),
+            child: TextField(
+              controller: _aiInputController,
+              focusNode: _aiInputFocusNode,
+              maxLines: null,
+              minLines: 3,
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _handleSendMessage(),
+              decoration: const InputDecoration(
+                hintText: "在小马笔记可以问或找到每一件事…",
+                hintStyle: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Color(0xFF888888),
+                ),
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.all(16.0),
+              ),
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF333333),
+              ),
             ),
           ),
-          const SizedBox(height: 70),
+          const SizedBox(height: 16),
           
           // 功能按钮行
           Row(
@@ -337,19 +397,23 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(width: 20),
                   // 发送按钮
-                  Container(
-                    width: 35,
-                    height: 35,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFF8D69), Color(0xFFFF8D69)],
+                  InkWell(
+                    onTap: _handleSendMessage,
+                    borderRadius: BorderRadius.circular(8.0),
+                    child: Container(
+                      width: 35,
+                      height: 35,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF8D69), Color(0xFFFF8D69)],
+                        ),
+                        borderRadius: BorderRadius.circular(8.0),
                       ),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: const Icon(
-                      Icons.send,
-                      size: 16,
-                      color: Colors.white,
+                      child: const Icon(
+                        Icons.send,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ],

@@ -128,45 +128,13 @@ class ChatAIMessageBloc extends Bloc<ChatAIMessageEvent, ChatAIMessageState> {
   }
 
   void _initializeStreamListener() {
-    if (state.stream != null) {
-      state.stream!.listen(
-        onData: (text) => _safeAdd(ChatAIMessageEvent.updateText(text)),
-        onError: (error) =>
-            _safeAdd(ChatAIMessageEvent.receiveError(error.toString())),
-        onAIResponseLimit: () =>
-            _safeAdd(const ChatAIMessageEvent.onAIResponseLimit()),
-        onAIImageResponseLimit: () =>
-            _safeAdd(const ChatAIMessageEvent.onAIImageResponseLimit()),
-        onMetadata: (metadata) =>
-            _safeAdd(ChatAIMessageEvent.receiveMetadata(metadata)),
-        onAIMaxRequired: (message) {
-          Log.info(message);
-          _safeAdd(ChatAIMessageEvent.onAIMaxRequired(message));
-        },
-        onLocalAIInitializing: () =>
-            _safeAdd(const ChatAIMessageEvent.onLocalAIInitializing()),
-        onAIFollowUp: (data) {
-          _safeAdd(ChatAIMessageEvent.onAIFollowUp(data));
-        },
-      );
-    }
+    // Stream listener functionality removed - now handled synchronously
   }
 
   void _checkInitialStreamState() {
-    if (state.stream != null) {
-      if (state.stream!.aiLimitReached) {
-        add(const ChatAIMessageEvent.onAIResponseLimit());
-      } else if (state.stream!.error != null) {
-        add(ChatAIMessageEvent.receiveError(state.stream!.error!));
-      }
-    }
+    // Stream state checking removed - now handled synchronously
   }
 
-  void _safeAdd(ChatAIMessageEvent event) {
-    if (!isClosed) {
-      add(event);
-    }
-  }
 }
 
 @freezed
@@ -193,7 +161,6 @@ class ChatAIMessageEvent with _$ChatAIMessageEvent {
 @freezed
 class ChatAIMessageState with _$ChatAIMessageState {
   const factory ChatAIMessageState({
-    AnswerStream? stream,
     required String text,
     required MessageState messageState,
     required List<ChatMessageRefSource> sources,
@@ -206,7 +173,6 @@ class ChatAIMessageState with _$ChatAIMessageState {
   ) {
     return ChatAIMessageState(
       text: text is String ? text : "",
-      stream: text is AnswerStream ? text : null,
       messageState: const MessageState.ready(),
       sources: metadata.sources,
       progress: metadata.progress,
