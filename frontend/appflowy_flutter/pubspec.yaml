@@ -302,6 +302,7 @@ flutter:
     - assets/images/
     - assets/images/appearance/
     - assets/images/built_in_cover_images/
+    - assets/images/icons/
     - assets/flowy_icons/
     - assets/flowy_icons/16x/
     - assets/flowy_icons/20x/

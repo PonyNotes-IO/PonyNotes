@@ -87,13 +87,13 @@ class _AIInputAreaState extends State<AIInputArea> {
                 _buildModelSelector(),
                 const Spacer(),
                 // 功能图标按钮组
-                _buildToolButton('https://lanhu-oss-proxy.lanhuapp.com/SketchPngb009e2180e4e063d23918466aa2bbf13ded841feae872f7502028c5b6266bf43'),
+                _buildToolButton('assets/images/icons/tool_1.png'),
                 const SizedBox(width: 20),
-                _buildToolButton('https://lanhu-oss-proxy.lanhuapp.com/SketchPngab61380e5d8d96dc6cff467b74a22fb2e7a80b2c8bf73f163286ce2b6f8a3020'),
+                _buildToolButton('assets/images/icons/tool_2.png'),
                 const SizedBox(width: 20),
-                _buildToolButton('https://lanhu-oss-proxy.lanhuapp.com/SketchPnge792a7d2f9ca27deed7f0213aec0ea8ee9643cb705391f7a8b13effe006a465e'),
+                _buildToolButton('assets/images/icons/tool_3.png'),
                 const SizedBox(width: 20),
-                _buildToolButton('https://lanhu-oss-proxy.lanhuapp.com/SketchPng646c32c2be74fa2141223e1341156125dbfd0adca82e6fe30bd93e8c681d91bb'),
+                _buildToolButton('assets/images/icons/tool_4.png'),
                 const SizedBox(width: 21),
                 // 分隔线（对应 block_5）
                 Container(
@@ -126,10 +126,17 @@ class _AIInputAreaState extends State<AIInputArea> {
             style: AIWelcomeTheme.modelSelectorStyle,
           ),
           const Spacer(),
-          Image.network(
-            'https://lanhu-oss-proxy.lanhuapp.com/SketchPnge7d4267a0f2057379d9d0f8d6234e1360804562d48a66363b504f16f4993ff28',
+          Image.asset(
+            'assets/images/icons/dropdown_arrow.png',
             width: 12,
             height: 12,
+            errorBuilder: (context, error, stackTrace) {
+              return Icon(
+                Icons.arrow_drop_down,
+                size: 12,
+                color: Colors.grey[600],
+              );
+            },
           ),
           const SizedBox(width: 10),
         ],
@@ -143,10 +150,29 @@ class _AIInputAreaState extends State<AIInputArea> {
       onTap: () {
         // TODO: 实现具体的工具功能
       },
-      child: Image.network(
-        imageUrl,
+      child: Container(
         width: AIWelcomeTheme.iconSize,
         height: AIWelcomeTheme.iconSize,
+        child: Image.asset(
+          imageUrl,
+          width: AIWelcomeTheme.iconSize,
+          height: AIWelcomeTheme.iconSize,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: AIWelcomeTheme.iconSize,
+              height: AIWelcomeTheme.iconSize,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Icon(
+                Icons.image_not_supported,
+                size: AIWelcomeTheme.iconSize * 0.6,
+                color: Colors.grey[600],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -155,10 +181,29 @@ class _AIInputAreaState extends State<AIInputArea> {
   Widget _buildSendButton() {
     return GestureDetector(
       onTap: _sendMessage,
-      child: Image.network(
-        'https://lanhu-oss-proxy.lanhuapp.com/SketchPng4f176c3cdbd3190cbcfd326e7491c5ef1dba23882c9f64c555d237883b4d06f2',
+      child: Container(
         width: AIWelcomeTheme.sendButtonSize,
         height: AIWelcomeTheme.sendButtonSize,
+        child: Image.asset(
+          'assets/images/icons/send_button.png',
+          width: AIWelcomeTheme.sendButtonSize,
+          height: AIWelcomeTheme.sendButtonSize,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: AIWelcomeTheme.sendButtonSize,
+              height: AIWelcomeTheme.sendButtonSize,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                borderRadius: BorderRadius.circular(AIWelcomeTheme.sendButtonSize / 2),
+              ),
+              child: Icon(
+                Icons.send,
+                size: AIWelcomeTheme.sendButtonSize * 0.6,
+                color: Colors.white,
+              ),
+            );
+          },
+        ),
       ),
     );
   }

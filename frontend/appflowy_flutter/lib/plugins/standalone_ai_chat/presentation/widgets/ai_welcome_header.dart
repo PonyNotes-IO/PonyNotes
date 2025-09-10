@@ -22,14 +22,22 @@ class AIWelcomeHeader extends StatelessWidget {
                 height: AIWelcomeTheme.avatarSize,
                 decoration: AIWelcomeTheme.avatarDecoration,
                 child: ClipOval(
-                  child: Container(
-                    // 使用本地AI头像图标
-                    decoration: const BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage('assets/images/ai_avatar.png'),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                  child: Image.asset(
+                    'assets/images/ai_avatar.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.blue[100],
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.smart_toy,
+                          size: AIWelcomeTheme.avatarSize * 0.6,
+                          color: Colors.blue[600],
+                        ),
+                      );
+                    },
                   ),
                 ),
               ),
