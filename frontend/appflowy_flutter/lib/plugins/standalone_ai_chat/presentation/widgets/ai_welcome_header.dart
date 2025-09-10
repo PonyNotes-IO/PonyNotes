@@ -23,12 +23,10 @@ class AIWelcomeHeader extends StatelessWidget {
                 decoration: AIWelcomeTheme.avatarDecoration,
                 child: ClipOval(
                   child: Container(
-                    // 使用设计图中的头像背景图
+                    // 使用本地AI头像图标
                     decoration: const BoxDecoration(
                       image: DecorationImage(
-                        image: NetworkImage(
-                          'https://lanhu-oss-proxy.lanhuapp.com/SketchPngcebd70543da76b2f330351c6cc9ab5f0d5a79bd196e502e3894aa38c94fb3cef',
-                        ),
+                        image: AssetImage('assets/images/ai_avatar.png'),
                         fit: BoxFit.cover,
                       ),
                     ),
