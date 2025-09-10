@@ -113,19 +113,41 @@ class _InteractiveAIChatPageState extends State<InteractiveAIChatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI聊天'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
         elevation: 1,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _reloadConfig,
-            tooltip: '重新加载配置',
+        toolbarHeight: 70, // 增加AppBar高度
+        centerTitle: true, // 居中标题
+        titleSpacing: 0, // 调整标题间距
+        leadingWidth: 56, // 设置leading区域宽度
+        leading: Container(
+          margin: const EdgeInsets.only(top: 40), // 向下移动返回按钮
+          child: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => Navigator.of(context).pop(),
+            tooltip: '返回',
           ),
-          IconButton(
-            icon: const Icon(Icons.clear_all),
-            onPressed: _clearMessages,
-            tooltip: '清空对话',
+        ),
+        title: Container(
+          margin: const EdgeInsets.only(top: 40), // 向下移动标题
+          child: const Text('AI聊天'),
+        ),
+        actions: [
+          Container(
+            margin: const EdgeInsets.only(top: 40, right: 20), // 向下移动刷新按钮
+            child: IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _reloadConfig,
+              tooltip: '重新加载配置',
+            ),
+          ),
+          Container(
+            margin: const EdgeInsets.only(top: 40, right: 20), // 向下移动清空按钮
+            child: IconButton(
+              icon: const Icon(Icons.clear_all),
+              onPressed: _clearMessages,
+              tooltip: '清空对话',
+            ),
           ),
         ],
       ),
