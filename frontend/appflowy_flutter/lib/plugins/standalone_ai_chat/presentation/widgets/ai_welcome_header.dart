@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+import '../ai_welcome_theme.dart';
+
+/// AI欢迎页面顶部头像和文字区域
+/// 对应设计图中的 block_1 区域
+class AIWelcomeHeader extends StatelessWidget {
+  const AIWelcomeHeader({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: AIWelcomeTheme.welcomeAreaPadding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 头像和主标题行（对应 block_1）
+          Row(
+            children: [
+              // AI头像（对应 block_2 + group_1）
+              Container(
+                width: AIWelcomeTheme.avatarSize,
+                height: AIWelcomeTheme.avatarSize,
+                decoration: AIWelcomeTheme.avatarDecoration,
+                child: ClipOval(
+                  child: Container(
+                    // 使用设计图中的头像背景图
+                    decoration: const BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(
+                          'https://lanhu-oss-proxy.lanhuapp.com/SketchPngcebd70543da76b2f330351c6cc9ab5f0d5a79bd196e502e3894aa38c94fb3cef',
+                        ),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20), // 头像和文字之间的间距
+              // 主标题（对应 text_15）
+              const Expanded(
+                child: Text(
+                  '我是小马笔记AI，很高兴见到你！',
+                  style: AIWelcomeTheme.titleStyle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20), // 主标题和副标题之间的间距
+          // 副标题（对应 text_16）- 左对齐显示
+          const Text(
+            '我可以帮你写代码、写作各种创意内容，请把你的任务交给我吧～',
+            style: AIWelcomeTheme.subtitleStyle,
+            textAlign: TextAlign.left,
+          ),
+        ],
+      ),
+    );
+  }
+}

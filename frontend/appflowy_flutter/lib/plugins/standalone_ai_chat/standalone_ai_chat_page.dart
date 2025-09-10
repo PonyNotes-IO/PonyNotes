@@ -5,6 +5,7 @@ import 'package:appflowy/plugins/ai_chat/application/chat_select_message_bloc.da
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_animation_list_widget.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_footer.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/chat_page/text_message_widget.dart';
+import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_message_widget.dart' as app_flowy;
 import 'package:appflowy/plugins/util.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
@@ -13,8 +14,10 @@ import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart';
+import 'package:appflowy/plugins/ai_chat/presentation/scroll_to_bottom.dart';
 import 'package:provider/provider.dart';
 import 'package:flowy_infra/uuid.dart';
+import 'presentation/ai_welcome_page.dart';
 
 class StandaloneAiChatPage extends StatefulWidget {
   const StandaloneAiChatPage({
@@ -37,6 +40,7 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
   late final ViewPB view;
   late final ViewPluginNotifier viewNotifier;
   bool _isInitialized = false;
+  bool _showWelcomePage = true; // 控制是否显示欢迎页面
 
   @override
   void initState() {
@@ -64,6 +68,8 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     if (mounted) {
       setState(() {
         _isInitialized = true;
+        // 如果有初始文本，直接切换到聊天界面
+        _showWelcomePage = widget.initialText == null || widget.initialText!.isEmpty;
       });
       
       // 如果有选中的模型，先设置模型
@@ -124,6 +130,13 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     }
   }
 
+  /// 从欢迎页面切换到聊天界面
+  void _switchToChatPage() {
+    setState(() {
+      _showWelcomePage = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_isInitialized) {
@@ -159,30 +172,59 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
         builder: (context) {
           final chatBloc = context.read<ChatBloc>();
 
+          // 根据状态显示欢迎页面或聊天页面
+          if (_showWelcomePage) {
+            return AIWelcomePage(
+              onMessageSent: _switchToChatPage,
+            );
+          }
+
           return Provider<ChatController>.value(
             value: chatBloc.chatController,
-            child: Column(
-              children: [
-                // 聊天消息区域 - 使用原有的ChatAnimationListWidget
-                Expanded(
-                  child: ChatAnimationListWidget(
-                    userProfile: widget.userProfile,
-                    scrollController: ScrollController(),
-                    itemBuilder: (context, animation, message,
-                        {bool? isRemoved}) {
-                      return TextMessageWidget(
-                        message: message as TextMessage,
-                        userProfile: widget.userProfile,
-                        view: view,
-                      );
-                    },
-                  ),
-                ),
-                // 输入框区域 - 使用原有的ChatFooter
-                ChatFooter(
+            child: Provider<Builders>(
+              create: (_) => Builders(
+                // we have a custom input builder, so we don't need the default one
+                inputBuilder: (_) => const SizedBox.shrink(),
+                textMessageBuilder: (context, message) => TextMessageWidget(
+                  message: message,
+                  userProfile: widget.userProfile,
                   view: view,
                 ),
-              ],
+                chatMessageBuilder: (context, message, animation, child) =>
+                    app_flowy.ChatMessage(
+                  message: message,
+                  padding: const EdgeInsets.symmetric(vertical: 18.0),
+                  child: child,
+                ),
+                scrollToBottomBuilder: (context, animation, onPressed) =>
+                    CustomScrollToBottom(
+                  animation: animation,
+                  onPressed: onPressed,
+                ),
+              ),
+              child: Column(
+                children: [
+                  // 聊天消息区域 - 使用原有的ChatAnimationListWidget
+                  Expanded(
+                    child: ChatAnimationListWidget(
+                      userProfile: widget.userProfile,
+                      scrollController: ScrollController(),
+                      itemBuilder: (context, animation, message,
+                          {bool? isRemoved}) {
+                        return TextMessageWidget(
+                          message: message as TextMessage,
+                          userProfile: widget.userProfile,
+                          view: view,
+                        );
+                      },
+                    ),
+                  ),
+                  // 输入框区域 - 使用原有的ChatFooter
+                  ChatFooter(
+                    view: view,
+                  ),
+                ],
+              ),
             ),
           );
         },
