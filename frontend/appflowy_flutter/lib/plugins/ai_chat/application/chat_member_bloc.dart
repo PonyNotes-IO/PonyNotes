@@ -35,7 +35,19 @@ class ChatMemberBloc extends Bloc<ChatMemberEvent, ChatMemberState> {
                     add(ChatMemberEvent.receiveMemberInfo(userId, member));
                   }
                 },
-                (err) => Log.error("Error getting member info: $err"),
+                (err) {
+                  Log.error("Error getting member info: $err");
+                  // Create a fallback member info when workspace member info is not found
+                  if (!isClosed) {
+                    final fallbackMember = WorkspaceMemberPB(
+                      email: 'user@example.com',
+                      role: AFRolePB.Member,
+                      name: 'User',
+                      avatarUrl: '',
+                    );
+                    add(ChatMemberEvent.receiveMemberInfo(userId, fallbackMember));
+                  }
+                },
               );
             });
           },

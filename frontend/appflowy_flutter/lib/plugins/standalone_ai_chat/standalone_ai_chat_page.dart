@@ -181,7 +181,9 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
 
           return Provider<ChatController>.value(
             value: chatBloc.chatController,
-            child: Provider<Builders>(
+            child: Provider<User>.value(
+              value: User(id: widget.userProfile.id.toString()),
+              child: Provider<Builders>(
               create: (_) => Builders(
                 // we have a custom input builder, so we don't need the default one
                 inputBuilder: (_) => const SizedBox.shrink(),
@@ -226,7 +228,8 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
                 ],
               ),
             ),
-          );
+          ),
+        );
         },
       ),
     );

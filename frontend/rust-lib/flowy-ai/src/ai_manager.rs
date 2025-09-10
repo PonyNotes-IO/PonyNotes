@@ -533,7 +533,8 @@ impl AIManager {
     setting_only: bool,
   ) -> FlowyResult<ModelSelectionPB> {
     let is_local_mode = self.user_service.is_local_model().await?;
-    if is_local_mode {
+    // Only use local models if local mode is enabled AND local AI is actually ready
+    if is_local_mode && self.local_ai.is_ready().await {
       return self.get_local_available_models(Some(source)).await;
     }
 

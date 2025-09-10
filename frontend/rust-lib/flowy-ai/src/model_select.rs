@@ -170,6 +170,7 @@ impl ModelSelectionControl {
     }
 
     // use local model if user doesn't set the model for given source
+    // but only if local models are actually available in the available list
     if self
       .sources
       .iter()
@@ -186,8 +187,14 @@ impl ModelSelectionControl {
             "[Model Selection] Found global active model: {}",
             local_model.name
           );
-          if available.iter().any(|m| m.name == local_model.name) {
+          // Only return local model if it's actually available (i.e., local AI is ready)
+          if available.iter().any(|m| m.name == local_model.name && m.is_local) {
             return local_model;
+          } else {
+            trace!(
+              "[Model Selection] Local model {} not available or local AI not ready, continuing to server storage",
+              local_model.name
+            );
           }
         }
       }
