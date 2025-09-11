@@ -233,11 +233,13 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
           debugPrint('❌ AI响应错误: $error');
           add(StandaloneChatEvent.errorOccurred(error: error));
         },
+        onComplete: () {
+          debugPrint('✅ AI流式响应完成，发送完成事件');
+          debugPrint('🚀 准备调用 finishResponse 事件');
+          add(const StandaloneChatEvent.finishResponse());
+          debugPrint('📤 finishResponse 事件已添加到队列');
+        },
       );
-      
-      // 发送完成事件
-      debugPrint('✅ AI服务调用完成，发送完成事件');
-      add(const StandaloneChatEvent.finishResponse());
     } catch (e) {
       debugPrint('❌ AI服务调用异常: $e');
       add(StandaloneChatEvent.errorOccurred(error: e.toString()));
@@ -254,14 +256,18 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     final currentContent = state.currentStreamingMessage ?? '';
     final newContent = currentContent + chunk;
 
-    emit(state.copyWith(
-      currentStreamingMessage: newContent,
-      isStreaming: true,
-    ));
+    if (!emit.isDone) {
+      emit(state.copyWith(
+        currentStreamingMessage: newContent,
+        isStreaming: true,
+      ));
+    }
   }
 
   /// 处理完成响应
   Future<void> _handleFinishResponse(Emitter<StandaloneChatState> emit) async {
+    debugPrint('🎯 _handleFinishResponse 方法被调用');
+    debugPrint('📊 当前状态: isLoading=${state.isLoading}, isStreaming=${state.isStreaming}');
     if (emit.isDone) return;
     
     final streamingContent = state.currentStreamingMessage ?? '';
@@ -276,30 +282,37 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         aiProvider: state.selectedProvider,
       );
 
-      try {
-        // 保存AI消息到数据库
-        await _persistence.saveMessage(aiMessage);
-      } catch (e) {
-        debugPrint('保存AI消息失败: $e');
-      }
-
-      if (emit.isDone) return;
-      
-      // 更新状态
+      // 先更新UI状态，然后异步保存到数据库
+      debugPrint('🔄 _handleFinishResponse: 设置 isLoading: false, isStreaming: false');
       emit(state.copyWith(
         messages: [...state.messages, aiMessage],
         isLoading: false,
         isStreaming: false,
         currentStreamingMessage: null,
       ));
+      debugPrint('✅ _handleFinishResponse: 状态已更新，isLoading: false');
+
+      // 异步保存到数据库（不阻塞UI更新）
+      _saveMessageAsync(aiMessage);
     } else {
-      if (emit.isDone) return;
-      
+      debugPrint('🔄 _handleFinishResponse: 空响应，设置 isLoading: false, isStreaming: false');
       emit(state.copyWith(
         isLoading: false,
         isStreaming: false,
         currentStreamingMessage: null,
       ));
+      debugPrint('✅ _handleFinishResponse: 空响应状态已更新');
+    }
+  }
+
+  /// 异步保存消息到数据库
+  void _saveMessageAsync(ChatMessage message) async {
+    try {
+      debugPrint('💾 开始异步保存AI消息到数据库...');
+      await _persistence.saveMessage(message);
+      debugPrint('✅ AI消息已成功异步保存到数据库');
+    } catch (e) {
+      debugPrint('❌ 异步保存AI消息失败: $e');
     }
   }
 

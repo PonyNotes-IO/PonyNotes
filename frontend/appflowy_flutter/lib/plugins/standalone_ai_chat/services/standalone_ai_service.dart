@@ -25,6 +25,7 @@ class StandaloneAiService {
     required AIProvider provider,
     required Function(String) onResponse,
     required Function(String) onError,
+    Function()? onComplete,
   }) async {
     try {
       print('🚀 开始发送AI请求: $message, 提供商: ${provider.displayName}');
@@ -33,13 +34,13 @@ class StandaloneAiService {
 
       switch (provider) {
         case AIProvider.deepseek:
-          await _callDeepSeekAPI(message, config, onResponse, onError);
+          await _callDeepSeekAPI(message, config, onResponse, onError, onComplete);
           break;
         case AIProvider.qwen:
-          await _callQwenAPI(message, config, onResponse, onError);
+          await _callQwenAPI(message, config, onResponse, onError, onComplete);
           break;
         case AIProvider.doubao:
-          await _callDoubaoAPI(message, config, onResponse, onError);
+          await _callDoubaoAPI(message, config, onResponse, onError, onComplete);
           break;
       }
     } catch (e) {
@@ -54,6 +55,7 @@ class StandaloneAiService {
     AIConfig config,
     Function(String) onResponse,
     Function(String) onError,
+    Function()? onComplete,
   ) async {
     try {
       print('🔗 开始调用DeepSeek API');
@@ -90,7 +92,7 @@ class StandaloneAiService {
       if (streamedResponse.statusCode == 200) {
         print('✅ DeepSeek API响应成功，开始处理流式响应');
         // 处理流式响应
-        await _handleStreamedResponse(streamedResponse, onResponse, onError);
+        await _handleStreamedResponse(streamedResponse, onResponse, onError, onComplete);
         print('✅ DeepSeek API流式响应处理完成');
       } else {
         final responseBody = await streamedResponse.stream.bytesToString();
@@ -112,12 +114,13 @@ class StandaloneAiService {
     AIConfig config,
     Function(String) onResponse,
     Function(String) onError,
+    Function()? onComplete,
   ) async {
     try {
       final client = http.Client();
       // 通义千问使用兼容模式的API端点
       final apiUrl = config.apiBase.contains('compatible-mode') 
-          ? config.apiBase
+          ? '${config.apiBase}/chat/completions'
           : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
       final request = http.Request(
         'POST',
@@ -167,7 +170,7 @@ class StandaloneAiService {
       final streamedResponse = await client.send(request);
 
       if (streamedResponse.statusCode == 200) {
-        await _handleStreamedResponse(streamedResponse, onResponse, onError);
+        await _handleStreamedResponse(streamedResponse, onResponse, onError, onComplete);
       } else {
         final responseBody = await streamedResponse.stream.bytesToString();
         onError('通义千问API调用失败: ${streamedResponse.statusCode}, $responseBody');
@@ -185,6 +188,7 @@ class StandaloneAiService {
     AIConfig config,
     Function(String) onResponse,
     Function(String) onError,
+    Function()? onComplete,
   ) async {
     try {
       final client = http.Client();
@@ -212,7 +216,7 @@ class StandaloneAiService {
 
       if (streamedResponse.statusCode == 200) {
         print('✅ 豆包API响应成功，开始处理流式响应');
-        await _handleStreamedResponse(streamedResponse, onResponse, onError);
+        await _handleStreamedResponse(streamedResponse, onResponse, onError, onComplete);
         print('✅ 豆包API流式响应处理完成');
       } else {
         final responseBody = await streamedResponse.stream.bytesToString();
@@ -231,10 +235,13 @@ class StandaloneAiService {
     http.StreamedResponse streamedResponse,
     Function(String) onResponse,
     Function(String) onError,
+    Function()? onComplete,
   ) async {
+    String fullResponse = '';
+    String buffer = '';
+    bool isCompleted = false; // 防止重复调用onComplete
+    
     try {
-      String fullResponse = '';
-      String buffer = '';
 
       await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
         buffer += chunk;
@@ -252,6 +259,11 @@ class StandaloneAiService {
             print('📋 数据内容: "$data"');
             if (data == '[DONE]' || data.isEmpty) {
               print('✅ 收到流结束信号: "$data"');
+              if (!isCompleted) {
+                print('🎯 调用onComplete回调');
+                isCompleted = true;
+                onComplete?.call();
+              }
               return;
             }
             
@@ -274,6 +286,11 @@ class StandaloneAiService {
                   if (content != null && content.isNotEmpty) {
                     fullResponse += content;
                     onResponse(content);
+                  }
+                  if (!isCompleted) {
+                    print('🎯 调用onComplete回调（finish_reason）');
+                    isCompleted = true;
+                    onComplete?.call();
                   }
                   return; // 流结束
                 }
@@ -308,6 +325,23 @@ class StandaloneAiService {
             if (json['choices'] != null && json['choices'].isNotEmpty) {
               final choice = json['choices'][0];
               content = choice['delta']?['content'] ?? choice['message']?['content'];
+              
+              // 检查是否有finish_reason表示结束
+              final finishReason = choice['finish_reason'];
+              if (finishReason != null && finishReason != 'null') {
+                print('✅ 剩余buffer中收到完成原因: $finishReason');
+                if (content != null && content.isNotEmpty) {
+                  fullResponse += content;
+                  onResponse(content);
+                }
+                print('🏁 流式响应完成，最终响应长度: ${fullResponse.length}');
+                if (!isCompleted) {
+                  print('🎯 调用onComplete回调（buffer finish_reason）');
+                  isCompleted = true;
+                  onComplete?.call();
+                }
+                return;
+              }
             }
             
             if (content != null && content.isNotEmpty) {
@@ -325,9 +359,21 @@ class StandaloneAiService {
       } else {
         print('✅ 流式响应处理完成，总响应长度: ${fullResponse.length}');
       }
+      
+      // Fallback: 如果还没有调用onComplete，在这里调用
+      if (!isCompleted) {
+        print('🎯 Fallback调用onComplete回调');
+        isCompleted = true;
+        onComplete?.call();
+      }
     } catch (e) {
       print('❌ 处理流式响应失败: $e');
       onError('处理流式响应失败: $e');
+      // 即使出错也要调用onComplete来重置UI状态
+      if (!isCompleted) {
+        isCompleted = true;
+        onComplete?.call();
+      }
     }
     print('🏁 _handleStreamedResponse 方法结束');
   }

@@ -408,11 +408,14 @@ class _ChatInputBarState extends State<_ChatInputBar> {
   }
 
   String _getHintText(StandaloneChatState state) {
+    debugPrint('🔍 _getHintText: isLoading=${state.isLoading}, isStreaming=${state.isStreaming}, selectedProvider=${state.selectedProvider?.displayName}');
     if (state.selectedProvider == null) {
       return '请先选择AI模型...';
     } else if (state.isLoading) {
+      debugPrint('💭 显示"AI正在思考中..."');
       return 'AI正在思考中...';
     } else {
+      debugPrint('✏️ 显示"输入您的问题..."');
       return '输入您的问题...';
     }
   }
