@@ -9,6 +9,10 @@ import 'package:appflowy/core/config/ai_config.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
+import 'package:appflowy/workspace/application/view/view_ext.dart';
+import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
+import 'package:appflowy_backend/dispatch/dispatch.dart';
 
 class HomePagePluginBuilder extends PluginBuilder {
   @override
@@ -462,62 +466,68 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentSection() {
-    return Container(
-      width: 132,
-      height: 132,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(
-          color: const Color(0xFFE9E9E9),
-          width: 1,
-        ),
-      ),
-      child: Stack(
-        children: [
-          // 顶部灰色区域
-          Positioned(
-            top: 1,
-            left: 1,
-            child: Container(
-              width: 130,
-              height: 48,
-              decoration: const BoxDecoration(
-                color: Color(0xFFF8F8F8),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(9),
-                  topRight: Radius.circular(9),
-                ),
-              ),
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: _handleAddNotebook,
+        child: Container(
+          width: 132,
+          height: 132,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10.0),
+            border: Border.all(
+              color: const Color(0xFFE9E9E9),
+              width: 1,
             ),
           ),
-          // 内容区域 - 左对齐显示图标和文字
-          Positioned(
-            top: 60,
-            left: 17,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 添加图标
-                const Icon(
-                  Icons.add,
-                  size: 25,
-                  color: Color(0xFF888888),
-                ),
-                const SizedBox(height: 18),
-                // 文字
-                const Text(
-                  "添加笔记本",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF888888),
+          child: Stack(
+            children: [
+              // 顶部灰色区域
+              Positioned(
+                top: 1,
+                left: 1,
+                child: Container(
+                  width: 130,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F8F8),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(9),
+                      topRight: Radius.circular(9),
+                    ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              // 内容区域 - 左对齐显示图标和文字
+              Positioned(
+                top: 60,
+                left: 17,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 添加图标
+                    const Icon(
+                      Icons.add,
+                      size: 25,
+                      color: Color(0xFF888888),
+                    ),
+                    const SizedBox(height: 18),
+                    // 文字
+                    const Text(
+                      "添加笔记本",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -866,5 +876,88 @@ class _HomePageState extends State<HomePage> {
         builder: (context) => const InteractiveAIChatPage(),
       ),
     );
+  }
+
+  /// 处理添加笔记本点击事件
+  void _handleAddNotebook() async {
+    try {
+      // 获取当前工作空间信息
+      final workspaceResult = await FolderEventGetCurrentWorkspaceSetting().send();
+      final workspaceId = workspaceResult.fold(
+        (workspace) => workspace.workspaceId,
+        (error) => '',
+      );
+
+      if (workspaceId.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('无法获取工作空间信息'),
+              duration: Duration(seconds: 3),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 创建笔记本文档
+      final result = await ViewBackendService.createView(
+        layoutType: ViewLayoutPB.Notebook,
+        parentViewId: workspaceId,
+        name: '新笔记本',
+        openAfterCreate: true,
+        ext: {
+          ViewExtKeys.viewTypeKey: ViewExtKeys.notebookTypeValue,
+        },
+      );
+
+      await result.fold(
+        (view) async {
+          // 创建成功，打开新创建的笔记本
+          final plugin = makePlugin(
+            pluginType: PluginType.document,
+            data: view,
+          );
+
+          getIt<TabsBloc>().add(
+            TabsEvent.openPlugin(plugin: plugin),
+          );
+
+          // 显示成功消息
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('笔记本创建成功！'),
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        },
+        (error) {
+          // 显示错误消息
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('创建笔记本失败: ${error.msg}'),
+                duration: const Duration(seconds: 3),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+      );
+    } catch (e) {
+      // 显示错误消息
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('创建笔记本时发生错误: $e'),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
