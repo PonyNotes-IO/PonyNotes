@@ -8,7 +8,7 @@ import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dar
 import 'package:appflowy/workspace/presentation/home/af_focus_manager.dart';
 import 'package:appflowy/workspace/presentation/home/hotkeys.dart';
 import 'package:appflowy/workspace/presentation/settings/settings_dialog.dart';
-import 'package:appflowy/shared/settings/show_settings.dart';
+
 import 'package:appflowy_backend/log.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
@@ -92,7 +92,11 @@ class _UserSettingButtonState extends State<UserSettingButton> {
         child: BlocProvider.value(
           value: _passwordBloc,
           child: FlowyButton(
-            onTap: () => showNewSettingsDialog(context),
+            onTap: () => showSettingsDialog(
+              context,
+              userWorkspaceBloc: _userWorkspaceBloc,
+              passwordBloc: _passwordBloc,
+            ),
             margin: EdgeInsets.zero,
             text: FlowySvg(
               FlowySvgs.settings_s,
