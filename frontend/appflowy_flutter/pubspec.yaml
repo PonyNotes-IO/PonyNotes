@@ -107,6 +107,7 @@ dependencies:
   local_notifier: ^0.1.5
   markdown:
   markdown_widget: ^2.3.2+6
+  flutter_markdown: ^0.6.18
   mime: ^2.0.0
   nanoid: ^1.0.0
   numerus: ^2.1.2

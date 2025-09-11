@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:appflowy/plugins/standalone_ai_chat/application/standalone_chat_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 
 /// 聊天消息气泡组件
 /// 支持用户消息和AI回复的不同样式显示
@@ -117,22 +118,21 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                     bottomLeft: Radius.circular(18),
                     bottomRight: Radius.circular(18),
                   ),
-                  border: Border.all(color: Colors.grey[200]!),
+                  border: Border.all(color: Colors.grey[200] ?? Colors.grey),
                 ),
                 child: _buildAiMessageContent(),
               ),
               // 消息状态和时间戳
-              if (widget.message.timestamp != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    _formatTimestamp(widget.message.timestamp!),
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: Colors.grey[500],
-                    ),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  _formatTimestamp(widget.message.timestamp),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[500],
                   ),
                 ),
+              ),
             ],
           ),
         ),
@@ -142,21 +142,14 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     );
   }
 
-  /// 构建AI消息内容（支持流式显示）
+  /// 构建AI消息内容（支持流式显示和Markdown渲染）
   Widget _buildAiMessageContent() {
     if (widget.message.isStreaming) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Flexible(
-            child: Text(
-              widget.message.content,
-              style: const TextStyle(
-                color: Colors.black87,
-                fontSize: 14,
-                height: 1.4,
-              ),
-            ),
+            child: _buildMarkdownContent(widget.message.content),
           ),
           const SizedBox(width: 4),
           _buildTypingIndicator(),
@@ -188,15 +181,73 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
       );
     }
 
-    return SelectableText(
-      widget.message.content,
-      style: const TextStyle(
-        color: Colors.black87,
-        fontSize: 14,
-        height: 1.4,
+    return _buildMarkdownContent(widget.message.content);
+  }
+
+  /// 构建Markdown内容
+  Widget _buildMarkdownContent(String content) {
+    print('🔍 [DEBUG] 使用flutter_markdown渲染内容');
+    print('📄 [DEBUG] 内容预览: "${content.substring(0, content.length > 50 ? 50 : content.length)}..."');
+    print('📏 [DEBUG] 内容长度: ${content.length}');
+    print('🎯 [DEBUG] 是否包含Markdown语法: ${content.contains('**') || content.contains('#') || content.contains('*')}');
+    
+    // 使用flutter_markdown替代markdown_widget
+    return Markdown(
+      data: content,
+      shrinkWrap: true,
+      selectable: true,
+      padding: EdgeInsets.zero,
+      styleSheet: MarkdownStyleSheet(
+        p: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+          height: 1.4,
+        ),
+        h1: const TextStyle(
+          color: Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        h2: const TextStyle(
+          color: Colors.black87,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        h3: const TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        strong: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        em: const TextStyle(
+          fontStyle: FontStyle.italic,
+          color: Colors.black87,
+        ),
+        listBullet: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+        ),
+        code: TextStyle(
+          backgroundColor: Colors.grey.shade200,
+          fontFamily: 'monospace',
+          fontSize: 13,
+          color: Colors.black87,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        codeblockPadding: const EdgeInsets.all(8),
       ),
     );
   }
+
 
   /// 构建打字指示器
   Widget _buildTypingIndicator() {
@@ -318,7 +369,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
   }
 
   /// 格式化时间戳
-  String _formatTimestamp(DateTime timestamp) {
+  String _formatTimestamp(DateTime? timestamp) {
+    if (timestamp == null) return '';
+    
     final now = DateTime.now();
     final diff = now.difference(timestamp);
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:appflowy/core/config/ai_config.dart';
 import '../application/standalone_chat_bloc.dart';
@@ -609,14 +610,16 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   ),
                 ],
               ),
-              child: SelectableText(
-                message.content,
-                style: TextStyle(
-                  fontSize: 14,
-                  height: 1.4,
-                  color: message.isUser ? Colors.white : Colors.black87,
-                ),
-              ),
+              child: message.isUser 
+                ? SelectableText(
+                    message.content,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.4,
+                      color: Colors.white,
+                    ),
+                  )
+                : _buildMarkdownContent(message.content),
             ),
           ),
           if (message.isUser) ...[
@@ -632,6 +635,64 @@ class _ChatMessageListState extends State<_ChatMessageList> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  /// 构建Markdown内容
+  Widget _buildMarkdownContent(String content) {
+    return Markdown(
+      data: content,
+      shrinkWrap: true,
+      selectable: true,
+      padding: EdgeInsets.zero,
+      styleSheet: MarkdownStyleSheet(
+        p: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+          height: 1.4,
+        ),
+        h1: const TextStyle(
+          color: Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        h2: const TextStyle(
+          color: Colors.black87,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        h3: const TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        strong: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        em: const TextStyle(
+          fontStyle: FontStyle.italic,
+          color: Colors.black87,
+        ),
+        listBullet: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+        ),
+        code: TextStyle(
+          backgroundColor: Colors.grey.shade200,
+          fontFamily: 'monospace',
+          fontSize: 13,
+          color: Colors.black87,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        codeblockPadding: const EdgeInsets.all(8),
       ),
     );
   }
