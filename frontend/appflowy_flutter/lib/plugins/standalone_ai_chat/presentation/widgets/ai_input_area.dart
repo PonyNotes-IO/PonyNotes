@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:appflowy/plugins/ai_chat/application/chat_bloc.dart';
 import 'package:appflowy/core/config/ai_config.dart';
+import '../../application/standalone_chat_bloc.dart';
 import '../ai_welcome_theme.dart';
 
 /// AI欢迎页面的输入交互区域
@@ -69,9 +69,12 @@ class _AIInputAreaState extends State<AIInputArea> {
       }
     }
 
-    // 发送消息到AI聊天
-    final chatBloc = context.read<ChatBloc>();
-    chatBloc.add(ChatEvent.sendMessage(message: text));
+    // 发送消息到独立AI聊天
+    final chatBloc = context.read<StandaloneChatBloc>();
+    chatBloc.add(StandaloneChatEvent.sendMessage(
+      message: text,
+      provider: _selectedProvider,
+    ));
 
     // 清空输入框
     _textController.clear();

@@ -38,6 +38,9 @@ class AIConfig {
   });
 
   bool get isValid => apiKey.isNotEmpty && apiKey != 'your_${_getProviderKey()}_api_key_here';
+  
+  /// 为了兼容性，添加 model getter
+  String get model => modelName;
 
   String _getProviderKey() {
     if (apiBase.contains('deepseek')) return 'deepseek';

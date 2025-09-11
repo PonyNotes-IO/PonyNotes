@@ -105,22 +105,19 @@ impl ChatCloudService for ChatServiceMiddleware {
     ai_model: AIModel,
   ) -> Result<StreamAnswer, FlowyError> {
     info!("stream_answer use model: {:?}", ai_model);
-    if ai_model.is_local {
-      if self.local_ai.is_ready().await {
-        let content = self.get_message_content(question_id)?;
-        self
-          .local_ai
-          .stream_question(chat_id, &content, format, &ai_model.name)
-          .await
-      } else {
-        Err(FlowyError::local_ai_not_ready())
-      }
-    } else {
-      self
-        .cloud_service
-        .stream_answer(workspace_id, chat_id, question_id, format, ai_model)
-        .await
+    
+    if ai_model.is_local && self.local_ai.is_ready().await {
+      let content = self.get_message_content(question_id)?;
+      return self
+        .local_ai
+        .stream_question(chat_id, &content, format, &ai_model.name)
+        .await;
     }
+
+    self
+      .cloud_service
+      .stream_answer(workspace_id, chat_id, question_id, format, ai_model)
+      .await
   }
 
   async fn get_answer(
@@ -215,13 +212,12 @@ impl ChatCloudService for ChatServiceMiddleware {
     ai_model: AIModel,
   ) -> Result<StreamComplete, FlowyError> {
     info!("stream_complete use custom model: {:?}", ai_model);
-    if ai_model.is_local {
-      if self.local_ai.is_ready().await {
-        self.local_ai.complete_text(&ai_model.name, params).await
-      } else {
-        Err(FlowyError::local_ai_not_ready())
-      }
+    if ai_model.is_local && self.local_ai.is_ready().await {
+      self.local_ai.complete_text(&ai_model.name, params).await
     } else {
+      // If local AI is requested but not ready, or if it's a cloud model, use cloud service
+      trace!("Using cloud service for completion with model: {}, is_local: {}, local_ai_ready: {}", 
+             ai_model.name, ai_model.is_local, self.local_ai.is_ready().await);
       self
         .cloud_service
         .stream_complete(workspace_id, params, ai_model)
