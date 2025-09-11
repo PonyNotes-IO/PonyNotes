@@ -13,18 +13,21 @@ class StandaloneAiChatPluginBuilder extends PluginBuilder {
   Plugin build(dynamic data) {
     String? initialText;
     AIModelPB? selectedModel;
+    String? selectedModelName;
     
     if (data is String) {
       initialText = data;
     } else if (data is Map<String, dynamic>) {
       initialText = data['initialText'] as String?;
       selectedModel = data['selectedModel'] as AIModelPB?;
+      selectedModelName = data['selectedModelName'] as String?;
     }
     
     return StandaloneAiChatPlugin(
       pluginType: pluginType,
       initialText: initialText,
       selectedModel: selectedModel,
+      selectedModelName: selectedModelName,
     );
   }
 
@@ -51,16 +54,19 @@ class StandaloneAiChatPlugin extends Plugin {
     required PluginType pluginType,
     this.initialText,
     this.selectedModel,
+    this.selectedModelName,
   }) : _pluginType = pluginType;
 
   final PluginType _pluginType;
   final String? initialText;
   final AIModelPB? selectedModel;
+  final String? selectedModelName;
 
   @override
   PluginWidgetBuilder get widgetBuilder => StandaloneAiChatPluginDisplay(
     initialText: initialText,
     selectedModel: selectedModel,
+    selectedModelName: selectedModelName,
   );
 
   @override
@@ -71,10 +77,15 @@ class StandaloneAiChatPlugin extends Plugin {
 }
 
 class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
-  StandaloneAiChatPluginDisplay({this.initialText, this.selectedModel});
+  StandaloneAiChatPluginDisplay({
+    this.initialText, 
+    this.selectedModel,
+    this.selectedModelName,
+  });
   
   final String? initialText;
   final AIModelPB? selectedModel;
+  final String? selectedModelName;
 
   @override
   String? get viewName => '问AI';
@@ -107,6 +118,7 @@ class StandaloneAiChatPluginDisplay extends PluginWidgetBuilder {
       userProfile: userProfile,
       initialText: initialText,
       selectedModel: selectedModel,
+      selectedModelName: selectedModelName,
     );
   }
 

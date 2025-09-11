@@ -585,7 +585,7 @@ class _ChatMessageListState extends State<_ChatMessageList> {
             ),
             const SizedBox(width: 12),
           ],
-          Expanded(
+          Flexible(
             child: Container(
               constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.7,

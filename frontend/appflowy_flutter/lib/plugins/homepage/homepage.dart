@@ -82,6 +82,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _aiInputController = TextEditingController();
   final FocusNode _aiInputFocusNode = FocusNode();
+  String _selectedModel = 'DeepSeek-R1-V3'; // 存储选择的模型
 
   @override
   void initState() {
@@ -108,6 +109,7 @@ class _HomePageState extends State<HomePage> {
         pluginType: PluginType.standaloneAiChat,
         data: {
           'initialText': text,
+          'selectedModelName': _selectedModel, // 传递选择的模型名称
         },
       );
 
@@ -353,7 +355,9 @@ class _HomePageState extends State<HomePage> {
               // 选择模型下拉框
               SimpleModelSelector(
                 onModelChanged: (model) {
-                  // 处理模型变更
+                  setState(() {
+                    _selectedModel = model;
+                  });
                   debugPrint('选择了模型: $model');
                 },
               ),

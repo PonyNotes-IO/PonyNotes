@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:appflowy/core/config/ai_config.dart';
 import 'widgets/ai_welcome_header.dart';
 import 'widgets/ai_input_area.dart';
 import 'ai_welcome_theme.dart';
@@ -11,7 +12,7 @@ class AIWelcomePage extends StatelessWidget {
     required this.onMessageSent,
   });
 
-  final VoidCallback onMessageSent;
+  final Function(String message, AIProvider? provider) onMessageSent;
 
   @override
   Widget build(BuildContext context) {

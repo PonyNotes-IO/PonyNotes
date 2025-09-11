@@ -83,8 +83,23 @@ class AIConfigService {
     if (_isLoaded) return;
 
     try {
-      final configFile = File('.env.ai');
-      if (await configFile.exists()) {
+      // 尝试从多个位置查找配置文件
+      File? configFile;
+      final possiblePaths = [
+        '.env.ai',
+        'frontend/appflowy_flutter/.env.ai',
+        '../.env.ai',
+      ];
+      
+      for (final path in possiblePaths) {
+        final file = File(path);
+        if (await file.exists()) {
+          configFile = file;
+          break;
+        }
+      }
+      
+      if (configFile != null) {
         final content = await configFile.readAsString();
         _parseEnvContent(content);
         _isLoaded = true;
@@ -93,9 +108,10 @@ class AIConfigService {
         final defaultModel = _envVars['AI_DEFAULT_MODEL'] ?? 'deepseek';
         _currentProvider = AIProvider.fromString(defaultModel);
         
-        debugPrint('✅ AI配置加载成功，当前提供商: ${_currentProvider.displayName}');
+        debugPrint('✅ AI配置加载成功，配置文件: ${configFile.path}');
+        debugPrint('✅ 当前提供商: ${_currentProvider.displayName}');
       } else {
-        debugPrint('⚠️  AI配置文件不存在: .env.ai');
+        debugPrint('⚠️  AI配置文件不存在，已尝试路径: ${possiblePaths.join(', ')}');
         debugPrint('📝 请复制 ai_config_example.env 为 .env.ai 并配置API密钥');
       }
     } catch (e) {

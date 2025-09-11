@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:async' show unawaited;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
@@ -154,6 +155,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     AIProvider? provider,
     Emitter<StandaloneChatState> emit,
   ) async {
+    debugPrint('🚀🚀🚀 _handleSendMessage 被调用！消息: "$message", 提供商: ${provider?.displayName}');
     if (message.trim().isEmpty) return;
 
     // 确定使用的AI提供商
@@ -173,9 +175,19 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
       timestamp: DateTime.now(),
     );
 
-    // 保存用户消息到数据库
-    await _persistence.saveMessage(userMessage);
+    try {
+      // 保存用户消息到数据库
+      await _persistence.saveMessage(userMessage);
+    } catch (e) {
+      debugPrint('保存用户消息失败: $e');
+    }
 
+    // 检查emit是否还有效
+    if (emit.isDone) {
+      debugPrint('⚠️ Emit已完成，跳过状态更新');
+      return;
+    }
+    
     // 更新状态
     emit(state.copyWith(
       messages: [...state.messages, userMessage],
@@ -186,24 +198,39 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
       currentStreamingMessage: '',
     ));
 
+    debugPrint('🎯 准备进入AI服务调用try块');
+    
+    // 使用 unawaited 来防止阻塞事件处理器
+    unawaited(_callAIServiceAsync(message, selectedProvider));
+  }
+
+  /// 异步调用AI服务，避免阻塞事件处理器
+  Future<void> _callAIServiceAsync(String message, AIProvider selectedProvider) async {
     try {
       // 开始AI流式响应
       await _streamSubscription?.cancel();
+      debugPrint('📡 流订阅已取消');
+      
+      debugPrint('🤖 准备调用AI服务: 消息="$message", 提供商=${selectedProvider.displayName}');
       
       await _aiService.sendMessage(
         message: message,
         provider: selectedProvider,
         onResponse: (response) {
+          debugPrint('📨 收到AI响应片段: $response');
           add(StandaloneChatEvent.receiveStreamChunk(chunk: response));
         },
         onError: (error) {
+          debugPrint('❌ AI响应错误: $error');
           add(StandaloneChatEvent.errorOccurred(error: error));
         },
       );
       
       // 发送完成事件
+      debugPrint('✅ AI服务调用完成，发送完成事件');
       add(const StandaloneChatEvent.finishResponse());
     } catch (e) {
+      debugPrint('❌ AI服务调用异常: $e');
       add(StandaloneChatEvent.errorOccurred(error: e.toString()));
     }
   }
@@ -213,6 +240,8 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     String chunk,
     Emitter<StandaloneChatState> emit,
   ) {
+    if (emit.isDone) return;
+    
     final currentContent = state.currentStreamingMessage ?? '';
     final newContent = currentContent + chunk;
 
@@ -224,6 +253,8 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
 
   /// 处理完成响应
   Future<void> _handleFinishResponse(Emitter<StandaloneChatState> emit) async {
+    if (emit.isDone) return;
+    
     final streamingContent = state.currentStreamingMessage ?? '';
     
     if (streamingContent.isNotEmpty) {
@@ -236,9 +267,15 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         aiProvider: state.selectedProvider,
       );
 
-      // 保存AI消息到数据库
-      await _persistence.saveMessage(aiMessage);
+      try {
+        // 保存AI消息到数据库
+        await _persistence.saveMessage(aiMessage);
+      } catch (e) {
+        debugPrint('保存AI消息失败: $e');
+      }
 
+      if (emit.isDone) return;
+      
       // 更新状态
       emit(state.copyWith(
         messages: [...state.messages, aiMessage],
@@ -247,6 +284,8 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         currentStreamingMessage: null,
       ));
     } else {
+      if (emit.isDone) return;
+      
       emit(state.copyWith(
         isLoading: false,
         isStreaming: false,
@@ -260,6 +299,8 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     String error,
     Emitter<StandaloneChatState> emit,
   ) {
+    if (emit.isDone) return;
+    
     emit(state.copyWith(
       isLoading: false,
       isStreaming: false,
@@ -274,11 +315,14 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
 
     try {
       final historyMessages = await _persistence.loadMessages();
+      
+      
       emit(state.copyWith(
         messages: historyMessages,
         isHistoryLoaded: true,
       ));
     } catch (e) {
+      
       emit(state.copyWith(
         error: '加载历史记录失败: $e',
       ));

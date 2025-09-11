@@ -27,11 +27,9 @@ class StandaloneAiService {
     required Function(String) onError,
   }) async {
     try {
+      print('🚀 开始发送AI请求: $message, 提供商: ${provider.displayName}');
       final config = _configService.getConfigForProvider(provider);
-      if (config == null) {
-        onError('AI配置未找到，请先配置${provider.displayName}');
-        return;
-      }
+      print('📋 获取到配置: API Base: ${config.apiBase}, Model: ${config.model}');
 
       switch (provider) {
         case AIProvider.deepseek:
@@ -43,10 +41,9 @@ class StandaloneAiService {
         case AIProvider.doubao:
           await _callDoubaoAPI(message, config, onResponse, onError);
           break;
-        default:
-          onError('不支持的AI提供商: ${provider.displayName}');
       }
     } catch (e) {
+      print('❌ AI服务发送消息失败: $e');
       onError('发送消息失败: $e');
     }
   }
@@ -59,28 +56,49 @@ class StandaloneAiService {
     Function(String) onError,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://api.deepseek.com/v1/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer ${config.apiKey}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': config.model ?? 'deepseek-chat',
-          'messages': [
-            {'role': 'user', 'content': message}
-          ],
-          'stream': true,
-        }),
+      print('🔗 开始调用DeepSeek API');
+      final client = http.Client();
+      final apiUrl = '${config.apiBase}/chat/completions';
+      print('🌐 API URL: $apiUrl');
+      
+      final request = http.Request(
+        'POST',
+        Uri.parse(apiUrl),
       );
+      
+      request.headers.addAll({
+        'Authorization': 'Bearer ${config.apiKey.substring(0, 10)}...', // 只显示前10位，保护API密钥
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      });
+      
+      final requestBody = {
+        'model': config.model,  // 使用配置中的模型
+        'messages': [
+          {'role': 'user', 'content': message}
+        ],
+        'stream': true,
+      };
+      
+      request.body = jsonEncode(requestBody);
+      print('📤 发送请求体: ${jsonEncode(requestBody)}');
 
-      if (response.statusCode == 200) {
+      final streamedResponse = await client.send(request);
+      print('📥 收到响应状态码: ${streamedResponse.statusCode}');
+
+      if (streamedResponse.statusCode == 200) {
+        print('✅ DeepSeek API响应成功，开始处理流式响应');
         // 处理流式响应
-        await _handleStreamResponse(response, onResponse, onError);
+        await _handleStreamedResponse(streamedResponse, onResponse, onError);
       } else {
-        onError('DeepSeek API调用失败: ${response.statusCode}');
+        final responseBody = await streamedResponse.stream.bytesToString();
+        print('❌ DeepSeek API调用失败: ${streamedResponse.statusCode}, $responseBody');
+        onError('DeepSeek API调用失败: ${streamedResponse.statusCode}, $responseBody');
       }
+      
+      client.close();
     } catch (e) {
+      print('❌ DeepSeek API调用异常: $e');
       onError('DeepSeek API调用异常: $e');
     }
   }
@@ -93,15 +111,45 @@ class StandaloneAiService {
     Function(String) onError,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation'),
-        headers: {
+      final client = http.Client();
+      // 通义千问使用兼容模式的API端点
+      final apiUrl = config.apiBase.contains('compatible-mode') 
+          ? '${config.apiBase}/chat/completions'
+          : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
+      final request = http.Request(
+        'POST',
+        Uri.parse(apiUrl),
+      );
+      
+      // 根据是否使用兼容模式设置不同的请求头和请求体
+      final isCompatibleMode = config.apiBase.contains('compatible-mode');
+      
+      if (isCompatibleMode) {
+        // 兼容模式：使用OpenAI格式
+        request.headers.addAll({
+          'Authorization': 'Bearer ${config.apiKey}',
+          'Content-Type': 'application/json',
+          'Accept': 'text/event-stream',
+        });
+        
+        request.body = jsonEncode({
+          'model': config.model,
+          'messages': [
+            {'role': 'user', 'content': message}
+          ],
+          'stream': true,
+        });
+      } else {
+        // 原生模式：使用DashScope格式
+        request.headers.addAll({
           'Authorization': 'Bearer ${config.apiKey}',
           'Content-Type': 'application/json',
           'X-DashScope-SSE': 'enable',
-        },
-        body: jsonEncode({
-          'model': config.model ?? 'qwen-turbo',
+          'Accept': 'text/event-stream',
+        });
+        
+        request.body = jsonEncode({
+          'model': config.model,
           'input': {
             'messages': [
               {'role': 'user', 'content': message}
@@ -110,14 +158,19 @@ class StandaloneAiService {
           'parameters': {
             'incremental_output': true,
           },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        await _handleStreamResponse(response, onResponse, onError);
-      } else {
-        onError('通义千问API调用失败: ${response.statusCode}');
+        });
       }
+
+      final streamedResponse = await client.send(request);
+
+      if (streamedResponse.statusCode == 200) {
+        await _handleStreamedResponse(streamedResponse, onResponse, onError);
+      } else {
+        final responseBody = await streamedResponse.stream.bytesToString();
+        onError('通义千问API调用失败: ${streamedResponse.statusCode}, $responseBody');
+      }
+      
+      client.close();
     } catch (e) {
       onError('通义千问API调用异常: $e');
     }
@@ -131,46 +184,87 @@ class StandaloneAiService {
     Function(String) onError,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('https://ark.cn-beijing.volces.com/api/v3/chat/completions'),
-        headers: {
-          'Authorization': 'Bearer ${config.apiKey}',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': config.model ?? 'ep-20241211205710-8dr2h',
-          'messages': [
-            {'role': 'user', 'content': message}
-          ],
-          'stream': true,
-        }),
+      final client = http.Client();
+      final apiUrl = '${config.apiBase}/chat/completions';
+      final request = http.Request(
+        'POST',
+        Uri.parse(apiUrl),
       );
+      
+      request.headers.addAll({
+        'Authorization': 'Bearer ${config.apiKey}',
+        'Content-Type': 'application/json',
+        'Accept': 'text/event-stream',
+      });
+      
+      request.body = jsonEncode({
+        'model': config.model,  // 使用配置中的模型
+        'messages': [
+          {'role': 'user', 'content': message}
+        ],
+        'stream': true,
+      });
 
-      if (response.statusCode == 200) {
-        await _handleStreamResponse(response, onResponse, onError);
+      final streamedResponse = await client.send(request);
+
+      if (streamedResponse.statusCode == 200) {
+        await _handleStreamedResponse(streamedResponse, onResponse, onError);
       } else {
-        onError('豆包API调用失败: ${response.statusCode}');
+        final responseBody = await streamedResponse.stream.bytesToString();
+        onError('豆包API调用失败: ${streamedResponse.statusCode}, $responseBody');
       }
+      
+      client.close();
     } catch (e) {
       onError('豆包API调用异常: $e');
     }
   }
 
   /// 处理流式响应
-  Future<void> _handleStreamResponse(
-    http.Response response,
+  Future<void> _handleStreamedResponse(
+    http.StreamedResponse streamedResponse,
     Function(String) onResponse,
     Function(String) onError,
   ) async {
     try {
-      final lines = response.body.split('\n');
       String fullResponse = '';
+      String buffer = '';
 
-      for (final line in lines) {
-        if (line.startsWith('data: ')) {
-          final data = line.substring(6).trim();
-          if (data == '[DONE]') break;
-          
+      await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+        buffer += chunk;
+        final lines = buffer.split('\n');
+        
+        // 保留最后一行（可能不完整）
+        buffer = lines.last;
+        
+        // 处理完整的行
+        for (int i = 0; i < lines.length - 1; i++) {
+          final line = lines[i].trim();
+          if (line.startsWith('data: ')) {
+            final data = line.substring(6).trim();
+            if (data == '[DONE]') {
+              return;
+            }
+            
+            try {
+              final json = jsonDecode(data);
+              final content = json['choices']?[0]?['delta']?['content'];
+              if (content != null && content is String) {
+                fullResponse += content;
+                onResponse(fullResponse);
+              }
+            } catch (e) {
+              // 忽略JSON解析错误，继续处理下一行
+              continue;
+            }
+          }
+        }
+      }
+
+      // 处理剩余的buffer
+      if (buffer.isNotEmpty && buffer.startsWith('data: ')) {
+        final data = buffer.substring(6).trim();
+        if (data != '[DONE]') {
           try {
             final json = jsonDecode(data);
             final content = json['choices']?[0]?['delta']?['content'];
@@ -179,25 +273,13 @@ class StandaloneAiService {
               onResponse(fullResponse);
             }
           } catch (e) {
-            // 忽略JSON解析错误，继续处理下一行
-            continue;
+            // 忽略JSON解析错误
           }
         }
       }
 
       if (fullResponse.isEmpty) {
-        // 如果没有流式数据，尝试解析完整响应
-        try {
-          final json = jsonDecode(response.body);
-          final content = json['choices']?[0]?['message']?['content'];
-          if (content != null && content is String) {
-            onResponse(content);
-          } else {
-            onError('AI响应格式错误');
-          }
-        } catch (e) {
-          onError('解析AI响应失败: $e');
-        }
+        onError('AI响应为空');
       }
     } catch (e) {
       onError('处理流式响应失败: $e');
@@ -208,7 +290,11 @@ class StandaloneAiService {
   Future<bool> checkServiceAvailability(AIProvider provider) async {
     try {
       final config = _configService.getConfigForProvider(provider);
-      if (config == null) return false;
+      
+      // 检查配置是否有效
+      if (!config.isValid) {
+        return false;
+      }
 
       // 发送测试消息
       bool isAvailable = false;
@@ -238,8 +324,6 @@ class StandaloneAiService {
         return ['qwen-turbo', 'qwen-plus', 'qwen-max'];
       case AIProvider.doubao:
         return ['ep-20241211205710-8dr2h', 'doubao-pro-4k', 'doubao-pro-32k'];
-      default:
-        return [];
     }
   }
 
@@ -254,8 +338,6 @@ class StandaloneAiService {
         return apiKey.length > 20; // 通义千问密钥格式较灵活
       case AIProvider.doubao:
         return apiKey.length > 20; // 豆包密钥格式较灵活
-      default:
-        return false;
     }
   }
 

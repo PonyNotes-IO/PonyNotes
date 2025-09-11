@@ -13,11 +13,13 @@ class StandaloneAiChatPage extends StatefulWidget {
     required this.userProfile,
     this.initialText,
     this.selectedModel,
+    this.selectedModelName,
   });
 
   final UserProfilePB userProfile;
   final String? initialText;
   final AIModelPB? selectedModel;
+  final String? selectedModelName;
 
   @override
   State<StandaloneAiChatPage> createState() => _StandaloneAiChatPageState();
@@ -26,11 +28,22 @@ class StandaloneAiChatPage extends StatefulWidget {
 class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
   bool _isInitialized = false;
   bool _showWelcomePage = true; // 控制是否显示欢迎页面
+  StandaloneChatBloc? _chatBloc;
+  
+  // 存储从欢迎页面传递过来的消息和模型
+  String? _pendingMessage;
+  AIProvider? _pendingProvider;
 
   @override
   void initState() {
     super.initState();
     _initializeChat();
+  }
+
+  @override
+  void dispose() {
+    _chatBloc?.close();
+    super.dispose();
   }
 
   /// 专为独立AI聊天界面设计的初始化逻辑
@@ -44,44 +57,36 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
         // 如果有初始文本，直接切换到聊天界面
         _showWelcomePage = widget.initialText == null || widget.initialText!.isEmpty;
       });
-      
-      // 如果有选中的模型，先设置模型
-      if (widget.selectedModel != null) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _setSelectedModel();
-        });
-      }
-      
-      // 如果有初始文本，在初始化完成后发送
-      if (widget.initialText != null && widget.initialText!.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _sendInitialMessage();
-        });
-      }
     }
   }
 
   /// 设置选中的模型
-  void _setSelectedModel() {
-    if (!mounted || widget.selectedModel == null) {
+  void _setSelectedModel(StandaloneChatBloc chatBloc) {
+    if (!mounted) return;
+    
+    String? modelName;
+    
+    // 优先使用selectedModelName（从HomePage传递过来的）
+    if (widget.selectedModelName != null) {
+      modelName = widget.selectedModelName!.toLowerCase();
+    } else if (widget.selectedModel != null) {
+      modelName = widget.selectedModel!.name.toLowerCase();
+    } else {
       return;
     }
 
     try {
-      // 从AIModelPB转换到AIProvider
-      final providerName = widget.selectedModel!.name.toLowerCase();
       AIProvider? provider;
       
-      if (providerName.contains('deepseek')) {
+      if (modelName.contains('deepseek')) {
         provider = AIProvider.deepseek;
-      } else if (providerName.contains('qwen') || providerName.contains('通义')) {
+      } else if (modelName.contains('qwen') || modelName.contains('通义')) {
         provider = AIProvider.qwen;
-      } else if (providerName.contains('doubao') || providerName.contains('豆包')) {
+      } else if (modelName.contains('doubao') || modelName.contains('豆包')) {
         provider = AIProvider.doubao;
       }
 
       if (provider != null) {
-        final chatBloc = context.read<StandaloneChatBloc>();
         chatBloc.add(StandaloneChatEvent.changeProvider(provider: provider));
       }
     } catch (e) {
@@ -90,13 +95,12 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
   }
 
   /// 发送初始消息
-  void _sendInitialMessage() {
+  void _sendInitialMessage(StandaloneChatBloc chatBloc) {
     if (!mounted || widget.initialText == null || widget.initialText!.isEmpty) {
       return;
     }
 
     try {
-      final chatBloc = context.read<StandaloneChatBloc>();
       chatBloc.add(StandaloneChatEvent.sendMessage(
         message: widget.initialText!,
       ));
@@ -107,10 +111,45 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
   }
 
   /// 从欢迎页面切换到聊天界面
-  void _switchToChatPage() {
+  void _switchToChatPage(String message, AIProvider? provider) {
+    debugPrint('🔄🔄🔄 _switchToChatPage 被调用！消息: "$message", 提供商: ${provider?.displayName}');
+    // 存储要发送的消息和模型
+    _pendingMessage = message;
+    _pendingProvider = provider;
+    
     setState(() {
       _showWelcomePage = false;
     });
+    
+    // 切换后立即发送消息
+    if (_chatBloc != null) {
+      _sendPendingMessage();
+    }
+  }
+  
+  /// 发送待处理的消息
+  void _sendPendingMessage() {
+    debugPrint('📤📤📤 _sendPendingMessage 被调用！待发送消息: "$_pendingMessage", 提供商: ${_pendingProvider?.displayName}');
+    if (_pendingMessage == null || _pendingMessage!.isEmpty) return;
+    
+    try {
+      // 如果有指定的提供商，先切换提供商
+      if (_pendingProvider != null) {
+        _chatBloc!.add(StandaloneChatEvent.changeProvider(provider: _pendingProvider!));
+      }
+      
+      // 发送消息
+      _chatBloc!.add(StandaloneChatEvent.sendMessage(
+        message: _pendingMessage!,
+        provider: _pendingProvider,
+      ));
+      
+      // 清空待处理的消息
+      _pendingMessage = null;
+      _pendingProvider = null;
+    } catch (e) {
+      debugPrint('发送待处理消息时出错: $e');
+    }
   }
 
   @override
@@ -124,7 +163,31 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     }
 
     return BlocProvider(
-      create: (_) => StandaloneChatBloc()..add(const StandaloneChatEvent.loadHistory()),
+      create: (context) {
+        _chatBloc = StandaloneChatBloc()..add(const StandaloneChatEvent.loadHistory());
+        
+        // 在BlocProvider创建后处理初始设置
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_chatBloc != null) {
+            // 如果有选中的模型，先设置模型
+            if (widget.selectedModel != null || widget.selectedModelName != null) {
+              _setSelectedModel(_chatBloc!);
+            }
+            
+            // 如果有初始文本，在初始化完成后发送
+            if (widget.initialText != null && widget.initialText!.isNotEmpty) {
+              _sendInitialMessage(_chatBloc!);
+            }
+            
+            // 如果有待处理的消息（从欢迎页面传递过来的），发送它
+            if (_pendingMessage != null) {
+              _sendPendingMessage();
+            }
+          }
+        });
+        
+        return _chatBloc!;
+      },
       child: Builder(
         builder: (context) {
           // 根据状态显示欢迎页面或聊天页面

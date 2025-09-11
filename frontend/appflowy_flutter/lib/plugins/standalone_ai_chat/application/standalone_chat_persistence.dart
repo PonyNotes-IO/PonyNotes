@@ -88,7 +88,7 @@ class StandaloneChatPersistence {
 
       // 保存消息 - 这里使用简化的方式，直接存储JSON字符串
       // 真正的实现需要与Rust后端的具体API对接
-      debugPrint('📝 尝试保存消息到后端: ${message.content.substring(0, 20)}...');
+      debugPrint('📝 尝试保存消息到后端: ${message.content.length > 20 ? message.content.substring(0, 20) + '...' : message.content}');
       
       // TODO: 这里需要根据实际的Rust后端API来实现
       // 现在先用调试信息模拟保存过程
