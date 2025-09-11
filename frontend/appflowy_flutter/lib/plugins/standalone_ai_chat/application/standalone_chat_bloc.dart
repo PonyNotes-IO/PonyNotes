@@ -144,8 +144,14 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   }
 
   @override
-  Future<void> close() {
-    _streamSubscription?.cancel();
+  Future<void> close() async {
+    debugPrint('🔄 正在关闭StandaloneChatBloc...');
+    
+    // 取消所有订阅
+    await _streamSubscription?.cancel();
+    _streamSubscription = null;
+    
+    debugPrint('✅ StandaloneChatBloc已关闭');
     return super.close();
   }
 
@@ -159,9 +165,11 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     if (message.trim().isEmpty) return;
 
     // 确定使用的AI提供商
+    debugPrint('🔍 提供商选择: provider=$provider, state.selectedProvider=${state.selectedProvider}, configService.currentProvider=${_configService.currentProvider}');
     final selectedProvider = provider ?? 
         state.selectedProvider ?? 
         _configService.currentProvider;
+    debugPrint('✅ 最终选择的提供商: ${selectedProvider.displayName}');
 
     // 生成消息ID
     final userMessageId = DateTime.now().millisecondsSinceEpoch.toString();
@@ -175,37 +183,38 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
       timestamp: DateTime.now(),
     );
 
+    // 先更新UI状态，显示用户消息
+    if (!emit.isDone) {
+      emit(state.copyWith(
+        messages: [...state.messages, userMessage],
+        isLoading: true,
+        isStreaming: true,
+        error: null,
+        selectedProvider: selectedProvider,
+        currentStreamingMessage: '',
+      ));
+      debugPrint('✅ 用户消息已添加到UI');
+    }
+
     try {
       // 保存用户消息到数据库
       await _persistence.saveMessage(userMessage);
+      debugPrint('📝 用户消息已保存到数据库');
     } catch (e) {
-      debugPrint('保存用户消息失败: $e');
+      debugPrint('❌ 保存用户消息失败: $e');
     }
-
-    // 检查emit是否还有效
-    if (emit.isDone) {
-      debugPrint('⚠️ Emit已完成，跳过状态更新');
-      return;
-    }
-    
-    // 更新状态
-    emit(state.copyWith(
-      messages: [...state.messages, userMessage],
-      isLoading: true,
-      isStreaming: true,
-      error: null,
-      selectedProvider: selectedProvider,
-      currentStreamingMessage: '',
-    ));
 
     debugPrint('🎯 准备进入AI服务调用try块');
+    debugPrint('🔍 选中的提供商: ${selectedProvider.displayName}');
     
     // 使用 unawaited 来防止阻塞事件处理器
+    debugPrint('⚡ 开始异步调用AI服务...');
     unawaited(_callAIServiceAsync(message, selectedProvider));
   }
 
   /// 异步调用AI服务，避免阻塞事件处理器
   Future<void> _callAIServiceAsync(String message, AIProvider selectedProvider) async {
+    debugPrint('🌟 _callAIServiceAsync 方法被调用！');
     try {
       // 开始AI流式响应
       await _streamSubscription?.cancel();
@@ -317,12 +326,13 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
       final historyMessages = await _persistence.loadMessages();
       
       
+      if (emit.isDone) return;
       emit(state.copyWith(
         messages: historyMessages,
         isHistoryLoaded: true,
       ));
     } catch (e) {
-      
+      if (emit.isDone) return;
       emit(state.copyWith(
         error: '加载历史记录失败: $e',
       ));
@@ -333,6 +343,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   Future<void> _handleClearChat(Emitter<StandaloneChatState> emit) async {
     try {
       await _persistence.clearMessages();
+      if (emit.isDone) return;
       emit(state.copyWith(
         messages: [],
         error: null,
@@ -341,6 +352,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         isLoading: false,
       ));
     } catch (e) {
+      if (emit.isDone) return;
       emit(state.copyWith(
         error: '清空聊天失败: $e',
       ));
@@ -353,6 +365,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     Emitter<StandaloneChatState> emit,
   ) {
     _configService.setProvider(provider);
+    if (emit.isDone) return;
     emit(state.copyWith(
       selectedProvider: provider,
     ));
@@ -435,6 +448,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     // TODO: 实现消息编辑功能
     debugPrint('消息编辑功能暂未实现');
   }
+
 }
 
 /// 扩展方法

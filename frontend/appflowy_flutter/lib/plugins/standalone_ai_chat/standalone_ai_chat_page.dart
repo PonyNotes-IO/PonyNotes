@@ -67,10 +67,10 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     String? modelName;
     
     // 优先使用selectedModelName（从HomePage传递过来的）
-    if (widget.selectedModelName != null) {
-      modelName = widget.selectedModelName!.toLowerCase();
+    if (widget.selectedModelName != null && widget.selectedModelName!.isNotEmpty) {
+      modelName = widget.selectedModelName!;
     } else if (widget.selectedModel != null) {
-      modelName = widget.selectedModel!.name.toLowerCase();
+      modelName = widget.selectedModel!.name;
     } else {
       return;
     }
@@ -78,19 +78,34 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     try {
       AIProvider? provider;
       
-      if (modelName.contains('deepseek')) {
-        provider = AIProvider.deepseek;
-      } else if (modelName.contains('qwen') || modelName.contains('通义')) {
-        provider = AIProvider.qwen;
-      } else if (modelName.contains('doubao') || modelName.contains('豆包')) {
-        provider = AIProvider.doubao;
+      // 通过显示名称直接匹配
+      for (final p in AIProvider.values) {
+        if (p.displayName == modelName) {
+          provider = p;
+          break;
+        }
+      }
+      
+      // 如果直接匹配失败，使用模糊匹配
+      if (provider == null) {
+        final lowerName = modelName.toLowerCase();
+        if (lowerName.contains('deepseek')) {
+          provider = AIProvider.deepseek;
+        } else if (lowerName.contains('qwen') || lowerName.contains('通义')) {
+          provider = AIProvider.qwen;
+        } else if (lowerName.contains('doubao') || lowerName.contains('豆包')) {
+          provider = AIProvider.doubao;
+        }
       }
 
       if (provider != null) {
+        debugPrint('✅ 设置AI提供商为: ${provider.displayName}');
         chatBloc.add(StandaloneChatEvent.changeProvider(provider: provider));
+      } else {
+        debugPrint('⚠️ 无法识别模型名称: $modelName，使用默认提供商');
       }
     } catch (e) {
-      debugPrint('设置选中模型失败: $e');
+      debugPrint('❌ 设置选中模型失败: $e');
     }
   }
 
@@ -101,12 +116,13 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     }
 
     try {
+      debugPrint('📤 发送初始消息: ${widget.initialText}');
       chatBloc.add(StandaloneChatEvent.sendMessage(
         message: widget.initialText!,
       ));
     } catch (e) {
       // 静默处理错误，不影响用户体验
-      debugPrint('发送初始消息时出错: $e');
+      debugPrint('❌ 发送初始消息时出错: $e');
     }
   }
 

@@ -58,8 +58,9 @@ class StandaloneAiService {
     try {
       print('🔗 开始调用DeepSeek API');
       final client = http.Client();
-      final apiUrl = '${config.apiBase}/chat/completions';
+      final apiUrl = '${config.apiBase}/chat/completions'; // 添加chat/completions端点
       print('🌐 API URL: $apiUrl');
+      print('🔑 API密钥: ${config.apiKey.substring(0, 10)}... (已截断显示)');
       
       final request = http.Request(
         'POST',
@@ -67,7 +68,7 @@ class StandaloneAiService {
       );
       
       request.headers.addAll({
-        'Authorization': 'Bearer ${config.apiKey.substring(0, 10)}...', // 只显示前10位，保护API密钥
+        'Authorization': 'Bearer ${config.apiKey}', // 使用完整的API密钥
         'Content-Type': 'application/json',
         'Accept': 'text/event-stream',
       });
@@ -90,6 +91,7 @@ class StandaloneAiService {
         print('✅ DeepSeek API响应成功，开始处理流式响应');
         // 处理流式响应
         await _handleStreamedResponse(streamedResponse, onResponse, onError);
+        print('✅ DeepSeek API流式响应处理完成');
       } else {
         final responseBody = await streamedResponse.stream.bytesToString();
         print('❌ DeepSeek API调用失败: ${streamedResponse.statusCode}, $responseBody');
@@ -97,6 +99,7 @@ class StandaloneAiService {
       }
       
       client.close();
+      print('✅ DeepSeek API调用方法结束');
     } catch (e) {
       print('❌ DeepSeek API调用异常: $e');
       onError('DeepSeek API调用异常: $e');
@@ -114,7 +117,7 @@ class StandaloneAiService {
       final client = http.Client();
       // 通义千问使用兼容模式的API端点
       final apiUrl = config.apiBase.contains('compatible-mode') 
-          ? '${config.apiBase}/chat/completions'
+          ? config.apiBase
           : 'https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation';
       final request = http.Request(
         'POST',
@@ -185,7 +188,7 @@ class StandaloneAiService {
   ) async {
     try {
       final client = http.Client();
-      final apiUrl = '${config.apiBase}/chat/completions';
+      final apiUrl = '${config.apiBase}/chat/completions'; // 添加chat/completions端点
       final request = http.Request(
         'POST',
         Uri.parse(apiUrl),
@@ -208,13 +211,16 @@ class StandaloneAiService {
       final streamedResponse = await client.send(request);
 
       if (streamedResponse.statusCode == 200) {
+        print('✅ 豆包API响应成功，开始处理流式响应');
         await _handleStreamedResponse(streamedResponse, onResponse, onError);
+        print('✅ 豆包API流式响应处理完成');
       } else {
         final responseBody = await streamedResponse.stream.bytesToString();
         onError('豆包API调用失败: ${streamedResponse.statusCode}, $responseBody');
       }
       
       client.close();
+      print('✅ 豆包API调用方法结束');
     } catch (e) {
       onError('豆包API调用异常: $e');
     }
@@ -240,50 +246,90 @@ class StandaloneAiService {
         // 处理完整的行
         for (int i = 0; i < lines.length - 1; i++) {
           final line = lines[i].trim();
+          print('🔍 处理行: "$line"');
           if (line.startsWith('data: ')) {
             final data = line.substring(6).trim();
-            if (data == '[DONE]') {
+            print('📋 数据内容: "$data"');
+            if (data == '[DONE]' || data.isEmpty) {
+              print('✅ 收到流结束信号: "$data"');
               return;
             }
             
             try {
               final json = jsonDecode(data);
-              final content = json['choices']?[0]?['delta']?['content'];
-              if (content != null && content is String) {
+              print('🔄 解析JSON: $json');
+              
+              // 尝试多种可能的内容路径
+              String? content;
+              if (json['choices'] != null && json['choices'].isNotEmpty) {
+                final choice = json['choices'][0];
+                content = choice['delta']?['content'] ?? choice['message']?['content'];
+              }
+              
+              // 检查是否有finish_reason表示结束
+              if (json['choices'] != null && json['choices'].isNotEmpty) {
+                final finishReason = json['choices'][0]['finish_reason'];
+                if (finishReason != null && finishReason != 'null') {
+                  print('✅ 收到完成原因: $finishReason');
+                  if (content != null && content.isNotEmpty) {
+                    fullResponse += content;
+                    onResponse(content);
+                  }
+                  return; // 流结束
+                }
+              }
+              
+              if (content != null && content.isNotEmpty) {
+                print('📨 收到内容片段: "$content" (长度: ${content.length})');
                 fullResponse += content;
-                onResponse(fullResponse);
+                print('📝 累积响应长度: ${fullResponse.length}');
+                onResponse(content); // 只发送新的内容片段，不是完整响应
               }
             } catch (e) {
+              print('❌ JSON解析错误: $e, 数据: "$data"');
               // 忽略JSON解析错误，继续处理下一行
               continue;
             }
           }
         }
       }
+      
+      print('🏁 流式响应循环结束，总响应长度: ${fullResponse.length}');
 
       // 处理剩余的buffer
       if (buffer.isNotEmpty && buffer.startsWith('data: ')) {
         final data = buffer.substring(6).trim();
-        if (data != '[DONE]') {
+        print('📋 处理剩余数据: "$data"');
+        if (data != '[DONE]' && data.isNotEmpty) {
           try {
             final json = jsonDecode(data);
-            final content = json['choices']?[0]?['delta']?['content'];
-            if (content != null && content is String) {
+            // 尝试多种可能的内容路径
+            String? content;
+            if (json['choices'] != null && json['choices'].isNotEmpty) {
+              final choice = json['choices'][0];
+              content = choice['delta']?['content'] ?? choice['message']?['content'];
+            }
+            
+            if (content != null && content.isNotEmpty) {
               fullResponse += content;
-              onResponse(fullResponse);
+              onResponse(content); // 只发送新的内容片段
             }
           } catch (e) {
-            // 忽略JSON解析错误
+            print('❌ 剩余buffer JSON解析错误: $e');
           }
         }
       }
 
       if (fullResponse.isEmpty) {
         onError('AI响应为空');
+      } else {
+        print('✅ 流式响应处理完成，总响应长度: ${fullResponse.length}');
       }
     } catch (e) {
+      print('❌ 处理流式响应失败: $e');
       onError('处理流式响应失败: $e');
     }
+    print('🏁 _handleStreamedResponse 方法结束');
   }
 
   /// 检查AI服务可用性

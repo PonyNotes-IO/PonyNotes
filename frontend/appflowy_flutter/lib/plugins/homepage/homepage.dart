@@ -5,6 +5,7 @@ import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:appflowy/plugins/homepage/widgets/simple_model_selector.dart';
 import 'package:appflowy/plugins/interactive_ai_chat/interactive_ai_chat_page.dart';
+import 'package:appflowy/core/config/ai_config.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
@@ -82,11 +83,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final TextEditingController _aiInputController = TextEditingController();
   final FocusNode _aiInputFocusNode = FocusNode();
-  String _selectedModel = 'DeepSeek-R1-V3'; // 存储选择的模型
+  String? _selectedModel; // 存储选择的模型
 
   @override
   void initState() {
     super.initState();
+    _initializeAIConfig();
+  }
+
+  /// 初始化AI配置
+  Future<void> _initializeAIConfig() async {
+    try {
+      await AIConfigService.instance.loadConfig();
+    } catch (e) {
+      debugPrint('主页初始化AI配置失败: $e');
+    }
   }
 
   @override
@@ -109,7 +120,7 @@ class _HomePageState extends State<HomePage> {
         pluginType: PluginType.standaloneAiChat,
         data: {
           'initialText': text,
-          'selectedModelName': _selectedModel, // 传递选择的模型名称
+          'selectedModelName': _selectedModel, // 传递选择的模型名称（可能为空）
         },
       );
 
