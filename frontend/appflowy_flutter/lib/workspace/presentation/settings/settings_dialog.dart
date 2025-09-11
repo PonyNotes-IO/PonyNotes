@@ -62,7 +62,8 @@ class SettingsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width * 0.6;
+    final width = MediaQuery.of(context).size.width * 0.7;
+    final height = MediaQuery.of(context).size.height * 0.8;
     final theme = AppFlowyTheme.of(context);
     final currentWorkspaceMemberRole =
         context.read<UserWorkspaceBloc>().state.currentWorkspace?.role;
@@ -75,15 +76,21 @@ class SettingsDialog extends StatelessWidget {
       child: BlocBuilder<SettingsDialogBloc, SettingsDialogState>(
         builder: (context, state) => FlowyDialog(
           width: width,
-          constraints: const BoxConstraints(minWidth: 564),
+          constraints: BoxConstraints(
+            minWidth: 564,
+            maxWidth: 1200,
+            minHeight: 600,
+            maxHeight: height,
+          ),
+          expandHeight: false,
           child: ScaffoldMessenger(
             child: Scaffold(
               backgroundColor: theme.backgroundColorScheme.primary,
               body: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(
-                    width: 204,
+                  Expanded(
+                    flex: 2,
                     child: SettingsMenu(
                       userProfile: user,
                       changeSelectedPage: (index) => context
@@ -102,6 +109,7 @@ class SettingsDialog extends StatelessWidget {
                   BlocBuilder<UserWorkspaceBloc, UserWorkspaceState>(
                     builder: (context, state) {
                       return Expanded(
+                        flex: 5,
                         child: getSettingsView(
                           state.currentWorkspace!,
                           context.read<SettingsDialogBloc>().state.page,
@@ -211,8 +219,9 @@ class _SimpleSettingsDialogState extends State<SimpleSettingsDialog> {
     final settings = context.watch<AppearanceSettingsCubit>().state;
 
     return FlowyDialog(
-      width: MediaQuery.of(context).size.width * 0.7,
-      constraints: const BoxConstraints(maxWidth: 784, minWidth: 564),
+      width: MediaQuery.of(context).size.width * 0.55,
+      constraints: const BoxConstraints(maxWidth: 640, minWidth: 500),
+      expandHeight: false,
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
