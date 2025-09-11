@@ -1,23 +1,11 @@
-import 'package:appflowy/ai/ai.dart';
-import 'package:appflowy/plugins/ai_chat/application/chat_bloc.dart';
-import 'package:appflowy/plugins/ai_chat/application/chat_member_bloc.dart';
-import 'package:appflowy/plugins/ai_chat/application/chat_select_message_bloc.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_animation_list_widget.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_footer.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/chat_page/text_message_widget.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/chat_page/chat_message_widget.dart' as app_flowy;
-import 'package:appflowy/plugins/util.dart';
-import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:appflowy_backend/protobuf/flowy-ai/entities.pb.dart';
-import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_chat_core/flutter_chat_core.dart';
-import 'package:appflowy/plugins/ai_chat/presentation/scroll_to_bottom.dart';
-import 'package:provider/provider.dart';
-import 'package:flowy_infra/uuid.dart';
+import 'package:appflowy/core/config/ai_config.dart';
+import 'application/standalone_chat_bloc.dart';
 import 'presentation/ai_welcome_page.dart';
+import 'presentation/standalone_chat_page.dart';
 
 class StandaloneAiChatPage extends StatefulWidget {
   const StandaloneAiChatPage({
@@ -36,9 +24,6 @@ class StandaloneAiChatPage extends StatefulWidget {
 }
 
 class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
-  late final String chatId;
-  late final ViewPB view;
-  late final ViewPluginNotifier viewNotifier;
   bool _isInitialized = false;
   bool _showWelcomePage = true; // 控制是否显示欢迎页面
 
@@ -50,20 +35,8 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
 
   /// 专为独立AI聊天界面设计的初始化逻辑
   Future<void> _initializeChat() async {
-    // 使用UUID格式的聊天ID，确保兼容后端UUID解析
-    chatId = uuid();
-
-    // 创建一个真实的ViewPB用于聊天，不是虚拟的
-    view = ViewPB()
-      ..id = chatId
-      ..name = 'AI聊天'
-      ..layout = ViewLayoutPB.Chat;
-
-    // 创建ViewPluginNotifier
-    viewNotifier = ViewPluginNotifier(view: view);
-
-    // 预创建聊天记录以避免外键约束错误
-    await _ensureStandaloneChatExists();
+    // 初始化AI配置
+    await AIConfigService.instance.loadConfig();
 
     if (mounted) {
       setState(() {
@@ -88,13 +61,6 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     }
   }
 
-  /// 确保独立AI聊天记录存在（仅用于StandaloneAiChatPage）
-  Future<void> _ensureStandaloneChatExists() async {
-    // 由于独立AI聊天是临时的，我们不需要预先创建数据库记录
-    // 聊天记录会在第一条消息发送时自动创建
-    // 这样可以避免不必要的数据库操作和潜在的错误
-  }
-
   /// 设置选中的模型
   void _setSelectedModel() {
     if (!mounted || widget.selectedModel == null) {
@@ -102,12 +68,22 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     }
 
     try {
-      AIEventUpdateSelectedModel(
-        UpdateSelectedModelPB(
-          source: chatId, // 使用chatId作为source
-          selectedModel: widget.selectedModel!,
-        ),
-      ).send();
+      // 从AIModelPB转换到AIProvider
+      final providerName = widget.selectedModel!.name.toLowerCase();
+      AIProvider? provider;
+      
+      if (providerName.contains('deepseek')) {
+        provider = AIProvider.deepseek;
+      } else if (providerName.contains('qwen') || providerName.contains('通义')) {
+        provider = AIProvider.qwen;
+      } else if (providerName.contains('doubao') || providerName.contains('豆包')) {
+        provider = AIProvider.doubao;
+      }
+
+      if (provider != null) {
+        final chatBloc = context.read<StandaloneChatBloc>();
+        chatBloc.add(StandaloneChatEvent.changeProvider(provider: provider));
+      }
     } catch (e) {
       debugPrint('设置选中模型失败: $e');
     }
@@ -120,8 +96,8 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
     }
 
     try {
-      final chatBloc = context.read<ChatBloc>();
-      chatBloc.add(ChatEvent.sendMessage(
+      final chatBloc = context.read<StandaloneChatBloc>();
+      chatBloc.add(StandaloneChatEvent.sendMessage(
         message: widget.initialText!,
       ));
     } catch (e) {
@@ -147,31 +123,10 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
       );
     }
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(
-          create: (_) => ChatBloc(
-            chatId: chatId,
-            userId: widget.userProfile.id.toString(),
-          ),
-        ),
-        BlocProvider(
-          create: (_) => AIPromptInputBloc(
-            objectId: chatId,
-            predefinedFormat: PredefinedFormat(
-              imageFormat: ImageFormat.text,
-              textFormat: TextFormat.bulletList,
-            ),
-          ),
-        ),
-        BlocProvider(create: (_) => ChatMemberBloc()),
-        BlocProvider(
-            create: (_) => ChatSelectMessageBloc(viewNotifier: viewNotifier)),
-      ],
+    return BlocProvider(
+      create: (_) => StandaloneChatBloc()..add(const StandaloneChatEvent.loadHistory()),
       child: Builder(
         builder: (context) {
-          final chatBloc = context.read<ChatBloc>();
-
           // 根据状态显示欢迎页面或聊天页面
           if (_showWelcomePage) {
             return AIWelcomePage(
@@ -179,57 +134,9 @@ class _StandaloneAiChatPageState extends State<StandaloneAiChatPage> {
             );
           }
 
-          return Provider<ChatController>.value(
-            value: chatBloc.chatController,
-            child: Provider<User>.value(
-              value: User(id: widget.userProfile.id.toString()),
-              child: Provider<Builders>(
-              create: (_) => Builders(
-                // we have a custom input builder, so we don't need the default one
-                inputBuilder: (_) => const SizedBox.shrink(),
-                textMessageBuilder: (context, message) => TextMessageWidget(
-                  message: message,
-                  userProfile: widget.userProfile,
-                  view: view,
-                ),
-                chatMessageBuilder: (context, message, animation, child) =>
-                    app_flowy.ChatMessage(
-                  message: message,
-                  padding: const EdgeInsets.symmetric(vertical: 18.0),
-                  child: child,
-                ),
-                scrollToBottomBuilder: (context, animation, onPressed) =>
-                    CustomScrollToBottom(
-                  animation: animation,
-                  onPressed: onPressed,
-                ),
-              ),
-              child: Column(
-                children: [
-                  // 聊天消息区域 - 使用原有的ChatAnimationListWidget
-                  Expanded(
-                    child: ChatAnimationListWidget(
-                      userProfile: widget.userProfile,
-                      scrollController: ScrollController(),
-                      itemBuilder: (context, animation, message,
-                          {bool? isRemoved}) {
-                        return TextMessageWidget(
-                          message: message as TextMessage,
-                          userProfile: widget.userProfile,
-                          view: view,
-                        );
-                      },
-                    ),
-                  ),
-                  // 输入框区域 - 使用原有的ChatFooter
-                  ChatFooter(
-                    view: view,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
+          return StandaloneChatPageView(
+            userProfile: widget.userProfile,
+          );
         },
       ),
     );

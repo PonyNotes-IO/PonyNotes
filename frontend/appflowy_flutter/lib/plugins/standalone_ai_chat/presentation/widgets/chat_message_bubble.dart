@@ -1,0 +1,404 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/application/standalone_chat_bloc.dart';
+
+/// 聊天消息气泡组件
+/// 支持用户消息和AI回复的不同样式显示
+class ChatMessageBubble extends StatefulWidget {
+  const ChatMessageBubble({
+    super.key,
+    required this.message,
+    this.onCopy,
+    this.onRetry,
+    this.onEdit,
+  });
+
+  final ChatMessage message;
+  final VoidCallback? onCopy;
+  final VoidCallback? onRetry;
+  final VoidCallback? onEdit;
+
+  @override
+  State<ChatMessageBubble> createState() => _ChatMessageBubbleState();
+}
+
+class _ChatMessageBubbleState extends State<ChatMessageBubble> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+        child: widget.message.isUser
+            ? _buildUserMessage()
+            : _buildAiMessage(),
+      ),
+    );
+  }
+
+  /// 构建用户消息
+  Widget _buildUserMessage() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (_isHovered) _buildActionButtons(isUser: true),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Container(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.7,
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.blue[500],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(18),
+                topRight: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(4),
+              ),
+            ),
+            child: Text(
+              widget.message.content,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        _buildUserAvatar(),
+      ],
+    );
+  }
+
+  /// 构建AI消息
+  Widget _buildAiMessage() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildAiAvatar(),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // AI标识和提供商信息
+              if (widget.message.aiProvider != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    '${widget.message.aiProvider!.displayName} AI',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              // 消息内容
+              Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.7,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[100],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    topRight: Radius.circular(18),
+                    bottomLeft: Radius.circular(18),
+                    bottomRight: Radius.circular(18),
+                  ),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: _buildAiMessageContent(),
+              ),
+              // 消息状态和时间戳
+              if (widget.message.timestamp != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    _formatTimestamp(widget.message.timestamp!),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        if (_isHovered) _buildActionButtons(isUser: false),
+      ],
+    );
+  }
+
+  /// 构建AI消息内容（支持流式显示）
+  Widget _buildAiMessageContent() {
+    if (widget.message.isStreaming) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              widget.message.content,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+          _buildTypingIndicator(),
+        ],
+      );
+    }
+
+    if (widget.message.hasError) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 16,
+            color: Colors.red[400],
+          ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              widget.message.content,
+              style: TextStyle(
+                color: Colors.red[600],
+                fontSize: 14,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return SelectableText(
+      widget.message.content,
+      style: const TextStyle(
+        color: Colors.black87,
+        fontSize: 14,
+        height: 1.4,
+      ),
+    );
+  }
+
+  /// 构建打字指示器
+  Widget _buildTypingIndicator() {
+    return Container(
+      width: 16,
+      height: 16,
+      child: const CircularProgressIndicator(
+        strokeWidth: 2,
+        valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
+      ),
+    );
+  }
+
+  /// 构建用户头像
+  Widget _buildUserAvatar() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: Colors.blue[600],
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        Icons.person,
+        size: 20,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  /// 构建AI头像
+  Widget _buildAiAvatar() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: ClipOval(
+        child: Image.asset(
+          'assets/images/ai_avatar.png',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Icon(
+              Icons.smart_toy,
+              size: 20,
+              color: Colors.grey[600],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  /// 构建操作按钮组
+  Widget _buildActionButtons({required bool isUser}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 复制按钮
+        _buildActionButton(
+          icon: Icons.copy,
+          tooltip: '复制',
+          onPressed: () {
+            Clipboard.setData(ClipboardData(text: widget.message.content));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('已复制到剪贴板'),
+                duration: Duration(seconds: 1),
+              ),
+            );
+            widget.onCopy?.call();
+          },
+        ),
+        const SizedBox(width: 4),
+        // 重试按钮（仅AI消息显示）
+        if (!isUser && (widget.message.hasError || widget.onRetry != null))
+          _buildActionButton(
+            icon: Icons.refresh,
+            tooltip: '重试',
+            onPressed: widget.onRetry,
+          ),
+        // 编辑按钮（仅用户消息显示）
+        if (isUser && widget.onEdit != null) ...[
+          const SizedBox(width: 4),
+          _buildActionButton(
+            icon: Icons.edit,
+            tooltip: '编辑',
+            onPressed: widget.onEdit,
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// 构建单个操作按钮
+  Widget _buildActionButton({
+    required IconData icon,
+    required String tooltip,
+    required VoidCallback? onPressed,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            icon,
+            size: 16,
+            color: Colors.grey[600],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 格式化时间戳
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+
+    if (diff.inMinutes < 1) {
+      return '刚刚';
+    } else if (diff.inHours < 1) {
+      return '${diff.inMinutes}分钟前';
+    } else if (diff.inDays < 1) {
+      return '${diff.inHours}小时前';
+    } else {
+      return '${timestamp.month}/${timestamp.day} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}';
+    }
+  }
+}
+
+/// 消息加载指示器组件
+class MessageLoadingIndicator extends StatelessWidget {
+  const MessageLoadingIndicator({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // AI头像
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Icon(
+              Icons.smart_toy,
+              size: 20,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // 加载动画
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(4),
+                topRight: Radius.circular(18),
+                bottomLeft: Radius.circular(18),
+                bottomRight: Radius.circular(18),
+              ),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.grey[400]!),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'AI正在思考中...',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
