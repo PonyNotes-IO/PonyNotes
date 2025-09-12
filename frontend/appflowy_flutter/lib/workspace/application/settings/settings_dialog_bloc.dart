@@ -14,6 +14,7 @@ part 'settings_dialog_bloc.freezed.dart';
 enum SettingsPage {
   // NEW
   account,
+  accountManagement,
   workspace,
   manageData,
   storage,

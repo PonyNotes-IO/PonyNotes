@@ -47,6 +47,9 @@ class SettingsMenu extends StatelessWidget {
         child: Column(
           spacing: theme.spacing.xs,
           children: [
+            // User info card section at the top
+            _buildUserInfoCard(context),
+            const VSpace(16),
             SettingsMenuElement(
               page: SettingsPage.account,
               selectedPage: currentPage,
@@ -168,6 +171,136 @@ class SettingsMenu extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildUserInfoCard(BuildContext context) {
+    final theme = AppFlowyTheme.of(context);
+    
+    return GestureDetector(
+      onTap: () => changeSelectedPage(SettingsPage.accountManagement),
+            child: Container(
+        padding: EdgeInsets.all(theme.spacing.m),
+        decoration: BoxDecoration(
+          color: theme.surfaceContainerColorScheme.layer01,
+          borderRadius: BorderRadius.circular(theme.spacing.m),
+          border: Border.all(
+            color: theme.borderColorScheme.primary.withOpacity(0.1),
+            width: 1,
+          ),
+        ),
+        child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 账号标题
+          FlowyText(
+            '账号',
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: theme.textColorScheme.primary,
+          ),
+          const VSpace(16),
+          // 用户信息行
+          Row(
+            children: [
+              // 用户头像
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5A3C),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(24),
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                    size: 28,
+                  ),
+                ),
+              ),
+              const HSpace(12),
+              // 用户名和账户类型
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    FlowyText(
+                      '小马笔记的笔记',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: theme.textColorScheme.primary,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const VSpace(4),
+                    FlowyText(
+                      '免费账户',
+                      fontSize: 14,
+                      color: theme.textColorScheme.secondary,
+                    ),
+                  ],
+                ),
+              ),
+              // 升级按钮
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF6B47),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: FlowyText(
+                  '升级',
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          const VSpace(20),
+                     // 权益图标行
+           Row(
+             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+             children: [
+               _buildBenefitIcon(context, const Color(0xFFFF9F7A), '权益一'),
+               _buildBenefitIcon(context, const Color(0xFF7FD4A3), '权益二'),
+               _buildBenefitIcon(context, const Color(0xFF7AB8FF), '权益三'),
+               _buildBenefitIcon(context, const Color(0xFFE07AFF), '权益四'),
+               _buildBenefitIcon(context, const Color(0xFFFF7AB8), '权益五'),
+             ],
+           ),
+        ],
+      ),
+    ),
+    );
+  }
+
+  Widget _buildBenefitIcon(BuildContext context, Color color, String label) {
+    final theme = AppFlowyTheme.of(context);
+    
+    return Column(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(
+            Icons.star,
+            color: Colors.white,
+            size: 24,
+          ),
+        ),
+        const VSpace(8),
+        FlowyText(
+          label,
+          fontSize: 12,
+          color: theme.textColorScheme.secondary,
+        ),
+      ],
     );
   }
 }

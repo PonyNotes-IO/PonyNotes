@@ -11,6 +11,7 @@ import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dar
 import 'package:appflowy/workspace/presentation/settings/pages/setting_ai_view/settings_ai_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_about_xiaoma_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_account_view.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/account_management_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_billing_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_manage_data_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_plan_view.dart';
@@ -140,6 +141,10 @@ class SettingsDialog extends StatelessWidget {
           userProfile: user,
           didLogout: didLogout,
           didLogin: dismissDialog,
+        );
+      case SettingsPage.accountManagement:
+        return AccountManagementView(
+          userProfile: user,
         );
       case SettingsPage.workspace:
         return SettingsWorkspaceView(
