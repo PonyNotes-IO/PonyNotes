@@ -1,7 +1,9 @@
+import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_body.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
+import 'package:flowy_svg/flowy_svg.dart';
 import 'package:flutter/material.dart';
 
 class AccountManagementView extends StatefulWidget {
@@ -25,7 +27,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
       'price': '¥0',
       'period': '',
       'color': const Color(0xFFFF6B47),
-      'tag': '91天',
+      'tag': '',
       'isPopular': false,
     },
     {
@@ -41,8 +43,8 @@ class _AccountManagementViewState extends State<AccountManagementView> {
       'price': '¥35.00',
       'period': '/月',
       'color': const Color(0xFF2196F3),
-      'tag': '007天',
-      'isPopular': true,
+      'tag': '',
+      'isPopular': false,
     },
     {
       'title': '专业账户',
@@ -64,27 +66,27 @@ class _AccountManagementViewState extends State<AccountManagementView> {
 
   final List<Map<String, dynamic>> benefits = [
     {
-      'icon': Icons.smart_toy_outlined,
+      'icon': FlowySvgs.rights_ai_xl,
       'title': '小马AI',
       'color': const Color(0xFFFF9F7A),
     },
     {
-      'icon': Icons.calendar_today_outlined,
+      'icon': FlowySvgs.rights_calendar_xl,
       'title': '小马日历',
       'color': const Color(0xFF7FD4A3),
     },
     {
-      'icon': Icons.star_outline,
+      'icon': FlowySvgs.rights_collect_xl,
       'title': '小马收藏夹',
       'color': const Color(0xFF7AB8FF),
     },
     {
-      'icon': Icons.cloud_sync_outlined,
+      'icon': FlowySvgs.rights_cs_xl,
       'title': '云端同步',
       'color': const Color(0xFFE07AFF),
     },
     {
-      'icon': Icons.storage_outlined,
+      'icon': FlowySvgs.rights_storage_xl,
       'title': '100T空间',
       'color': const Color(0xFFFF7AB8),
     },
@@ -154,7 +156,7 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: const FlowyText(
-                                  '007天',
+                                  '推荐',
                                   fontSize: 10,
                                   color: Colors.white,
                                 ),
@@ -209,37 +211,30 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               const VSpace(16),
               
               // 权益图标行
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: benefits.map((benefit) {
-                  return Column(
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: benefit['color'].withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: benefit['color'].withOpacity(0.3),
-                            width: 1,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: benefits.map((benefit) {
+                    return Expanded(
+                      child: Column(
+                        children: [
+                          FlowySvg(
+                            benefit['icon'],
+                            color: benefit['color'],
+                            size: const Size.square(40),
                           ),
-                        ),
-                        child: Icon(
-                          benefit['icon'],
-                          color: benefit['color'],
-                          size: 28,
-                        ),
+                          const VSpace(8),
+                          FlowyText(
+                            benefit['title'],
+                            fontSize: 12,
+                            color: theme.textColorScheme.secondary,
+                          ),
+                        ],
                       ),
-                      const VSpace(8),
-                      FlowyText(
-                        benefit['title'],
-                        fontSize: 12,
-                        color: theme.textColorScheme.secondary,
-                      ),
-                    ],
-                  );
-                }).toList(),
+                    );
+                  }).toList(),
+                ),
               ),
               
               const VSpace(32),

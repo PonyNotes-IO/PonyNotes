@@ -51,7 +51,7 @@ class SettingsMenu extends StatelessWidget {
             _buildUserInfoCard(context),
             const VSpace(16),
             SettingsMenuElement(
-              page: SettingsPage.account,
+              page: SettingsPage.accountManagement,
               selectedPage: currentPage,
               label: LocaleKeys.settings_accountPage_menuLabel.tr(),
               icon: const FlowySvg(FlowySvgs.settings_page_user_m),
@@ -178,7 +178,7 @@ class SettingsMenu extends StatelessWidget {
     final theme = AppFlowyTheme.of(context);
     
     return GestureDetector(
-      onTap: () => changeSelectedPage(SettingsPage.accountManagement),
+      onTap: () => changeSelectedPage(SettingsPage.account),
             child: Container(
         padding: EdgeInsets.all(theme.spacing.m),
         decoration: BoxDecoration(
