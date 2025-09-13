@@ -43,7 +43,7 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
         // 功能列表 - 使用文本样式
         GestureDetector(
           onTap: () {
-            // TODO: 处理订阅详情点击
+            _showSubscriptionDetailsDialog(context);
           },
           child: _buildTextItem(context, "订阅详情", showArrow: true),
         ),
@@ -134,6 +134,104 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
             ),
         ],
       ),
+    );
+  }
+
+  void _showSubscriptionDetailsDialog(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: theme.dialogBackgroundColor,
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '订阅详情',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: theme.textTheme.titleLarge?.color,
+                ),
+              ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  hoverColor: Colors.grey.withOpacity(0.1),
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      color: theme.iconTheme.color,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+          contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          content: SizedBox(
+            width: 400,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Divider(
+                  color: theme.dividerColor,
+                  thickness: 1,
+                  height: 16,
+                ),
+                Text(
+                  '支付',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: theme.textTheme.titleMedium?.color,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '确认购买后，你的 iTunes 账户将会进行付款。',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '付费账户在当前订购周期结束时将自动续订，你的iTunes 账户会再一次进行付款。同时，你可以在当前付费周期结束前至少 24 个小时取消自动续订。',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '订购后，你随时可以在 AppleID 账户设置中管理或者关闭自动续订。',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: theme.textTheme.bodyMedium?.color?.withOpacity(0.8),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
