@@ -24,11 +24,11 @@ class SettingsBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 固定在顶部的头部，在整个宽度中居中
+        // 固定在顶部的头部，左对齐
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-          alignment: Alignment.center,
+          alignment: Alignment.centerLeft,
           child: SettingsHeader(
             title: title,
             description: description,

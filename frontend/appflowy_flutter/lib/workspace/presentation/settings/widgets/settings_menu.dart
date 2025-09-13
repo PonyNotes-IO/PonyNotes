@@ -178,7 +178,7 @@ class SettingsMenu extends StatelessWidget {
     final theme = AppFlowyTheme.of(context);
     
     return GestureDetector(
-      onTap: () => changeSelectedPage(SettingsPage.account),
+      onTap: () => changeSelectedPage(SettingsPage.userProfile),
             child: Container(
         padding: EdgeInsets.all(theme.spacing.m),
         decoration: BoxDecoration(

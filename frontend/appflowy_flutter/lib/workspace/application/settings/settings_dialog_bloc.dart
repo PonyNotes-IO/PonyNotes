@@ -24,6 +24,7 @@ enum SettingsPage {
   billing,
   sites,
   aboutXiaoma,
+  userProfile,
   // OLD
   notifications,
   cloud,

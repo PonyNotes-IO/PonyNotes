@@ -17,6 +17,7 @@ import 'package:appflowy/workspace/presentation/settings/pages/settings_manage_d
 import 'package:appflowy/workspace/presentation/settings/pages/settings_plan_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_shortcuts_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_storage_view.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/settings_user_profile_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_workspace_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/sites/settings_sites_view.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/af_dropdown_menu_entry.dart';
@@ -116,6 +117,7 @@ class SettingsDialog extends StatelessWidget {
                           context.read<SettingsDialogBloc>().state.page,
                           state.userProfile,
                           state.currentWorkspace?.role,
+                          context,
                         ),
                       );
                     },
@@ -134,6 +136,7 @@ class SettingsDialog extends StatelessWidget {
     SettingsPage page,
     UserProfilePB user,
     AFRolePB? currentWorkspaceMemberRole,
+    BuildContext context,
   ) {
     switch (page) {
       case SettingsPage.account:
@@ -145,6 +148,9 @@ class SettingsDialog extends StatelessWidget {
       case SettingsPage.accountManagement:
         return AccountManagementView(
           userProfile: user,
+          changeSelectedPage: (index) => context
+              .read<SettingsDialogBloc>()
+              .add(SettingsDialogEvent.setSelectedPage(index)),
         );
       case SettingsPage.workspace:
         return SettingsWorkspaceView(
@@ -205,6 +211,10 @@ class SettingsDialog extends StatelessWidget {
         return const FeatureFlagsPage();
       case SettingsPage.aboutXiaoma:
         return const SettingsAboutXiaomaView();
+      case SettingsPage.userProfile:
+        return SettingsUserProfileView(
+          userProfile: user,
+        );
     }
   }
 }

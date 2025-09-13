@@ -1,4 +1,5 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
+import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_body.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
@@ -10,9 +11,11 @@ class AccountManagementView extends StatefulWidget {
   const AccountManagementView({
     super.key,
     required this.userProfile,
+    required this.changeSelectedPage,
   });
 
   final UserProfilePB userProfile;
+  final Function changeSelectedPage;
 
   @override
   State<AccountManagementView> createState() => _AccountManagementViewState();
@@ -100,11 +103,9 @@ class _AccountManagementViewState extends State<AccountManagementView> {
       title: "我的账户",
       children: [
         // 账户类型选择区域
-        Container(
-          padding: EdgeInsets.all(theme.spacing.l),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               // 账户类型选择
               Row(
                 children: plans.asMap().entries.map((entry) {
@@ -242,7 +243,10 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               // 功能列表
               _buildFeatureItem(context, '文档光标颜色', '购买', showArrow: true),
               _buildFeatureItem(context, 'AI使用次数', '今日剩余20次升级', showArrow: true),
-              _buildFeatureItem(context, '个人资料', '', showArrow: true),
+              GestureDetector(
+                onTap: () => widget.changeSelectedPage(SettingsPage.userProfile),
+                child: _buildFeatureItem(context, '个人资料', '', showArrow: true),
+              ),
               _buildFeatureItem(context, '绑定手机', '修改', showButton: true, buttonText: '修改'),
               _buildFeatureItem(context, '邮箱', '修改', showButton: true, buttonText: '修改'),
               
@@ -269,7 +273,6 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               ),
             ],
           ),
-        ),
       ],
     );
   }
