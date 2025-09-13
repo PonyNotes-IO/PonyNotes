@@ -1,6 +1,8 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_body.dart';
+import 'package:appflowy/workspace/presentation/settings/widgets/identity_verification_dialog.dart';
+import 'package:appflowy/workspace/presentation/settings/widgets/email_binding_dialog.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
@@ -247,8 +249,14 @@ class _AccountManagementViewState extends State<AccountManagementView> {
                 onTap: () => widget.changeSelectedPage(SettingsPage.userProfile),
                 child: _buildFeatureItem(context, '个人资料', '', showArrow: true),
               ),
-              _buildFeatureItem(context, '绑定手机', '修改', showButton: true, buttonText: '修改'),
-              _buildFeatureItem(context, '邮箱', '修改', showButton: true, buttonText: '修改'),
+              GestureDetector(
+                onTap: () => _showPhoneVerificationDialog(context),
+                child: _buildFeatureItem(context, '绑定手机', '修改', showButton: true, buttonText: '修改'),
+              ),
+              GestureDetector(
+                onTap: () => _showEmailVerificationDialog(context),
+                child: _buildFeatureItem(context, '邮箱', '修改', showButton: true, buttonText: '修改'),
+              ),
               
               const VSpace(32),
               
@@ -305,17 +313,10 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               color: theme.textColorScheme.secondary,
             ),
           if (showButton)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFF6B47),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: FlowyText(
-                buttonText,
-                fontSize: 14,
-                color: Colors.white,
-              ),
+            FlowyText(
+              buttonText,
+              fontSize: 14,
+              color: theme.textColorScheme.secondary,
             ),
           if (showArrow)
             const Icon(
@@ -324,6 +325,46 @@ class _AccountManagementViewState extends State<AccountManagementView> {
               color: Colors.grey,
             ),
         ],
+      ),
+    );
+  }
+
+  void _showPhoneVerificationDialog(BuildContext context) {
+    // 从用户资料中获取手机号，如果没有则使用默认值
+    final phoneNumber = widget.userProfile.phoneNumber.isNotEmpty 
+        ? widget.userProfile.phoneNumber 
+        : '185******70';
+        
+    showDialog(
+      context: context,
+      builder: (context) => IdentityVerificationDialog(
+        phoneNumber: phoneNumber,
+        onVerificationComplete: () {
+          // 验证完成后的回调
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('手机验证完成'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showEmailVerificationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => EmailBindingDialog(
+        onBindingComplete: () {
+          // 绑定完成后的回调
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('邮箱绑定完成'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
       ),
     );
   }
