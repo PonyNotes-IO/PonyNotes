@@ -26,11 +26,11 @@ extension FileLibraryCategoryExtension on FileLibraryCategory {
       case FileLibraryCategory.video:
         return '视频文件';
       case FileLibraryCategory.archive:
-        return '压缩文件';
+        return '百度云盘';
       case FileLibraryCategory.text:
-        return '文本文件';
+        return '阿里云盘';
       case FileLibraryCategory.other:
-        return '其他文件';
+        return '坚果云云盘';
     }
   }
 

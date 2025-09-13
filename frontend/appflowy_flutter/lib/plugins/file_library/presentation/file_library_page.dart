@@ -148,16 +148,37 @@ class _FileLibraryPageState extends State<FileLibraryPage> {
           {'category': FileLibraryCategory.document, 'name': '文档文件', 'icon': FlowySvgs.dl_document_s},
           {'category': FileLibraryCategory.audio, 'name': '音频文件', 'icon': FlowySvgs.dl_audio_s},
           {'category': FileLibraryCategory.video, 'name': '视频文件', 'icon': FlowySvgs.dl_video_s},
-          {'category': FileLibraryCategory.archive, 'name': '压缩文件', 'icon': FlowySvgs.dl_folder_s},
-          {'category': FileLibraryCategory.text, 'name': '文本文件', 'icon': FlowySvgs.icon_document_s},
-          {'category': FileLibraryCategory.other, 'name': '其他文件', 'icon': FlowySvgs.dl_folder_s},
+          {'category': FileLibraryCategory.archive, 'name': '百度云盘', 'icon': FlowySvgs.baidu_cloud_disk_s},
+          {'category': FileLibraryCategory.text, 'name': '阿里云盘', 'icon': FlowySvgs.aliyun_drive_s},
+          {'category': FileLibraryCategory.other, 'name': '坚果云云盘', 'icon': FlowySvgs.nuts_cloud_disk_s},
         ];
+
+        // 分离本地文件类型和云盘类型
+        final localCategories = categories.take(5).toList(); // 全部文件到视频文件
+        final cloudCategories = categories.skip(5).toList(); // 百度云盘到坚果云云盘
 
         return ListView(
           padding: const EdgeInsets.symmetric(vertical: 8),
           children: [
             // 本地文件分类
-            ...categories.map((categoryData) {
+            ...localCategories.map((categoryData) {
+              final category = categoryData['category'] as FileLibraryCategory;
+              final count = state.files.where((file) => category.matchesFileType(file.fileType)).length;
+              return _buildCategoryItem(
+                category,
+                categoryData['name'] as String,
+                categoryData['icon'] as FlowySvgData,
+                count,
+              );
+            }),
+            // 分割线
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              height: 1,
+              color: Theme.of(context).dividerColor.withOpacity(0.8),
+            ),
+            // 云盘分类
+            ...cloudCategories.map((categoryData) {
               final category = categoryData['category'] as FileLibraryCategory;
               final count = state.files.where((file) => category.matchesFileType(file.fileType)).length;
               return _buildCategoryItem(
