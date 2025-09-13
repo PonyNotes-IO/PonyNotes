@@ -18,31 +18,72 @@ class SettingsNotificationsView extends StatelessWidget {
           title: LocaleKeys.settings_menu_notifications.tr(),
           children: [
             SettingListTile(
-              label: LocaleKeys.settings_notifications_enableNotifications_label
+              label: LocaleKeys.settings_notifications_mentionNotifications_label
                   .tr(),
-              hint: LocaleKeys.settings_notifications_enableNotifications_hint
+              hint: LocaleKeys.settings_notifications_mentionNotifications_hint
                   .tr(),
               trailing: [
                 Toggle(
-                  value: state.isNotificationsEnabled,
+                  value: state.isMentionNotificationsEnabled,
                   onChanged: (_) => context
                       .read<NotificationSettingsCubit>()
-                      .toggleNotificationsEnabled(),
+                      .toggleMentionNotificationsEnabled(),
                 ),
               ],
             ),
             SettingListTile(
-              label: LocaleKeys
-                  .settings_notifications_showNotificationsIcon_label
+              label: LocaleKeys.settings_notifications_pendingNotifications_label
                   .tr(),
-              hint: LocaleKeys.settings_notifications_showNotificationsIcon_hint
+              hint: LocaleKeys.settings_notifications_pendingNotifications_hint
                   .tr(),
               trailing: [
                 Toggle(
-                  value: state.isShowNotificationsIconEnabled,
+                  value: state.isPendingNotificationsEnabled,
                   onChanged: (_) => context
                       .read<NotificationSettingsCubit>()
-                      .toggleShowNotificationIconEnabled(),
+                      .togglePendingNotificationsEnabled(),
+                ),
+              ],
+            ),
+            SettingListTile(
+              label: LocaleKeys.settings_notifications_permissionChangeNotifications_label
+                  .tr(),
+              hint: LocaleKeys.settings_notifications_permissionChangeNotifications_hint
+                  .tr(),
+              trailing: [
+                Toggle(
+                  value: state.isPermissionChangeNotificationsEnabled,
+                  onChanged: (_) => context
+                      .read<NotificationSettingsCubit>()
+                      .togglePermissionChangeNotificationsEnabled(),
+                ),
+              ],
+            ),
+            SettingListTile(
+              label: LocaleKeys.settings_notifications_teamJoinNotifications_label
+                  .tr(),
+              hint: LocaleKeys.settings_notifications_teamJoinNotifications_hint
+                  .tr(),
+              trailing: [
+                Toggle(
+                  value: state.isTeamJoinNotificationsEnabled,
+                  onChanged: (_) => context
+                      .read<NotificationSettingsCubit>()
+                      .toggleTeamJoinNotificationsEnabled(),
+                ),
+              ],
+            ),
+            SettingListTile(
+              label: LocaleKeys.settings_notifications_clipNotifications_label
+                  .tr(),
+              hint: LocaleKeys.settings_notifications_clipNotifications_hint
+                  .tr(),
+              trailing: [
+                Toggle(
+                  value: state.isClipNotificationsEnabled,
+                  onChanged: (_) => context
+                      .read<NotificationSettingsCubit>()
+                      .toggleClipNotificationsEnabled(),
                 ),
               ],
             ),

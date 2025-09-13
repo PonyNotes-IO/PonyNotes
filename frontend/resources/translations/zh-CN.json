@@ -815,7 +815,7 @@
       "language": "语言",
       "user": "用户",
       "files": "文件",
-      "notifications": "通知",
+      "notifications": "通知设置",
       "open": "打开设置",
       "logout": "登出",
       "logoutPrompt": "您确定要登出吗？",
@@ -869,6 +869,26 @@
         "label": "显示通知图标",
         "hint": "关闭开关以隐藏侧边栏中的通知图标。"
       },
+      "mentionNotifications": {
+        "label": "@我",
+        "hint": "当他人@我或在文档中提及时通知我"
+      },
+      "pendingNotifications": {
+        "label": "待处理",
+        "hint": "需要我审批的申请"
+      },
+      "permissionChangeNotifications": {
+        "label": "权限变更",
+        "hint": "当权限调整时，通知我"
+      },
+      "teamJoinNotifications": {
+        "label": "加入团队或加入协作时",
+        "hint": "当加入团队或成员加入协作时通知我"
+      },
+      "clipNotifications": {
+        "label": "剪藏通知",
+        "hint": "当剪藏图片、网页等成功失败时通知我"
+      },
       "archiveNotifications": {
         "allSuccess": "成功归档所有通知",
         "success": "成功归档通知"
@@ -906,7 +926,7 @@
       },
       "refreshSuccess": "成功刷新通知",
       "titles": {
-        "notifications": "通知",
+        "notifications": "通知设置",
         "reminder": "提醒"
       }
     },

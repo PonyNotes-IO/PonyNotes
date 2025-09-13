@@ -1255,6 +1255,26 @@
         "label": "Show notifications icon",
         "hint": "Toggle off to hide the notification icon in the sidebar."
       },
+      "mentionNotifications": {
+        "label": "Mention notifications",
+        "hint": "Receive notifications when you are mentioned in comments or discussions."
+      },
+      "pendingNotifications": {
+        "label": "Pending notifications",
+        "hint": "Get notified about pending tasks and assignments."
+      },
+      "permissionChangeNotifications": {
+        "label": "Permission change notifications",
+        "hint": "Receive notifications when your permissions are changed."
+      },
+      "teamJoinNotifications": {
+        "label": "Team join notifications",
+        "hint": "Get notified when new members join your team."
+      },
+      "clipNotifications": {
+        "label": "Clip notifications",
+        "hint": "Receive notifications about clip activities and updates."
+      },
       "archiveNotifications": {
         "allSuccess": "Archived all notifications successfully",
         "success": "Archived notification successfully"
