@@ -1,7 +1,9 @@
+import 'package:appflowy/startup/tasks/device_info_task.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_body.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_category_spacer.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_legal_terms_view.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
+import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
@@ -38,20 +40,27 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
         // 小马笔记品牌信息
         _buildBrandInfo(context),
         const SettingsCategorySpacer(),
-        // 简化的列表项
-        _buildListItem(context, "订阅详情", Icons.star_outline, () {
-          // TODO: 处理订阅详情点击
-        }),
-        const VSpace(8),
-        _buildListItem(context, "法律条款", Icons.description_outlined, () {
-          setState(() {
-            _currentPage = 'legal';
-          });
-        }),
-        const VSpace(8),
-        _buildListItem(context, "版本更新", Icons.system_update_outlined, () {
-          // TODO: 处理版本更新点击
-        }),
+        // 功能列表 - 使用文本样式
+        GestureDetector(
+          onTap: () {
+            // TODO: 处理订阅详情点击
+          },
+          child: _buildTextItem(context, "订阅详情", showArrow: true),
+        ),
+        GestureDetector(
+          onTap: () {
+            setState(() {
+              _currentPage = 'legal';
+            });
+          },
+          child: _buildTextItem(context, "法律条款", showArrow: true),
+        ),
+        GestureDetector(
+          onTap: () {
+            // TODO: 处理版本更新点击
+          },
+          child: _buildTextItem(context, "版本更新", showArrow: false, subtitle: "V${ApplicationInfo.applicationVersion}"),
+        ),
       ],
     );
   }
@@ -92,38 +101,38 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
     );
   }
 
-  Widget _buildListItem(
+  Widget _buildTextItem(
     BuildContext context,
-    String title,
-    IconData icon,
-    VoidCallback onTap,
-  ) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Theme.of(context).dividerColor,
+    String title, {
+    bool showArrow = false,
+    String subtitle = '',
+  }) {
+    final theme = AppFlowyTheme.of(context);
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 16),
+      child: Row(
+        children: [
+          Expanded(
+            child: FlowyText(
+              title,
+              fontSize: 16,
+              color: theme.textColorScheme.primary,
+            ),
           ),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
+          if (subtitle.isNotEmpty)
+            FlowyText(
+              subtitle,
+              fontSize: 14,
+              color: theme.textColorScheme.secondary,
             ),
-            const HSpace(12),
-            Expanded(
-              child: Text(
-                title,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+          if (showArrow)
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey,
             ),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
+        ],
       ),
     );
   }
