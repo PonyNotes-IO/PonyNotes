@@ -44,7 +44,7 @@ class SettingsBody extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SettingsCategorySpacer(),
+                const SizedBox(height: 24), // 保持与原分割线相同的间距 (theme.spacing.l 上下各12px)
                 SeparatedColumn(
                   mainAxisSize: MainAxisSize.min,
                   separatorBuilder: () => autoSeparate
