@@ -8,16 +8,16 @@ class SettingsMenuElement extends StatelessWidget {
     super.key,
     required this.page,
     required this.label,
-    required this.icon,
     required this.changeSelectedPage,
     required this.selectedPage,
+    this.showArrow = true, // 默认显示箭头
   });
 
   final SettingsPage page;
   final SettingsPage selectedPage;
   final String label;
-  final Widget icon;
   final Function changeSelectedPage;
+  final bool showArrow; // 是否显示右侧箭头
 
   @override
   Widget build(BuildContext context) {
@@ -38,14 +38,22 @@ class SettingsMenuElement extends StatelessWidget {
       builder: (_, __, ___) {
         return Row(
           children: [
-            icon,
-            HSpace(theme.spacing.m),
-            Text(
-              label,
-              style: theme.textStyle.body.standard(
-                color: theme.textColorScheme.primary,
+            Expanded(
+              child: Text(
+                label,
+                style: theme.textStyle.body.standard(
+                  color: theme.textColorScheme.primary,
+                ),
               ),
             ),
+            if (showArrow) ...[
+              const HSpace(8),
+              Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: theme.textColorScheme.secondary,
+              ),
+            ],
           ],
         );
       },

@@ -19,6 +19,8 @@ import 'package:appflowy/workspace/presentation/settings/pages/settings_shortcut
 import 'package:appflowy/workspace/presentation/settings/pages/settings_storage_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_user_profile_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_workspace_view.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/settings_workspace_management_view.dart';
+import 'package:appflowy/workspace/presentation/settings/pages/settings_sharing_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/sites/settings_sites_view.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/af_dropdown_menu_entry.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_category.dart';
@@ -157,6 +159,10 @@ class SettingsDialog extends StatelessWidget {
           userProfile: user,
           currentWorkspaceMemberRole: currentWorkspaceMemberRole,
         );
+      case SettingsPage.workspaceManagement:
+        return SettingsWorkspaceManagementView(
+          userProfile: user,
+        );
       case SettingsPage.manageData:
         return SettingsManageDataView(
           userProfile: user,
@@ -173,6 +179,10 @@ class SettingsDialog extends StatelessWidget {
         return WorkspaceMembersPage(
           userProfile: user,
           workspaceId: workspace.workspaceId,
+        );
+      case SettingsPage.sharing:
+        return SettingsSharingView(
+          userProfile: user,
         );
       case SettingsPage.plan:
         return SettingsPlanView(

@@ -16,11 +16,13 @@ enum SettingsPage {
   account,
   accountManagement,
   workspace,
+  workspaceManagement,
   manageData,
   storage,
   plan,
   billing,
   sites,
+  sharing,
   aboutXiaoma,
   userProfile,
   // OLD
