@@ -5,7 +5,7 @@ import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_magic_link_or_passcode_page.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_password_page.dart';
 import 'package:appflowy/user/presentation/screens/sign_in_screen/widgets/continue_with/continue_with_phone_sms_page.dart';
-import 'package:appflowy/user/presentation/utils/legal_document_navigator.dart';
+import 'package:appflowy/user/presentation/screens/legal_document_screen.dart';
 import 'package:appflowy_ui/appflowy_ui.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
@@ -128,9 +128,7 @@ class _ContinueWithEmailAndPasswordState
                                   GestureDetector(
                                     onTap: () {
                                       Navigator.of(dialogContext).pop();
-                                      LegalDocumentNavigator
-                                          .navigateToUserAgreement(
-                                              parentContext);
+                                      _navigateToUserAgreement(parentContext);
                                     },
                                     child: Text(
                                       LocaleKeys.legal_userAgreement.tr(),
@@ -146,9 +144,7 @@ class _ContinueWithEmailAndPasswordState
                                   GestureDetector(
                                     onTap: () {
                                       Navigator.of(dialogContext).pop();
-                                      LegalDocumentNavigator
-                                          .navigateToPrivacyPolicy(
-                                              parentContext);
+                                      _navigateToPrivacyPolicy(parentContext);
                                     },
                                     child: Text(
                                       LocaleKeys.legal_privacyPolicy.tr(),
@@ -164,9 +160,7 @@ class _ContinueWithEmailAndPasswordState
                                   GestureDetector(
                                     onTap: () {
                                       Navigator.of(dialogContext).pop();
-                                      LegalDocumentNavigator
-                                          .navigateToPersonalInfoProtection(
-                                              parentContext);
+                                      _navigateToPersonalInfoProtection(parentContext);
                                     },
                                     child: Text(
                                       LocaleKeys.legal_personalInfoProtection
@@ -285,8 +279,7 @@ class _ContinueWithEmailAndPasswordState
                       ),
                       GestureDetector(
                         onTap: () {
-                          LegalDocumentNavigator.navigateToUserAgreement(
-                              context);
+                          _navigateToUserAgreement(context);
                         },
                         child: Text(
                           "《用户协议》",
@@ -308,8 +301,7 @@ class _ContinueWithEmailAndPasswordState
                       ),
                       GestureDetector(
                         onTap: () {
-                          LegalDocumentNavigator.navigateToPrivacyPolicy(
-                              context);
+                          _navigateToPrivacyPolicy(context);
                         },
                         child: Text(
                           "《隐私政策》",
@@ -610,6 +602,39 @@ class _ContinueWithEmailAndPasswordState
               });
             },
           ),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToUserAgreement(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          title: LocaleKeys.legal_userAgreement.tr(),
+          content: LocaleKeys.legal_userAgreementContent.tr(),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToPrivacyPolicy(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          title: LocaleKeys.legal_privacyPolicy.tr(),
+          content: LocaleKeys.legal_privacyPolicyContent.tr(),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToPersonalInfoProtection(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          title: LocaleKeys.legal_personalInfoProtection.tr(),
+          content: LocaleKeys.legal_personalInfoProtectionContent.tr(),
         ),
       ),
     );

@@ -1,4 +1,5 @@
 import 'package:appflowy/startup/tasks/device_info_task.dart';
+import 'package:appflowy/user/presentation/screens/legal_document_screen.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_body.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_category_spacer.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
@@ -265,9 +266,27 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildLegalMenuItem(context, '版权声明'),
-                _buildLegalMenuItem(context, '服务条款'),
-                _buildLegalMenuItem(context, '隐私条款'),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToCopyrightStatement(context);
+                  },
+                  child: _buildLegalMenuItem(context, '版权声明'),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToServiceTerms(context);
+                  },
+                  child: _buildLegalMenuItem(context, '服务条款'),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    _navigateToPrivacyPolicy(context);
+                  },
+                  child: _buildLegalMenuItem(context, '隐私条款'),
+                ),
                 const SizedBox(height: 16),
               ],
             ),
@@ -397,6 +416,39 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
           ),
         );
       },
+    );
+  }
+
+  void _navigateToCopyrightStatement(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          title: LocaleKeys.legal_copyrightStatement.tr(),
+          content: LocaleKeys.legal_copyrightStatementContent.tr(),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToServiceTerms(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          title: LocaleKeys.legal_serviceTerms.tr(),
+          content: LocaleKeys.legal_serviceTermsContent.tr(),
+        ),
+      ),
+    );
+  }
+
+  void _navigateToPrivacyPolicy(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => LegalDocumentScreen(
+          title: LocaleKeys.legal_privacyPolicy.tr(),
+          content: LocaleKeys.legal_privacyPolicyContent.tr(),
+        ),
+      ),
     );
   }
 }
