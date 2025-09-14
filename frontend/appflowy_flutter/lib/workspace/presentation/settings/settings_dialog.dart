@@ -13,9 +13,7 @@ import 'package:appflowy/workspace/presentation/settings/pages/settings_about_xi
 import 'package:appflowy/workspace/presentation/settings/pages/settings_account_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/account_management_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_billing_view.dart';
-import 'package:appflowy/workspace/presentation/settings/pages/settings_manage_data_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_plan_view.dart';
-import 'package:appflowy/workspace/presentation/settings/pages/settings_shortcuts_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_storage_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_user_profile_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_workspace_view.dart';
@@ -38,9 +36,6 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-
-import 'widgets/setting_cloud.dart';
 
 @visibleForTesting
 const kSelfHostedTextInputFieldKey =
@@ -162,11 +157,6 @@ class SettingsDialog extends StatelessWidget {
       case SettingsPage.workspaceManagement:
         return SettingsWorkspaceManagementView(
           userProfile: user,
-        );
-      case SettingsPage.manageData:
-        return SettingsManageDataView(
-          userProfile: user,
-          workspace: workspace,
         );
       case SettingsPage.storage:
         return SettingsStorageView(
@@ -573,9 +563,7 @@ class _SupportSettings extends StatelessWidget {
                   await getIt<FlowyCacheManager>().clearAllCache();
                   if (context.mounted) {
                     showToastNotification(
-                      message: LocaleKeys
-                          .settings_manageDataPage_cache_dialog_successHint
-                          .tr(),
+                      message: "缓存清除成功！",
                     );
                   }
                 },

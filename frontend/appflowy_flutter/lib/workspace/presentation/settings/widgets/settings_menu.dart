@@ -69,26 +69,16 @@ class SettingsMenu extends StatelessWidget {
               label: "空间管理",
               changeSelectedPage: changeSelectedPage,
             ),
-            if (FeatureFlag.membersSettings.isOn &&
-                userProfile.workspaceType == WorkspaceTypePB.ServerW &&
-                currentUserRole != null &&
-                currentUserRole != AFRolePB.Guest)
-              SettingsMenuElement(
-                page: SettingsPage.member,
-                selectedPage: currentPage,
-                label: LocaleKeys.settings_appearance_members_label.tr(),
-                changeSelectedPage: changeSelectedPage,
-              ),
+            SettingsMenuElement(
+              page: SettingsPage.member,
+              selectedPage: currentPage,
+              label: "人员管理",
+              changeSelectedPage: changeSelectedPage,
+            ),
             SettingsMenuElement(
               page: SettingsPage.sharing,
               selectedPage: currentPage,
               label: "共享发布",
-              changeSelectedPage: changeSelectedPage,
-            ),
-            SettingsMenuElement(
-              page: SettingsPage.manageData,
-              selectedPage: currentPage,
-              label: LocaleKeys.settings_manageDataPage_menuLabel.tr(),
               changeSelectedPage: changeSelectedPage,
             ),
             SettingsMenuElement(

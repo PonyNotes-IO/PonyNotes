@@ -17,7 +17,6 @@ enum SettingsPage {
   accountManagement,
   workspace,
   workspaceManagement,
-  manageData,
   storage,
   plan,
   billing,
