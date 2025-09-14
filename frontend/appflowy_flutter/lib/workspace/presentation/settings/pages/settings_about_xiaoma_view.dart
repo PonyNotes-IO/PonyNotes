@@ -62,13 +62,16 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              color: const Color(0xFFFF6B35),
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
-              Icons.note_alt_outlined,
-              size: 40,
-              color: Colors.white,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.asset(
+                'assets/images/about_logo.png',
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const VSpace(16),
@@ -76,7 +79,7 @@ class _SettingsAboutXiaomaViewState extends State<SettingsAboutXiaomaView> {
           Text(
             "小马笔记",
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
