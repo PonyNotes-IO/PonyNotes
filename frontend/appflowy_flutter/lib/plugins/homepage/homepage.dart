@@ -1,7 +1,6 @@
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
-import 'package:appflowy_backend/protobuf/flowy-folder/view.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
 import 'package:appflowy/plugins/homepage/widgets/simple_model_selector.dart';
 import 'package:appflowy/plugins/interactive_ai_chat/interactive_ai_chat_page.dart';
@@ -13,6 +12,11 @@ import 'package:appflowy/workspace/application/workspace/workspace_service.dart'
 import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
+import 'package:appflowy/workspace/application/recent/recent_views_bloc.dart';
+import 'package:appflowy/workspace/application/view/view_ext.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:appflowy_backend/log.dart';
 
 class HomePagePluginBuilder extends PluginBuilder {
   @override
@@ -69,7 +73,10 @@ class HomePagePluginWidgetBuilder extends PluginWidgetBuilder
     required bool shrinkWrap,
     Map<String, dynamic>? data,
   }) =>
-      HomePage(userProfile: context.userProfile);
+      BlocProvider(
+        create: (context) => RecentViewsBloc()..add(const RecentViewsEvent.initial()),
+        child: HomePage(userProfile: context.userProfile),
+      );
 
   @override
   List<NavigationItem> get navigationItems => [this];
@@ -466,69 +473,48 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildRecentSection() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: GestureDetector(
-        onTap: _handleAddNotebook,
-        child: Container(
-          width: 132,
-          height: 132,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(10.0),
-            border: Border.all(
-              color: const Color(0xFFE9E9E9),
-              width: 1,
+    return BlocBuilder<RecentViewsBloc, RecentViewsState>(
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const SizedBox(
+            height: 132,
+            child: Center(
+              child: CircularProgressIndicator(),
             ),
+          );
+        }
+
+        // 过滤掉可能的无效视图，并限制显示数量
+        final validRecentViews = state.views
+            .where((sectionView) => sectionView.item.name.isNotEmpty) // 基本验证
+            .take(6)
+            .toList();
+
+        if (validRecentViews.isEmpty) {
+          // 如果没有最近访问的项目，只显示"添加笔记本"卡片
+          return Align(
+            alignment: Alignment.centerLeft,
+            child: _buildAddNotebookCard(),
+          );
+        }
+
+        return SizedBox(
+          height: 132,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: validRecentViews.length + 1, // +1 for the "添加笔记本" card
+            itemBuilder: (context, index) {
+              if (index == validRecentViews.length) {
+                // 最后一个位置显示"添加笔记本"卡片
+                return _buildAddNotebookCard();
+              }
+              
+              final recentView = validRecentViews[index];
+              return _buildRecentViewCard(recentView.item);
+            },
           ),
-          child: Stack(
-            children: [
-              // 顶部灰色区域
-              Positioned(
-                top: 1,
-                left: 1,
-                child: Container(
-                  width: 130,
-                  height: 48,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF8F8F8),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(9),
-                      topRight: Radius.circular(9),
-                    ),
-                  ),
-                ),
-              ),
-              // 内容区域 - 左对齐显示图标和文字
-              Positioned(
-                top: 60,
-                left: 17,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 添加图标
-                    const Icon(
-                      Icons.add,
-                      size: 25,
-                      color: Color(0xFF888888),
-                    ),
-                    const SizedBox(height: 18),
-                    // 文字
-                    const Text(
-                      "添加笔记本",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF888888),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -951,6 +937,237 @@ class _HomePageState extends State<HomePage> {
             content: Text('创建笔记本时发生错误: $e'),
             duration: const Duration(seconds: 3),
             backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 构建最近访问项目的卡片
+  Widget _buildRecentViewCard(ViewPB view) {
+    return Container(
+      width: 132,
+      height: 132,
+      margin: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: () => _openView(view),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10.0),
+            border: Border.all(
+              color: const Color(0xFFE9E9E9),
+              width: 1,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // 顶部灰色区域
+              Positioned(
+                top: 1,
+                left: 1,
+                child: Container(
+                  width: 130,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F8F8),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(9),
+                      topRight: Radius.circular(9),
+                    ),
+                  ),
+                ),
+              ),
+              // 内容区域
+              Positioned(
+                top: 60,
+                left: 17,
+                right: 17,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 项目图标
+                    Icon(
+                      _getViewIcon(view.layout),
+                      size: 25,
+                      color: const Color(0xFF636363),
+                    ),
+                    const SizedBox(height: 8),
+                    // 项目名称
+                    Text(
+                      view.name,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF333333),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建"添加笔记本"卡片
+  Widget _buildAddNotebookCard() {
+    return Container(
+      width: 132,
+      height: 132,
+      margin: const EdgeInsets.only(right: 12),
+      child: GestureDetector(
+        onTap: _handleAddNotebook,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(10.0),
+            border: Border.all(
+              color: const Color(0xFFE9E9E9),
+              width: 1,
+            ),
+          ),
+          child: Stack(
+            children: [
+              // 顶部灰色区域
+              Positioned(
+                top: 1,
+                left: 1,
+                child: Container(
+                  width: 130,
+                  height: 48,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF8F8F8),
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(9),
+                      topRight: Radius.circular(9),
+                    ),
+                  ),
+                ),
+              ),
+              // 内容区域 - 左对齐显示图标和文字
+              Positioned(
+                top: 60,
+                left: 17,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 添加图标
+                    const Icon(
+                      Icons.add,
+                      size: 25,
+                      color: Color(0xFF888888),
+                    ),
+                    const SizedBox(height: 8),
+                    // 文字
+                    const Text(
+                      "添加笔记本",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF888888),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 根据视图布局获取对应的图标
+  IconData _getViewIcon(ViewLayoutPB layout) {
+    switch (layout) {
+      case ViewLayoutPB.Document:
+        return Icons.description_outlined;
+      case ViewLayoutPB.Grid:
+        return Icons.table_chart_outlined;
+      case ViewLayoutPB.Board:
+        return Icons.dashboard_outlined;
+      case ViewLayoutPB.Calendar:
+        return Icons.calendar_today_outlined;
+      default:
+        return Icons.description_outlined;
+    }
+  }
+
+  /// 打开指定的视图
+  void _openView(ViewPB view) async {
+    try {
+      Log.info('尝试打开视图: ${view.name} (ID: ${view.id})');
+      
+      // 首先验证视图是否仍然存在
+      final viewResult = await ViewBackendService.getView(view.id);
+      final existingView = viewResult.toNullable();
+      
+      if (existingView == null) {
+        Log.warn('视图不存在或已被删除: ${view.name} (ID: ${view.id})');
+        
+        // 视图已被删除，从最近访问列表中移除并显示提示
+        if (mounted) {
+          context.read<RecentViewsBloc>().add(
+            RecentViewsEvent.removeRecentViews([view.id]),
+          );
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.warning, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text('项目 "${view.name}" 已被删除，已从最近访问中移除'),
+                  ),
+                ],
+              ),
+              duration: const Duration(seconds: 3),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+      
+      Log.info('成功验证视图存在，开始创建插件');
+      final plugin = existingView.plugin();
+      getIt<TabsBloc>().add(
+        TabsEvent.openPlugin(
+          plugin: plugin,
+          view: existingView,
+        ),
+      );
+      
+      Log.info('成功打开视图: ${existingView.name}');
+    } catch (e, stackTrace) {
+      Log.error('打开视图失败: ${view.name} (ID: ${view.id})', e, stackTrace);
+      
+      // 如果插件创建失败或其他错误，显示错误信息
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text('无法打开项目: ${view.name}'),
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red,
+            action: SnackBarAction(
+              label: '重试',
+              textColor: Colors.white,
+              onPressed: () => _openView(view),
+            ),
           ),
         );
       }

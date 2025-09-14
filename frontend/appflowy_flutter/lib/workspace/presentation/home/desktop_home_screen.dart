@@ -86,8 +86,11 @@ class DesktopHomeScreen extends StatelessWidget {
               ),
               BlocProvider<TabsBloc>.value(value: getIt<TabsBloc>()),
               BlocProvider<HomeBloc>(
-                create: (_) =>
-                    HomeBloc(workspaceLatest)..add(const HomeEvent.initial()),
+                create: (_) {
+                  // 触发 TabsBloc 初始化，确保当前页面被添加到最近访问
+                  getIt<TabsBloc>().add(const TabsEvent.initial());
+                  return HomeBloc(workspaceLatest)..add(const HomeEvent.initial());
+                },
               ),
               BlocProvider<HomeSettingBloc>(
                 create: (_) => HomeSettingBloc(

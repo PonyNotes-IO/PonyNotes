@@ -7,6 +7,7 @@ import 'package:appflowy/plugins/util.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/util/expand_views.dart';
+import 'package:appflowy/workspace/application/recent/cached_recent_service.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
@@ -23,10 +24,12 @@ part 'tabs_bloc.freezed.dart';
 class TabsBloc extends Bloc<TabsEvent, TabsState> {
   TabsBloc() : super(TabsState()) {
     menuSharedState = getIt<MenuSharedState>();
+    _recentService = getIt<CachedRecentService>();
     _dispatch();
   }
 
   late final MenuSharedState menuSharedState;
+  late final CachedRecentService _recentService;
 
   @override
   Future<void> close() {
@@ -204,21 +207,37 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
               emit(newstate.copyWith(currentIndex: 0));
             }
           },
+          initial: () {
+            // 在应用初始化时，检查当前打开的视图并添加到最近访问
+            final pageManager = state.currentPageManager;
+            final notifier = pageManager.plugin.notifier;
+            if (notifier is ViewPluginNotifier && !notifier.view.isSpace) {
+              _addToRecentViews(notifier.view.id);
+            }
+          },
         );
       },
     );
   }
 
   void _setLatestOpenView([ViewPB? view]) {
-    if (view != null) {
-      menuSharedState.latestOpenView = view;
+    ViewPB? targetView = view;
+    
+    if (targetView != null) {
+      menuSharedState.latestOpenView = targetView;
     } else {
       final pageManager = state.currentPageManager;
       final notifier = pageManager.plugin.notifier;
       if (notifier is ViewPluginNotifier &&
           menuSharedState.latestOpenView?.id != notifier.view.id) {
-        menuSharedState.latestOpenView = notifier.view;
+        targetView = notifier.view;
+        menuSharedState.latestOpenView = targetView;
       }
+    }
+    
+    // 自动添加到最近访问列表（过滤掉空间视图）
+    if (targetView != null && !targetView.isSpace) {
+      _addToRecentViews(targetView.id);
     }
   }
 
@@ -299,6 +318,19 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
       ),
     );
   }
+  
+  /// 添加视图到最近访问列表的异步方法
+  void _addToRecentViews(String viewId) {
+    // 使用异步方式更新最近访问，避免阻塞UI
+    Future.microtask(() async {
+      try {
+        await _recentService.updateRecentViews([viewId], true);
+        Log.debug('已添加视图到最近访问: $viewId');
+      } catch (e) {
+        Log.error('添加视图到最近访问失败: $viewId, 错误: $e');
+      }
+    });
+  }
 }
 
 @freezed
@@ -337,6 +369,8 @@ class TabsEvent with _$TabsEvent {
 
   const factory TabsEvent.switchWorkspace(String workspaceId) =
       _SwitchWorkspace;
+      
+  const factory TabsEvent.initial() = _Initial;
 }
 
 class TabsState {
