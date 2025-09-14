@@ -1,7 +1,6 @@
 import 'package:appflowy/ai/ai.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/plugins/ai_chat/application/ai_model_switch_listener.dart';
-import 'package:appflowy/workspace/application/settings/ai/local_llm_listener.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-ai/entities.pb.dart';
@@ -41,15 +40,12 @@ class AIModelState {
 
 class AIModelStateNotifier {
   AIModelStateNotifier({required this.objectId})
-      : _localAIListener =
-            UniversalPlatform.isDesktop ? LocalAIStateListener() : null,
-        _aiModelSwitchListener = AIModelSwitchListener(objectId: objectId) {
+      : _aiModelSwitchListener = AIModelSwitchListener(objectId: objectId) {
     _startListening();
     _init();
   }
 
   final String objectId;
-  final LocalAIStateListener? _localAIListener;
   final AIModelSwitchListener _aiModelSwitchListener;
 
   LocalAIPB? _localAIState;
@@ -65,15 +61,6 @@ class AIModelStateNotifier {
 
   /// Starts platform-specific listeners
   void _startListening() {
-    if (UniversalPlatform.isDesktop) {
-      _localAIListener?.start(
-        stateCallback: (state) async {
-          _localAIState = state;
-          _updateAll();
-        },
-      );
-    }
-
     _aiModelSwitchListener.start(
       onUpdateSelectedModel: (model) async {
         _selectedModel = model;
@@ -123,7 +110,6 @@ class AIModelStateNotifier {
   Future<void> dispose() async {
     _stateChangedCallbacks.clear();
     _availableModelsChangedCallbacks.clear();
-    await _localAIListener?.stop();
     await _aiModelSwitchListener.stop();
   }
 

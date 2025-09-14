@@ -5,7 +5,7 @@ import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/mobile/presentation/base/app_bar/app_bar.dart';
 import 'package:appflowy/mobile/presentation/presentation.dart';
-import 'package:appflowy/mobile/presentation/setting/ai/ai_settings_group.dart';
+
 import 'package:appflowy/mobile/presentation/setting/cloud/cloud_setting_group.dart';
 import 'package:appflowy/mobile/presentation/setting/user_session_setting_group.dart';
 import 'package:appflowy/mobile/presentation/setting/workspace/workspace_setting_group.dart';
@@ -97,12 +97,7 @@ class _MobileHomeSettingPageState extends State<MobileHomeSettingPage> {
                   const AppearanceSettingGroup(),
                   const LanguageSettingGroup(),
                   if (Env.enableCustomCloud) const CloudSettingGroup(),
-                  if (isAuthEnabled)
-                    AiSettingsGroup(
-                      key: ValueKey(currentWorkspaceId),
-                      userProfile: userProfile,
-                      workspaceId: currentWorkspaceId,
-                    ),
+
                   // const SupportSettingGroup(),
                   const AboutSettingGroup(),
                   UserSessionSettingGroup(

@@ -110,15 +110,7 @@ class SettingsMenu extends StatelessWidget {
               icon: const FlowySvg(FlowySvgs.settings_page_keyboard_m),
               changeSelectedPage: changeSelectedPage,
             ),
-            SettingsMenuElement(
-              page: SettingsPage.ai,
-              selectedPage: currentPage,
-              label: LocaleKeys.settings_aiPage_menuLabel.tr(),
-              icon: const FlowySvg(
-                FlowySvgs.settings_page_ai_m,
-              ),
-              changeSelectedPage: changeSelectedPage,
-            ),
+
             if (userProfile.workspaceType == WorkspaceTypePB.ServerW &&
                 currentUserRole != null &&
                 currentUserRole != AFRolePB.Guest)
@@ -145,18 +137,7 @@ class SettingsMenu extends StatelessWidget {
                 changeSelectedPage: changeSelectedPage,
               ),
             ],
-            if (kDebugMode)
-              SettingsMenuElement(
-                // no need to translate this page
-                page: SettingsPage.featureFlags,
-                selectedPage: currentPage,
-                label: 'Feature Flags',
-                icon: const Icon(
-                  Icons.flag,
-                  size: 20,
-                ),
-                changeSelectedPage: changeSelectedPage,
-              ),
+
             // 关于小马按钮
             SettingsMenuElement(
               page: SettingsPage.aboutXiaoma,
@@ -339,15 +320,7 @@ class SimpleSettingsMenu extends StatelessWidget {
                     icon: const Icon(Icons.sync),
                     changeSelectedPage: () {},
                   ),
-                  if (kDebugMode)
-                    SettingsMenuElement(
-                      // no need to translate this page
-                      page: SettingsPage.featureFlags,
-                      selectedPage: SettingsPage.cloud,
-                      label: 'Feature Flags',
-                      icon: const Icon(Icons.flag),
-                      changeSelectedPage: () {},
-                    ),
+
                 ],
               ),
             ),

@@ -19,7 +19,6 @@ enum SettingsPage {
   manageData,
   storage,
   shortcuts,
-  ai,
   plan,
   billing,
   sites,
@@ -29,7 +28,6 @@ enum SettingsPage {
   notifications,
   cloud,
   member,
-  featureFlags,
 }
 
 class SettingsDialogBloc

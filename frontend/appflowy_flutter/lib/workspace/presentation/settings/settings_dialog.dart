@@ -8,7 +8,7 @@ import 'package:appflowy/util/share_log_files.dart';
 import 'package:appflowy/workspace/application/settings/appearance/appearance_cubit.dart';
 import 'package:appflowy/workspace/application/settings/appflowy_cloud_urls_bloc.dart';
 import 'package:appflowy/workspace/application/settings/settings_dialog_bloc.dart';
-import 'package:appflowy/workspace/presentation/settings/pages/setting_ai_view/settings_ai_view.dart';
+
 import 'package:appflowy/workspace/presentation/settings/pages/settings_about_xiaoma_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/settings_account_view.dart';
 import 'package:appflowy/workspace/presentation/settings/pages/account_management_view.dart';
@@ -23,7 +23,7 @@ import 'package:appflowy/workspace/presentation/settings/pages/sites/settings_si
 import 'package:appflowy/workspace/presentation/settings/shared/af_dropdown_menu_entry.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_category.dart';
 import 'package:appflowy/workspace/presentation/settings/shared/settings_dropdown.dart';
-import 'package:appflowy/workspace/presentation/settings/widgets/feature_flags/feature_flag_page.dart';
+
 import 'package:appflowy/workspace/presentation/settings/widgets/members/workspace_member_page.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/settings_menu.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/settings_notifications_view.dart';
@@ -37,7 +37,7 @@ import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'pages/setting_ai_view/local_settings_ai_view.dart';
+
 import 'widgets/setting_cloud.dart';
 
 @visibleForTesting
@@ -172,21 +172,7 @@ class SettingsDialog extends StatelessWidget {
         return SettingCloud(restartAppFlowy: () => restartApp());
       case SettingsPage.shortcuts:
         return const SettingsShortcutsView();
-      case SettingsPage.ai:
-        if (user.workspaceType == WorkspaceTypePB.ServerW) {
-          return SettingsAIView(
-            key: ValueKey(workspace.workspaceId),
-            userProfile: user,
-            currentWorkspaceMemberRole: currentWorkspaceMemberRole,
-            workspaceId: workspace.workspaceId,
-          );
-        } else {
-          return LocalSettingsAIView(
-            key: ValueKey(workspace.workspaceId),
-            userProfile: user,
-            workspaceId: workspace.workspaceId,
-          );
-        }
+
       case SettingsPage.member:
         return WorkspaceMembersPage(
           userProfile: user,
@@ -207,8 +193,7 @@ class SettingsDialog extends StatelessWidget {
           workspaceId: workspace.workspaceId,
           user: user,
         );
-      case SettingsPage.featureFlags:
-        return const FeatureFlagsPage();
+
       case SettingsPage.aboutXiaoma:
         return const SettingsAboutXiaomaView();
       case SettingsPage.userProfile:
