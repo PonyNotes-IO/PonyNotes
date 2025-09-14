@@ -168,10 +168,6 @@ class SettingsDialog extends StatelessWidget {
         );
       case SettingsPage.notifications:
         return const SettingsNotificationsView();
-      case SettingsPage.cloud:
-        return SettingCloud(restartAppFlowy: () => restartApp());
-      case SettingsPage.shortcuts:
-        return const SettingsShortcutsView();
 
       case SettingsPage.member:
         return WorkspaceMembersPage(
@@ -212,7 +208,7 @@ class SimpleSettingsDialog extends StatefulWidget {
 }
 
 class _SimpleSettingsDialogState extends State<SimpleSettingsDialog> {
-  SettingsPage page = SettingsPage.cloud;
+  SettingsPage page = SettingsPage.workspace;
 
   @override
   Widget build(BuildContext context) {

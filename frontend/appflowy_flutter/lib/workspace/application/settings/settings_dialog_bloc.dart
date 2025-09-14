@@ -18,7 +18,6 @@ enum SettingsPage {
   workspace,
   manageData,
   storage,
-  shortcuts,
   plan,
   billing,
   sites,
@@ -26,7 +25,6 @@ enum SettingsPage {
   userProfile,
   // OLD
   notifications,
-  cloud,
   member,
 }
 

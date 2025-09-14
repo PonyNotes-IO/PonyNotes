@@ -70,7 +70,7 @@ void main() {
       await tester.tapGoogleLoginInButton();
       // Open the setting page and sign out
       await tester.openSettings();
-      await tester.openSettingsPage(SettingsPage.cloud);
+      await tester.openSettingsPage(SettingsPage.workspace);
       await tester.pumpAndSettle();
 
       // the switch should be on by default

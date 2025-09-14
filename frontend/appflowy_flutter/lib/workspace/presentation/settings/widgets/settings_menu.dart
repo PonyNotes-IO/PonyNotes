@@ -83,13 +83,6 @@ class SettingsMenu extends StatelessWidget {
               changeSelectedPage: changeSelectedPage,
             ),
             SettingsMenuElement(
-              page: SettingsPage.storage,
-              selectedPage: currentPage,
-              label: "存储设置",
-              icon: const Icon(Icons.storage_outlined, size: 20),
-              changeSelectedPage: changeSelectedPage,
-            ),
-            SettingsMenuElement(
               page: SettingsPage.notifications,
               selectedPage: currentPage,
               label: LocaleKeys.settings_menu_notifications.tr(),
@@ -97,17 +90,10 @@ class SettingsMenu extends StatelessWidget {
               changeSelectedPage: changeSelectedPage,
             ),
             SettingsMenuElement(
-              page: SettingsPage.cloud,
+              page: SettingsPage.storage,
               selectedPage: currentPage,
-              label: LocaleKeys.settings_menu_cloudSettings.tr(),
-              icon: const FlowySvg(FlowySvgs.settings_page_cloud_m),
-              changeSelectedPage: changeSelectedPage,
-            ),
-            SettingsMenuElement(
-              page: SettingsPage.shortcuts,
-              selectedPage: currentPage,
-              label: LocaleKeys.settings_shortcutsPage_menuLabel.tr(),
-              icon: const FlowySvg(FlowySvgs.settings_page_keyboard_m),
+              label: "存储设置",
+              icon: const Icon(Icons.storage_outlined, size: 20),
               changeSelectedPage: changeSelectedPage,
             ),
 
@@ -313,14 +299,7 @@ class SimpleSettingsMenu extends StatelessWidget {
               child: SeparatedColumn(
                 separatorBuilder: () => const VSpace(16),
                 children: [
-                  SettingsMenuElement(
-                    page: SettingsPage.cloud,
-                    selectedPage: SettingsPage.cloud,
-                    label: LocaleKeys.settings_menu_cloudSettings.tr(),
-                    icon: const Icon(Icons.sync),
-                    changeSelectedPage: () {},
-                  ),
-
+                  // 已移除云设置菜单项
                 ],
               ),
             ),

@@ -20,7 +20,7 @@ void main() {
       await tester.tapAnonymousSignInButton();
 
       await tester.openSettings();
-      await tester.openSettingsPage(SettingsPage.shortcuts);
+      await tester.openSettingsPage(SettingsPage.workspace);
       await tester.pumpAndSettle();
 
       final backspaceCmd =
