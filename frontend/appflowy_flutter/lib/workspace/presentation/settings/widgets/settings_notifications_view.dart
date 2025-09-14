@@ -16,6 +16,7 @@ class SettingsNotificationsView extends StatelessWidget {
       builder: (context, state) {
         return SettingsBody(
           title: LocaleKeys.settings_menu_notifications.tr(),
+          autoSeparate: false,
           children: [
             SettingListTile(
               label: LocaleKeys.settings_notifications_mentionNotifications_label
@@ -31,6 +32,7 @@ class SettingsNotificationsView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             SettingListTile(
               label: LocaleKeys.settings_notifications_pendingNotifications_label
                   .tr(),
@@ -45,6 +47,7 @@ class SettingsNotificationsView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             SettingListTile(
               label: LocaleKeys.settings_notifications_permissionChangeNotifications_label
                   .tr(),
@@ -59,6 +62,7 @@ class SettingsNotificationsView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             SettingListTile(
               label: LocaleKeys.settings_notifications_teamJoinNotifications_label
                   .tr(),
@@ -73,6 +77,7 @@ class SettingsNotificationsView extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
             SettingListTile(
               label: LocaleKeys.settings_notifications_clipNotifications_label
                   .tr(),
