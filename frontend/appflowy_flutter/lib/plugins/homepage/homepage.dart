@@ -9,8 +9,8 @@ import 'package:appflowy/core/config/ai_config.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
-import 'package:appflowy/workspace/application/view/view_service.dart';
-import 'package:appflowy/workspace/application/view/view_ext.dart';
+import 'package:appflowy/workspace/application/workspace/workspace_service.dart';
+import 'package:appflowy/user/application/user_service.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 
@@ -881,18 +881,21 @@ class _HomePageState extends State<HomePage> {
   /// 处理添加笔记本点击事件
   void _handleAddNotebook() async {
     try {
-      // 获取当前工作空间信息
+      // 获取当前用户和工作空间信息
+      final userResult = await UserBackendService.getCurrentUserProfile();
       final workspaceResult = await FolderEventGetCurrentWorkspaceSetting().send();
+      
+      final userProfile = userResult.fold((user) => user, (error) => null);
       final workspaceId = workspaceResult.fold(
-        (workspace) => workspace.workspaceId,
-        (error) => '',
+        (setting) => setting.workspaceId,
+        (error) => null,
       );
-
-      if (workspaceId.isEmpty) {
+      
+      if (userProfile == null || workspaceId == null || workspaceId.isEmpty) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('无法获取工作空间信息'),
+              content: Text('无法获取当前用户或工作空间信息'),
               duration: Duration(seconds: 3),
               backgroundColor: Colors.red,
             ),
@@ -901,30 +904,23 @@ class _HomePageState extends State<HomePage> {
         return;
       }
 
-      // 创建笔记本文档
-      final result = await ViewBackendService.createView(
-        layoutType: ViewLayoutPB.Notebook,
-        parentViewId: workspaceId,
-        name: '新笔记本',
-        openAfterCreate: true,
-        ext: {
-          ViewExtKeys.viewTypeKey: ViewExtKeys.notebookTypeValue,
-        },
+      // 使用WorkspaceService创建笔记本视图
+      final workspaceService = WorkspaceService(
+        workspaceId: workspaceId,
+        userId: userProfile.id,
       );
 
-      await result.fold(
-        (view) async {
-          // 创建成功，打开新创建的笔记本
-          final plugin = makePlugin(
-            pluginType: PluginType.document,
-            data: view,
-          );
+      // 创建Document类型的视图（而不是Notebook类型）
+      final result = await workspaceService.createView(
+        name: '新笔记本',
+        viewSection: ViewSectionPB.Public, // 创建在公共区域，这样在"我的空间"中可见
+        layout: ViewLayoutPB.Document, // 使用Document类型，这是稳定可用的类型
+        setAsCurrent: true,
+      );
 
-          getIt<TabsBloc>().add(
-            TabsEvent.openPlugin(plugin: plugin),
-          );
-
-          // 显示成功消息
+      result.fold(
+        (view) {
+          // 显示创建成功消息
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
