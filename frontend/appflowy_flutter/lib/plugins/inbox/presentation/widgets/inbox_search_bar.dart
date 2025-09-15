@@ -32,7 +32,7 @@ class _InboxSearchBarState extends State<InboxSearchBar> {
     
     return Container(
       height: 36,
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
       decoration: BoxDecoration(
         color: theme.backgroundColorScheme.primary,
         borderRadius: BorderRadius.circular(8),

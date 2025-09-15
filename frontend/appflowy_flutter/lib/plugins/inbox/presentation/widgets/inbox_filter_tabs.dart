@@ -14,7 +14,7 @@ class InboxFilterTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.only(left: 20, right: 20, bottom: 12),
       child: Row(
         children: [
           _buildFilterTab(context, '全部', hasNotification: true),
