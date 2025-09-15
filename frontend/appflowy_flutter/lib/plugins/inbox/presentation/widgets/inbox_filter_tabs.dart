@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:appflowy/util/theme_extension.dart';
 
 class InboxFilterTabs extends StatelessWidget {
   final String selectedFilter;
@@ -16,30 +17,43 @@ class InboxFilterTabs extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         children: [
-          _buildFilterTab('全部', hasNotification: true),
+          _buildFilterTab(context, '全部', hasNotification: true),
           const SizedBox(width: 10),
-          _buildFilterTab('未读'),
+          _buildFilterTab(context, '未读'),
           const SizedBox(width: 10),
-          _buildFilterTab('剪藏'),
+          _buildFilterTab(context, '已收藏'),
+          const SizedBox(width: 10),
+          _buildFilterTab(context, '重要'),
         ],
       ),
     );
   }
 
-  Widget _buildFilterTab(String label, {bool hasNotification = false}) {
+  Widget _buildFilterTab(BuildContext context, String label, {bool hasNotification = false}) {
     final isSelected = selectedFilter == label;
+    final isLightMode = Theme.of(context).isLightMode;
+    
+    final backgroundColor = isSelected 
+        ? (isLightMode ? const Color(0xFFEFEFEF) : const Color(0xFF2C2C2C))
+        : (isLightMode ? Colors.white : const Color(0xFF1E1E1E));
+    
+    final borderColor = isLightMode 
+        ? const Color(0xFFE9E9E9) 
+        : const Color(0xFF3C3C3C);
+    
+    final textColor = isLightMode 
+        ? Colors.black87 
+        : Colors.white70;
     
     return GestureDetector(
       onTap: () => onFilterChanged(label),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected 
-              ? const Color(0xFFEFEFEF) 
-              : Colors.white,
+          color: backgroundColor,
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-            color: const Color(0xFFE9E9E9),
+            color: borderColor,
             width: 1,
           ),
         ),
@@ -50,21 +64,19 @@ class InboxFilterTabs extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF333333),
+                fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                color: textColor,
               ),
             ),
-            
-            // 红点通知
-            if (hasNotification && label == '全部')
+            if (hasNotification)
               Positioned(
-                right: -3,
-                top: -3,
+                top: -2,
+                right: -2,
                 child: Container(
                   width: 8,
                   height: 8,
                   decoration: const BoxDecoration(
-                    color: Color(0xFFFF2844),
+                    color: Colors.red,
                     shape: BoxShape.circle,
                   ),
                 ),

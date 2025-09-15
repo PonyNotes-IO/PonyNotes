@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:appflowy/plugins/inbox/domain/models/inbox_item.dart';
+import 'package:flowy_infra/theme_extension.dart';
 
 class InboxDetailPanel extends StatefulWidget {
   final InboxItem item;
@@ -42,13 +43,15 @@ class _InboxDetailPanelState extends State<InboxDetailPanel> {
   }
 
   Widget _buildHeader() {
+    final afTheme = AFThemeExtension.of(context);
+    
     return Container(
       height: 56,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
         border: Border(
-          bottom: BorderSide(color: Color(0xFFE5E7EB), width: 1),
+          bottom: BorderSide(color: afTheme.borderColor, width: 1),
         ),
       ),
       child: Row(
@@ -56,12 +59,12 @@ class _InboxDetailPanelState extends State<InboxDetailPanel> {
           // 关闭按钮或返回按钮
           widget.showBackButton 
             ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF666666)),
+                icon: Icon(Icons.arrow_back, color: afTheme.onBackground),
                 onPressed: widget.onBackToList,
                 tooltip: '返回列表',
               )
             : IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF666666)),
+                icon: Icon(Icons.close, color: afTheme.onBackground),
                 onPressed: widget.onClose,
                 tooltip: '关闭',
               ),
@@ -72,10 +75,10 @@ class _InboxDetailPanelState extends State<InboxDetailPanel> {
           Expanded(
             child: Text(
               widget.item.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF333333),
+                color: afTheme.textColor,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -88,13 +91,13 @@ class _InboxDetailPanelState extends State<InboxDetailPanel> {
               IconButton(
                 icon: Icon(
                   widget.item.isStarred ? Icons.star : Icons.star_border,
-                  color: widget.item.isStarred ? Colors.amber : const Color(0xFF666666),
+                  color: widget.item.isStarred ? Colors.amber : afTheme.onBackground,
                 ),
                 onPressed: _toggleStar,
                 tooltip: widget.item.isStarred ? '取消收藏' : '收藏',
               ),
               IconButton(
-                icon: const Icon(Icons.more_vert, color: Color(0xFF666666)),
+                icon: Icon(Icons.more_vert, color: afTheme.onBackground),
                 onPressed: _showMoreOptions,
                 tooltip: '更多选项',
               ),
