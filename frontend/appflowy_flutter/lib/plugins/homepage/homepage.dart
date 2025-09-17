@@ -648,14 +648,14 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       width: 44,
                       height: 44,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFCDF3F6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF8D69).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                       child: Icon(
+                       child: const Icon(
                          Icons.description,
                          size: 24,
-                         color: const Color(0xFF888888),
+                         color: Color(0xFFFF8D69),
                        ),
                     ),
                   ),
@@ -719,7 +719,7 @@ class _HomePageState extends State<HomePage> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF8D69).withOpacity(0.1),
+                  color: const Color(0xFFFF8D69).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
