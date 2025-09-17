@@ -8,14 +8,12 @@ class TodoListDisplay extends StatelessWidget {
   final List<TodoItem> todayTodos;
   final List<TodoItem> upcomingTodos;
   final Function(String todoId)? onTodoToggle;
-  final VoidCallback? onTodoAdd;
 
   const TodoListDisplay({
     super.key,
     required this.todayTodos,
     required this.upcomingTodos,
     this.onTodoToggle,
-    this.onTodoAdd,
   });
 
   @override
@@ -38,28 +36,6 @@ class TodoListDisplay extends StatelessWidget {
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Color(0xFF333333),
-              ),
-            ),
-            const Spacer(),
-            InkWell(
-              onTap: onTodoAdd,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6366F1).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: const Text(
-                  "+ 添加",
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF6366F1),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
               ),
             ),
           ],
