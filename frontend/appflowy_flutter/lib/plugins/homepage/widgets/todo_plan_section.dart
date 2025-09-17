@@ -101,10 +101,6 @@ class TodoPlanSectionContent extends StatelessWidget {
                     onTodoToggle: (todoId) {
                       context.read<TodoBloc>().add(TodoEvent.toggleComplete(todoId));
                     },
-                    onTodoAdd: () {
-                      // 可以触发左侧的创建区域或打开完整的创建对话框
-                      _showAddTodoDialog(context);
-                    },
                   ),
                 ),
               ],
@@ -115,21 +111,4 @@ class TodoPlanSectionContent extends StatelessWidget {
     );
   }
 
-  void _showAddTodoDialog(BuildContext context) {
-    // TODO: 实现添加待办的对话框
-    // 这里可以复用日历的NewEventPage或创建简化版本
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('添加待办'),
-        content: const Text('此功能将在后续开发中实现'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
-  }
 }
