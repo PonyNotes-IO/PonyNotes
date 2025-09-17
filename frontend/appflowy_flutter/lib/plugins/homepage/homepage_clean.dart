@@ -15,7 +15,9 @@ import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy/workspace/application/recent/recent_views_bloc.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:appflowy_backend/log.dart';
 
 class HomePagePluginBuilder extends PluginBuilder {
   @override
@@ -581,8 +583,8 @@ class _HomePageState extends State<HomePage> {
             );
           }
           
-           // 刷新最近访问列表
-           context.read<RecentViewsBloc>().add(RecentViewsEvent.fetchRecentViews());
+          // 刷新最近访问列表
+          context.read<RecentViewsBloc>().add(const RecentViewsEvent.fetch());
         },
         (error) {
           // 显示错误消息
@@ -652,11 +654,11 @@ class _HomePageState extends State<HomePage> {
                         color: Color(0xFFCDF3F6),
                         shape: BoxShape.circle,
                       ),
-                       child: Icon(
-                         Icons.description,
-                         size: 24,
-                         color: const Color(0xFF888888),
-                       ),
+                      child: Icon(
+                        view.icon?.value.icon ?? Icons.description,
+                        size: 24,
+                        color: const Color(0xFF888888),
+                      ),
                     ),
                   ),
                 ),
@@ -748,14 +750,8 @@ class _HomePageState extends State<HomePage> {
   /// 打开视图
   void _openView(ViewPB view) async {
     try {
-       // 使用TabsBloc来打开视图
-       final plugin = view.plugin();
-       context.read<TabsBloc>().add(
-         TabsEvent.openPlugin(
-           plugin: plugin,
-           view: view,
-         ),
-       );
+      // 使用TabsBloc来打开视图
+      context.read<TabsBloc>().openTab(view);
     } catch (e) {
       // 显示错误消息
       if (mounted) {
