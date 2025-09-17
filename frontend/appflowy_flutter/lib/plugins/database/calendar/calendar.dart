@@ -1101,7 +1101,7 @@ class CalendarPluginConfig implements PluginConfig {
 }
 
 // 日历文档视图组件 - 参考回收站的实现
-class CalendarDocumentView extends StatelessWidget {
+class CalendarDocumentView extends StatefulWidget {
   const CalendarDocumentView({
     super.key,
     required this.view,
@@ -1110,18 +1110,53 @@ class CalendarDocumentView extends StatelessWidget {
   final ViewPB view;
 
   @override
+  State<CalendarDocumentView> createState() => _CalendarDocumentViewState();
+}
+
+class _CalendarDocumentViewState extends State<CalendarDocumentView> {
+  late DocumentBloc _documentBloc;
+  late ViewBloc _viewBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeBlocs();
+  }
+
+  @override
+  void didUpdateWidget(CalendarDocumentView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当view改变时，重新初始化blocs
+    if (oldWidget.view.id != widget.view.id) {
+      _disposeBlocs();
+      _initializeBlocs();
+    }
+  }
+
+  void _initializeBlocs() {
+    _documentBloc = DocumentBloc(documentId: widget.view.id)
+      ..add(const DocumentEvent.initial());
+    _viewBloc = ViewBloc(view: widget.view)
+      ..add(const ViewEvent.initial());
+  }
+
+  void _disposeBlocs() {
+    _documentBloc.close();
+    _viewBloc.close();
+  }
+
+  @override
+  void dispose() {
+    _disposeBlocs();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider(
-          create: (context) {
-            return DocumentBloc(documentId: view.id)
-              ..add(const DocumentEvent.initial());
-          },
-        ),
-        BlocProvider(
-          create: (context) => ViewBloc(view: view)..add(const ViewEvent.initial()),
-        ),
+        BlocProvider.value(value: _documentBloc),
+        BlocProvider.value(value: _viewBloc),
       ],
       child: BlocBuilder<DocumentBloc, DocumentState>(
         builder: (context, state) {
@@ -1264,7 +1299,7 @@ class CalendarDocumentView extends StatelessWidget {
         children: [
           // 标题
           Text(
-            view.name.isEmpty ? '无标题笔记' : view.name,
+            widget.view.name.isEmpty ? '无标题笔记' : widget.view.name,
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.bold,
@@ -1273,7 +1308,7 @@ class CalendarDocumentView extends StatelessWidget {
           const SizedBox(height: 8),
           // 创建时间
           Text(
-            '创建时间：${_formatCreateTime(view.createTime.toInt())}',
+            '创建时间：${_formatCreateTime(widget.view.createTime.toInt())}',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
