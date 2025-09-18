@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:appflowy/plugins/standalone_ai_chat/application/standalone_chat_bloc.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/models/chat_image.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/services/image_storage_service.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/presentation/widgets/chat_image_widget.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 /// 聊天消息气泡组件
@@ -63,13 +66,24 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                 bottomRight: Radius.circular(4),
               ),
             ),
-            child: Text(
-              widget.message.content,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                height: 1.4,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 显示图片
+                if (widget.message.imageIds.isNotEmpty)
+                  _buildMessageImages(),
+                
+                // 显示文本内容
+                if (widget.message.content.isNotEmpty)
+                  Text(
+                    widget.message.content,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      height: 1.4,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -384,6 +398,77 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
     } else {
       return '${timestamp.month}/${timestamp.day} ${timestamp.hour}:${timestamp.minute.toString().padLeft(2, '0')}';
     }
+  }
+
+  /// 构建消息中的图片
+  Widget _buildMessageImages() {
+    return FutureBuilder<List<ChatImage>>(
+      future: _loadMessageImages(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Text(
+              '图片加载失败',
+              style: TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+              ),
+            ),
+          );
+        }
+
+        final images = snapshot.data!;
+        return Container(
+          margin: EdgeInsets.only(bottom: widget.message.content.isNotEmpty ? 8 : 0),
+          child: Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: images.map((image) => ChatImageWidget(
+              image: image,
+              width: 120,
+              height: 120,
+              onTap: () => _showImagePreview(context, image),
+            )).toList(),
+          ),
+        );
+      },
+    );
+  }
+
+  /// 加载消息中的图片
+  Future<List<ChatImage>> _loadMessageImages() async {
+    final imageStorage = ImageStorageService.instance;
+    await imageStorage.initialize();
+    return await imageStorage.getImages(widget.message.imageIds);
+  }
+
+  /// 显示图片预览
+  void _showImagePreview(BuildContext context, ChatImage image) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: InteractiveViewer(
+          child: ChatImageWidget(
+            image: image,
+            borderRadius: 0,
+          ),
+        ),
+      ),
+    );
   }
 }
 

@@ -2,10 +2,11 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/user_profile.pb.dart';
-import 'package:appflowy/plugins/homepage/widgets/simple_model_selector.dart';
 import 'package:appflowy/plugins/homepage/widgets/todo_plan_section.dart';
 import 'package:appflowy/plugins/interactive_ai_chat/interactive_ai_chat_page.dart';
 import 'package:appflowy/core/config/ai_config.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/presentation/widgets/ai_input_area.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/models/chat_image.dart';
 import 'package:flutter/material.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
@@ -91,10 +92,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _aiInputController = TextEditingController();
-  final FocusNode _aiInputFocusNode = FocusNode();
-  String? _selectedModel; // 存储选择的模型
-
   @override
   void initState() {
     super.initState();
@@ -110,27 +107,18 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  @override
-  void dispose() {
-    _aiInputController.dispose();
-    _aiInputFocusNode.dispose();
-    super.dispose();
-  }
-
-  void _handleSendMessage() {
-    final text = _aiInputController.text.trim();
-    if (text.isEmpty) return;
-
-    // 清空输入框
-    _aiInputController.clear();
+  /// 处理来自AIInputArea的消息发送
+  void _handleMessageSent(String message, AIProvider? provider, List<ChatImage>? images) {
+    if (message.isEmpty) return;
     
     // 创建独立的AI聊天插件
     try {
       final standaloneAiChatPlugin = makePlugin(
         pluginType: PluginType.standaloneAiChat,
         data: {
-          'initialText': text,
-          'selectedModelName': _selectedModel, // 传递选择的模型名称（可能为空）
+          'initialText': message,
+          'selectedModelName': provider?.name, // 传递选择的模型名称
+          'initialImages': images, // 传递选择的图片
         },
       );
 
@@ -214,8 +202,10 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // 问AI区域
-            _buildAISection(),
+            // 问AI区域 - 复用AIInputArea组件
+            AIInputArea(
+              onMessageSent: _handleMessageSent,
+            ),
             const SizedBox(height: 50),
 
             // 最近访问标题
@@ -319,157 +309,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Widget _buildAISection() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        border: Border.all(
-          color: const Color(0xFFE9E9E9),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // AI输入框
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(8.0),
-              border: Border.all(
-                color: const Color(0xFFE9E9E9),
-                width: 1,
-              ),
-            ),
-            child: TextField(
-              controller: _aiInputController,
-              focusNode: _aiInputFocusNode,
-              maxLines: null,
-              minLines: 3,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _handleSendMessage(),
-              decoration: const InputDecoration(
-                hintText: "在小马笔记可以问或找到每一件事…",
-                hintStyle: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w400,
-                  color: Color(0xFF888888),
-                ),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.all(16.0),
-              ),
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF333333),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // 功能按钮行
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // 选择模型下拉框
-              SimpleModelSelector(
-                onModelChanged: (model) {
-                  setState(() {
-                    _selectedModel = model;
-                  });
-                  debugPrint('选择了模型: $model');
-                },
-              ),
-              
-              // 右侧功能按钮
-              Row(
-                children: [
-                  _buildActionButton(
-                    icon: Icons.image_outlined,
-                    onTap: () {
-                      // 处理图片功能
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  _buildActionButton(
-                    icon: Icons.language,
-                    onTap: () {
-                      // 处理语言功能
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  _buildActionButton(
-                    icon: Icons.attach_file_outlined,
-                    onTap: () {
-                      // 处理附件功能
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  _buildActionButton(
-                    icon: Icons.more_horiz,
-                    onTap: () {
-                      // 处理更多功能
-                    },
-                  ),
-                  const SizedBox(width: 20),
-                  Container(
-                    width: 1,
-                    height: 20,
-                    color: const Color(0xFFD8D8D8),
-                  ),
-                  const SizedBox(width: 20),
-                  // 发送按钮
-                  InkWell(
-                    onTap: _handleSendMessage,
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFF8D69), Color(0xFFFF8D69)],
-                        ),
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                      child: const Icon(
-                        Icons.send,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8.0),
-      child: Container(
-        width: 25,
-        height: 25,
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
-        child: Icon(
-          icon,
-          size: 25,
-          color: const Color(0xFF636363),
-        ),
-      ),
-    );
-  }
 
   Widget _buildRecentSection() {
     return BlocBuilder<RecentViewsBloc, RecentViewsState>(

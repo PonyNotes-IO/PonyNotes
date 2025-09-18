@@ -365,7 +365,6 @@ class _ChatInputBarState extends State<ChatInputBar> {
         _selectorKey.currentContext?.findRenderObject() as RenderBox?;
     if (selectorRenderBox == null) return;
     
-    final selectorSize = selectorRenderBox.size;
     final selectorOffset = selectorRenderBox.localToGlobal(Offset.zero);
 
     _overlayEntry = OverlayEntry(

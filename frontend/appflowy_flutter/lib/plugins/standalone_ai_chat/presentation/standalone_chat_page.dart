@@ -1,9 +1,12 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:appflowy/core/config/ai_config.dart';
 import '../application/standalone_chat_bloc.dart';
+import '../services/image_service.dart';
+import '../models/chat_image.dart';
 
 /// 独立AI聊天页面视图
 class StandaloneChatPageView extends StatelessWidget {
@@ -322,6 +325,7 @@ class _ChatInputBarState extends State<_ChatInputBar> {
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   bool _canSend = false;
+  final List<ChatImage> _selectedImages = [];
 
   @override
   void initState() {
@@ -339,21 +343,56 @@ class _ChatInputBarState extends State<_ChatInputBar> {
 
   void _updateSendButtonState() {
     final hasText = _textController.text.trim().isNotEmpty;
-    if (hasText != _canSend) {
+    final hasImages = _selectedImages.isNotEmpty;
+    final canSend = hasText || hasImages;
+    if (canSend != _canSend) {
       setState(() {
-        _canSend = hasText;
+        _canSend = canSend;
       });
     }
   }
 
   void _sendMessage() {
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
+    final hasText = text.isNotEmpty;
+    final hasImages = _selectedImages.isNotEmpty;
+    
+    if (!hasText && !hasImages) return;
 
     final bloc = context.read<StandaloneChatBloc>();
-    bloc.add(StandaloneChatEvent.sendMessage(message: text));
+    
+    if (hasImages) {
+      bloc.add(StandaloneChatEvent.sendMessageWithImages(
+        message: text,
+        images: List.from(_selectedImages),
+      ));
+    } else {
+      bloc.add(StandaloneChatEvent.sendMessage(message: text));
+    }
 
     _textController.clear();
+    _selectedImages.clear();
+    _updateSendButtonState();
+  }
+
+  /// 选择图片
+  Future<void> _selectImage() async {
+    final imageService = ChatImageService.instance;
+    final image = await imageService.showImagePickerDialog(context);
+    
+    if (image != null) {
+      setState(() {
+        _selectedImages.add(image);
+      });
+      _updateSendButtonState();
+    }
+  }
+
+  /// 移除选中的图片
+  void _removeImage(int index) {
+    setState(() {
+      _selectedImages.removeAt(index);
+    });
     _updateSendButtonState();
   }
 
@@ -371,35 +410,44 @@ class _ChatInputBarState extends State<_ChatInputBar> {
           child: SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.grey[50],
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: Colors.grey[200]!),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        focusNode: _focusNode,
-                        enabled: !state.isLoading && state.selectedProvider != null,
-                        maxLines: 5,
-                        minLines: 1,
-                        decoration: InputDecoration(
-                          hintText: _getHintText(state),
-                          hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        ),
-                        style: const TextStyle(fontSize: 14),
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (!state.isLoading && state.selectedProvider != null) ? (_) => _sendMessage() : null,
-                      ),
+              child: Column(
+                children: [
+                  // 显示选中的图片
+                  if (_selectedImages.isNotEmpty) _buildSelectedImages(),
+                  // 输入框和按钮
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Colors.grey[200]!),
                     ),
-                    _buildSendButton(state),
-                  ],
-                ),
+                    child: Row(
+                      children: [
+                        // 图片按钮
+                        _buildImageButton(state),
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            focusNode: _focusNode,
+                            enabled: !state.isLoading && state.selectedProvider != null,
+                            maxLines: 5,
+                            minLines: 1,
+                            decoration: InputDecoration(
+                              hintText: _getHintText(state),
+                              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            ),
+                            style: const TextStyle(fontSize: 14),
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (!state.isLoading && state.selectedProvider != null) ? (_) => _sendMessage() : null,
+                          ),
+                        ),
+                        _buildSendButton(state),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -419,6 +467,113 @@ class _ChatInputBarState extends State<_ChatInputBar> {
       debugPrint('✏️ 显示"输入您的问题..."');
       return '输入您的问题...';
     }
+  }
+
+  /// 构建图片按钮
+  Widget _buildImageButton(StandaloneChatState state) {
+    final isEnabled = !state.isLoading && state.selectedProvider != null;
+    
+    return Padding(
+      padding: const EdgeInsets.all(8),
+      child: GestureDetector(
+        onTap: isEnabled ? _selectImage : null,
+        child: Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: isEnabled ? Colors.grey[100] : Colors.grey[200],
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Icon(
+            Icons.image,
+            size: 16,
+            color: isEnabled ? Colors.grey[600] : Colors.grey[400],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 构建选中的图片列表
+  Widget _buildSelectedImages() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: _selectedImages
+              .asMap()
+              .entries
+              .map((entry) => _buildImagePreview(entry.key, entry.value))
+              .toList(),
+        ),
+      ),
+    );
+  }
+
+  /// 构建图片预览
+  Widget _buildImagePreview(int index, ChatImage image) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: Stack(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: image.bytes != null
+                  ? Image.memory(
+                      image.bytes!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.image_not_supported,
+                        color: Colors.grey[400],
+                      ),
+                    )
+                  : image.filePath != null
+                      ? Image.file(
+                          File(image.filePath!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey[400],
+                          ),
+                        )
+                      : Icon(
+                          Icons.image,
+                          color: Colors.grey[400],
+                        ),
+            ),
+          ),
+          Positioned(
+            top: -4,
+            right: -4,
+            child: GestureDetector(
+              onTap: () => _removeImage(index),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSendButton(StandaloneChatState state) {

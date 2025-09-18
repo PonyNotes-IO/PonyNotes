@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:appflowy/core/config/ai_config.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/models/chat_image.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/services/image_service.dart';
 
 /// 独立AI服务，专门为StandaloneAiChatPage提供第三方AI调用
 /// 支持DeepSeek、通义千问、豆包等多种AI服务
@@ -14,18 +16,20 @@ class StandaloneAiService {
 
   final AIConfigService _configService = AIConfigService.instance;
 
-  /// 发送消息到AI服务
+  /// 发送消息到AI服务（支持多模态）
   /// 
   /// [message] 用户输入的消息
   /// [provider] AI提供商
   /// [onResponse] 响应回调，支持流式响应
   /// [onError] 错误回调
+  /// [images] 可选的图片列表，支持多模态对话
   Future<void> sendMessage({
     required String message,
     required AIProvider provider,
     required Function(String) onResponse,
     required Function(String) onError,
     Function()? onComplete,
+    List<ChatImage>? images,
   }) async {
     try {
       print('🚀 开始发送AI请求: $message, 提供商: ${provider.displayName}');
@@ -34,13 +38,13 @@ class StandaloneAiService {
 
       switch (provider) {
         case AIProvider.deepseek:
-          await _callDeepSeekAPI(message, config, onResponse, onError, onComplete);
+          await _callDeepSeekAPI(message, config, onResponse, onError, onComplete, images);
           break;
         case AIProvider.qwen:
-          await _callQwenAPI(message, config, onResponse, onError, onComplete);
+          await _callQwenAPI(message, config, onResponse, onError, onComplete, images);
           break;
         case AIProvider.doubao:
-          await _callDoubaoAPI(message, config, onResponse, onError, onComplete);
+          await _callDoubaoAPI(message, config, onResponse, onError, onComplete, images);
           break;
       }
     } catch (e) {
@@ -56,6 +60,7 @@ class StandaloneAiService {
     Function(String) onResponse,
     Function(String) onError,
     Function()? onComplete,
+    List<ChatImage>? images,
   ) async {
     try {
       print('🔗 开始调用DeepSeek API');
@@ -75,10 +80,13 @@ class StandaloneAiService {
         'Accept': 'text/event-stream',
       });
       
+      // 构建多模态消息内容
+      final messageContent = await _buildMessageContent(message, images);
+      
       final requestBody = {
         'model': config.model,  // 使用配置中的模型
         'messages': [
-          {'role': 'user', 'content': message}
+          {'role': 'user', 'content': messageContent}
         ],
         'stream': true,
       };
@@ -115,6 +123,7 @@ class StandaloneAiService {
     Function(String) onResponse,
     Function(String) onError,
     Function()? onComplete,
+    List<ChatImage>? images,
   ) async {
     try {
       final client = http.Client();
@@ -126,6 +135,9 @@ class StandaloneAiService {
         'POST',
         Uri.parse(apiUrl),
       );
+      
+      // 构建多模态消息内容
+      final messageContent = await _buildMessageContent(message, images);
       
       // 根据是否使用兼容模式设置不同的请求头和请求体
       final isCompatibleMode = config.apiBase.contains('compatible-mode');
@@ -141,7 +153,7 @@ class StandaloneAiService {
         request.body = jsonEncode({
           'model': config.model,
           'messages': [
-            {'role': 'user', 'content': message}
+            {'role': 'user', 'content': messageContent}
           ],
           'stream': true,
         });
@@ -158,7 +170,7 @@ class StandaloneAiService {
           'model': config.model,
           'input': {
             'messages': [
-              {'role': 'user', 'content': message}
+              {'role': 'user', 'content': messageContent}
             ]
           },
           'parameters': {
@@ -189,6 +201,7 @@ class StandaloneAiService {
     Function(String) onResponse,
     Function(String) onError,
     Function()? onComplete,
+    List<ChatImage>? images,
   ) async {
     try {
       final client = http.Client();
@@ -204,10 +217,13 @@ class StandaloneAiService {
         'Accept': 'text/event-stream',
       });
       
+      // 构建多模态消息内容
+      final messageContent = await _buildMessageContent(message, images);
+      
       request.body = jsonEncode({
         'model': config.model,  // 使用配置中的模型
         'messages': [
-          {'role': 'user', 'content': message}
+          {'role': 'user', 'content': messageContent}
         ],
         'stream': true,
       });
@@ -228,6 +244,57 @@ class StandaloneAiService {
     } catch (e) {
       onError('豆包API调用异常: $e');
     }
+  }
+
+  /// 构建多模态消息内容
+  Future<dynamic> _buildMessageContent(String message, List<ChatImage>? images) async {
+    // 如果没有图片，返回简单的文本消息
+    if (images == null || images.isEmpty) {
+      return message;
+    }
+
+    // 有图片的情况下，构建多模态内容数组
+    final List<Map<String, dynamic>> content = [];
+    
+    // 添加文本内容（如果有）
+    if (message.trim().isNotEmpty) {
+      content.add({
+        'type': 'text',
+        'text': message,
+      });
+    }
+    
+    // 添加图片内容
+    final imageService = ChatImageService.instance;
+    for (final image in images) {
+      try {
+        // 获取图片的base64编码
+        final base64Data = await imageService.getImageBase64(image);
+        if (base64Data != null) {
+          content.add({
+            'type': 'image_url',
+            'image_url': {
+              'url': base64Data,
+            },
+          });
+          print('📷 添加图片到消息内容: ${image.name ?? '未知'} (${image.fileSizeFormatted})');
+        }
+      } catch (e) {
+        print('❌ 处理图片失败: ${image.name}, 错误: $e');
+        // 如果图片处理失败，添加文本描述
+        content.add({
+          'type': 'text',
+          'text': '[图片加载失败: ${image.name ?? '未知'}]',
+        });
+      }
+    }
+    
+    // 如果没有成功添加任何内容，返回原始消息
+    if (content.isEmpty) {
+      return message;
+    }
+    
+    return content;
   }
 
   /// 处理流式响应

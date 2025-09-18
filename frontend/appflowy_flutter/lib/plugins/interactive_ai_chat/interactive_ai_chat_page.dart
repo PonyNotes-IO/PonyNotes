@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:appflowy/core/config/ai_config.dart';
 import 'package:appflowy/core/services/ai_chat_service.dart';
-import 'package:appflowy/core/services/chat_history_service.dart';
 import 'package:appflowy/plugins/ai_chat/presentation/widgets/ai_model_selector.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/services/image_service.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/models/chat_image.dart';
+import 'package:appflowy/plugins/standalone_ai_chat/presentation/widgets/chat_image_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -26,6 +28,8 @@ class _InteractiveAIChatPageState extends State<InteractiveAIChatPage> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
+  final List<ChatImage> _selectedImages = [];
+  final ChatImageService _imageService = ChatImageService.instance;
   
   bool _isLoading = false;
   bool _isInitialized = false;
@@ -53,6 +57,38 @@ class _InteractiveAIChatPageState extends State<InteractiveAIChatPage> {
       setState(() {
         _error = '初始化AI服务失败: $e';
         _isInitialized = true;
+      });
+    }
+  }
+
+  /// 处理图片选择
+  Future<void> _handleImagePicker() async {
+    try {
+      final image = await _imageService.showImagePickerDialog(context);
+      
+      if (image != null) {
+        setState(() {
+          _selectedImages.add(image);
+        });
+      }
+    } catch (e) {
+      debugPrint('选择图片时出错: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('选择图片失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// 移除选中的图片
+  void _removeImage(int index) {
+    if (index >= 0 && index < _selectedImages.length) {
+      setState(() {
+        _selectedImages.removeAt(index);
       });
     }
   }
@@ -367,43 +403,70 @@ class _InteractiveAIChatPageState extends State<InteractiveAIChatPage> {
           top: BorderSide(color: theme.dividerColor.withOpacity(0.3)),
         ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: TextField(
-              controller: _messageController,
-              decoration: InputDecoration(
-                hintText: '输入消息...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+          // 图片预览区域
+          if (_selectedImages.isNotEmpty)
+            ChatImagePreview(
+              images: _selectedImages,
+              onRemove: (image) {
+                final index = _selectedImages.indexOf(image);
+                if (index != -1) {
+                  _removeImage(index);
+                }
+              },
+            ),
+          
+          // 输入框和按钮区域
+          Row(
+            children: [
+              // 图片选择按钮
+              IconButton(
+                onPressed: _isLoading ? null : _handleImagePicker,
+                icon: Icon(
+                  Icons.image,
+                  color: _isLoading ? theme.disabledColor : theme.primaryColor,
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                suffixIcon: _isLoading 
-                  ? Container(
-                      margin: const EdgeInsets.all(8),
-                      width: 24,
-                      height: 24,
-                      child: const CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : null,
+                tooltip: '选择图片',
               ),
-              maxLines: null,
-              textInputAction: TextInputAction.send,
-              onSubmitted: (_) => _sendMessage(),
-              enabled: !_isLoading,
-            ),
-          ),
-          const SizedBox(width: 12),
-          FloatingActionButton(
-            onPressed: _isLoading ? _stopStreaming : _sendMessage,
-            backgroundColor: _isLoading ? Colors.red : theme.primaryColor,
-            child: Icon(
-              _isLoading ? Icons.stop : Icons.send,
-              color: Colors.white,
-            ),
+              
+              Expanded(
+                child: TextField(
+                  controller: _messageController,
+                  decoration: InputDecoration(
+                    hintText: '输入消息...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    suffixIcon: _isLoading 
+                      ? Container(
+                          margin: const EdgeInsets.all(8),
+                          width: 24,
+                          height: 24,
+                          child: const CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : null,
+                  ),
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onSubmitted: (_) => _sendMessage(),
+                  enabled: !_isLoading,
+                ),
+              ),
+              const SizedBox(width: 12),
+              FloatingActionButton(
+                onPressed: _isLoading ? _stopStreaming : _sendMessage,
+                backgroundColor: _isLoading ? Colors.red : theme.primaryColor,
+                child: Icon(
+                  _isLoading ? Icons.stop : Icons.send,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -416,18 +479,36 @@ class _InteractiveAIChatPageState extends State<InteractiveAIChatPage> {
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty || _isLoading) return;
+    final hasImages = _selectedImages.isNotEmpty;
+    
+    if (text.isEmpty && !hasImages) return;
+    if (_isLoading) return;
+
+    // 构建消息内容，包含图片信息
+    String messageContent = text;
+    if (hasImages) {
+      if (text.isNotEmpty) {
+        messageContent += '\n\n';
+      }
+      messageContent += '[包含 ${_selectedImages.length} 张图片，请分析这些图片]';
+      for (int i = 0; i < _selectedImages.length; i++) {
+        final image = _selectedImages[i];
+        messageContent += '\n- 图片${i + 1}: ${image.name ?? '未知'} (${image.fileSizeFormatted})';
+      }
+    }
 
     // 添加用户消息
     final userMessage = ChatMessage(
       role: MessageRole.user,
-      content: text,
+      content: messageContent,
       timestamp: DateTime.now(),
     );
 
     setState(() {
       _messages.add(userMessage);
       _isLoading = true;
+      // 清空输入框和选中的图片
+      _selectedImages.clear();
     });
 
     _messageController.clear();

@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:appflowy/core/config/ai_config.dart';
 import '../services/standalone_ai_service.dart';
+import '../models/chat_image.dart';
+import '../services/image_storage_service.dart';
 import 'standalone_chat_persistence.dart';
 
 part 'standalone_chat_bloc.freezed.dart';
@@ -16,6 +18,12 @@ class StandaloneChatEvent with _$StandaloneChatEvent {
     required String message,
     AIProvider? provider,
   }) = _SendMessage;
+
+  const factory StandaloneChatEvent.sendMessageWithImages({
+    required String message,
+    required List<ChatImage> images,
+    AIProvider? provider,
+  }) = _SendMessageWithImages;
 
   const factory StandaloneChatEvent.receiveStreamChunk({
     required String chunk,
@@ -95,6 +103,7 @@ class ChatMessage with _$ChatMessage {
     AIProvider? provider, // 添加provider别名，与aiProvider相同
     @Default(false) bool isStreaming,
     @Default(false) bool hasError,
+    @Default([]) List<String> imageIds, // 添加图片ID列表
   }) = _ChatMessage;
 }
 
@@ -116,6 +125,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   final StandaloneAiService _aiService = StandaloneAiService.instance;
   final AIConfigService _configService = AIConfigService.instance;
   final StandaloneChatPersistence _persistence = StandaloneChatPersistence.instance;
+  final ImageStorageService _imageStorage = ImageStorageService.instance;
   
   StreamSubscription<String>? _streamSubscription;
   String _currentMessageId = '';
@@ -124,6 +134,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     on<StandaloneChatEvent>((event, emit) async {
       event.when(
         sendMessage: (message, provider) => _handleSendMessage(message, provider, emit),
+        sendMessageWithImages: (message, images, provider) => _handleSendMessageWithImages(message, images, provider, emit),
         receiveStreamChunk: (chunk) => _handleReceiveStreamChunk(chunk, emit),
         finishResponse: () => _handleFinishResponse(emit),
         errorOccurred: (error) => _handleErrorOccurred(error, emit),
@@ -196,24 +207,147 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
       debugPrint('✅ 用户消息已添加到UI');
     }
 
-    try {
-      // 保存用户消息到数据库
-      await _persistence.saveMessage(userMessage);
-      debugPrint('📝 用户消息已保存到数据库');
-    } catch (e) {
-      debugPrint('❌ 保存用户消息失败: $e');
-    }
+    // 异步保存用户消息到数据库（不阻塞UI）
+    _saveMessageAsync(userMessage);
 
     debugPrint('🎯 准备进入AI服务调用try块');
     debugPrint('🔍 选中的提供商: ${selectedProvider.displayName}');
     
     // 使用 unawaited 来防止阻塞事件处理器
     debugPrint('⚡ 开始异步调用AI服务...');
-    unawaited(_callAIServiceAsync(message, selectedProvider));
+    unawaited(_callAIServiceAsync(message, selectedProvider, null));
+  }
+
+  /// 处理发送带图片的消息
+  Future<void> _handleSendMessageWithImages(
+    String message,
+    List<ChatImage> images,
+    AIProvider? provider,
+    Emitter<StandaloneChatState> emit,
+  ) async {
+    debugPrint('🚀📷 _handleSendMessageWithImages 被调用！消息: "$message", 图片数量: ${images.length}');
+    if (message.trim().isEmpty && images.isEmpty) return;
+
+    // 确定使用的AI提供商
+    final selectedProvider = provider ?? 
+        state.selectedProvider ?? 
+        _configService.currentProvider;
+    debugPrint('✅ 最终选择的提供商: ${selectedProvider.displayName}');
+
+    try {
+      // 初始化图片存储服务
+      await _imageStorage.initialize();
+
+      // 保存图片并获取图片ID
+      final imageIds = <String>[];
+      for (final image in images) {
+        final imageId = await _imageStorage.saveImage(image);
+        if (imageId != null) {
+          imageIds.add(imageId);
+        }
+      }
+
+      // 生成消息ID
+      final userMessageId = DateTime.now().millisecondsSinceEpoch.toString();
+      _currentMessageId = '${DateTime.now().millisecondsSinceEpoch + 1}'; // AI消息ID
+
+      // 创建用户消息（包含图片ID）
+      final userMessage = ChatMessage(
+        id: userMessageId,
+        content: message,
+        isUser: true,
+        timestamp: DateTime.now(),
+        imageIds: imageIds,
+      );
+
+      // 先更新UI状态，显示用户消息
+      if (!emit.isDone) {
+        emit(state.copyWith(
+          messages: [...state.messages, userMessage],
+          isLoading: true,
+          isStreaming: true,
+          error: null,
+          selectedProvider: selectedProvider,
+          currentStreamingMessage: '',
+        ));
+        debugPrint('✅ 带图片的用户消息已添加到UI');
+      }
+
+      // 异步保存用户消息到数据库（不阻塞UI）
+      _saveMessageAsync(userMessage);
+
+      // 构建包含图片的消息内容
+      String fullMessage = message;
+      if (images.isNotEmpty) {
+        fullMessage += '\n\n[包含 ${images.length} 张图片，请分析这些图片]';
+      }
+
+      debugPrint('🎯 准备调用AI服务分析图片');
+      
+      // 异步调用AI服务，包含图片数据
+      unawaited(_callAIServiceWithImagesAsync(fullMessage, images, selectedProvider));
+    } catch (e) {
+      debugPrint('❌ 处理带图片消息失败: $e');
+      if (!emit.isDone) {
+        emit(state.copyWith(
+          isLoading: false,
+          isStreaming: false,
+          error: '发送消息失败: $e',
+        ));
+      }
+    }
+  }
+
+  /// 异步调用AI服务，包含图片分析
+  Future<void> _callAIServiceWithImagesAsync(
+    String message,
+    List<ChatImage> images,
+    AIProvider selectedProvider,
+  ) async {
+    debugPrint('🌟📷 _callAIServiceWithImagesAsync 方法被调用！');
+    try {
+      // 开始AI流式响应
+      await _streamSubscription?.cancel();
+      debugPrint('📡 流订阅已取消');
+      
+      // 构建包含图片信息的完整消息
+      String enhancedMessage = message;
+      if (images.isNotEmpty) {
+        enhancedMessage += '\n\n图片信息：\n';
+        for (int i = 0; i < images.length; i++) {
+          final image = images[i];
+          enhancedMessage += '- 图片${i + 1}: ${image.name ?? '未知'} (${image.fileSizeFormatted})\n';
+        }
+        enhancedMessage += '\n请详细分析这些图片的内容。';
+      }
+      
+      debugPrint('🤖 准备调用AI服务: 消息长度=${enhancedMessage.length}, 图片数量=${images.length}');
+      
+      await _aiService.sendMessage(
+        message: message, // 使用原始消息，不添加额外描述
+        provider: selectedProvider,
+        images: images, // 传递图片数据
+        onResponse: (response) {
+          debugPrint('📨 收到AI响应片段: $response');
+          add(StandaloneChatEvent.receiveStreamChunk(chunk: response));
+        },
+        onError: (error) {
+          debugPrint('❌ AI响应错误: $error');
+          add(StandaloneChatEvent.errorOccurred(error: error));
+        },
+        onComplete: () {
+          debugPrint('✅ AI流式响应完成，发送完成事件');
+          add(const StandaloneChatEvent.finishResponse());
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ AI服务调用异常: $e');
+      add(StandaloneChatEvent.errorOccurred(error: e.toString()));
+    }
   }
 
   /// 异步调用AI服务，避免阻塞事件处理器
-  Future<void> _callAIServiceAsync(String message, AIProvider selectedProvider) async {
+  Future<void> _callAIServiceAsync(String message, AIProvider selectedProvider, List<ChatImage>? images) async {
     debugPrint('🌟 _callAIServiceAsync 方法被调用！');
     try {
       // 开始AI流式响应
@@ -225,6 +359,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
       await _aiService.sendMessage(
         message: message,
         provider: selectedProvider,
+        images: images, // 传递图片数据
         onResponse: (response) {
           debugPrint('📨 收到AI响应片段: $response');
           add(StandaloneChatEvent.receiveStreamChunk(chunk: response));
@@ -308,11 +443,13 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   /// 异步保存消息到数据库
   void _saveMessageAsync(ChatMessage message) async {
     try {
-      debugPrint('💾 开始异步保存AI消息到数据库...');
+      final messageType = message.isUser ? '用户' : 'AI';
+      debugPrint('💾 开始异步保存${messageType}消息到数据库...');
       await _persistence.saveMessage(message);
-      debugPrint('✅ AI消息已成功异步保存到数据库');
+      debugPrint('✅ ${messageType}消息已成功异步保存到数据库');
     } catch (e) {
-      debugPrint('❌ 异步保存AI消息失败: $e');
+      final messageType = message.isUser ? '用户' : 'AI';
+      debugPrint('❌ 异步保存${messageType}消息失败: $e');
     }
   }
 
@@ -338,10 +475,25 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
     try {
       final historyMessages = await _persistence.loadMessages();
       
-      
       if (emit.isDone) return;
+      
+      // 如果当前状态中已经有消息（比如正在进行的对话），则合并历史记录和当前消息
+      // 避免覆盖正在进行的对话
+      List<ChatMessage> finalMessages;
+      if (state.messages.isNotEmpty) {
+        // 当前有消息，合并历史记录（去重）
+        final currentMessageIds = state.messages.map((m) => m.id).toSet();
+        final newHistoryMessages = historyMessages.where((m) => !currentMessageIds.contains(m.id)).toList();
+        finalMessages = [...newHistoryMessages, ...state.messages];
+        debugPrint('📚 合并历史记录: 历史${historyMessages.length}条, 当前${state.messages.length}条, 新增${newHistoryMessages.length}条, 总计${finalMessages.length}条');
+      } else {
+        // 当前没有消息，直接使用历史记录
+        finalMessages = historyMessages;
+        debugPrint('📚 加载历史记录: ${historyMessages.length}条');
+      }
+      
       emit(state.copyWith(
-        messages: historyMessages,
+        messages: finalMessages,
         isHistoryLoaded: true,
       ));
     } catch (e) {

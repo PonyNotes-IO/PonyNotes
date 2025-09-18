@@ -372,6 +372,8 @@ class TodoItemWidget extends StatelessWidget {
 
   Color _getPriorityColor(TodoPriority priority) {
     switch (priority) {
+      case TodoPriority.none:
+        return const Color(0xFF9E9E9E);
       case TodoPriority.low:
         return const Color(0xFF4CAF50);
       case TodoPriority.medium:

@@ -876,7 +876,7 @@ class _PromptBottomActions extends StatelessWidget {
         final path = await getIt<FilePickerService>().pickFiles(
           dialogTitle: '',
           type: FileType.custom,
-          allowedExtensions: ["pdf", "txt", "md"],
+          allowedExtensions: ["pdf", "txt", "md", "jpg", "jpeg", "png", "gif", "webp", "bmp", "svg"],
         );
 
         if (path == null) {

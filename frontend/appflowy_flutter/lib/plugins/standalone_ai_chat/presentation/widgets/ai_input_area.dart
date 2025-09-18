@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:appflowy/core/config/ai_config.dart';
 import '../ai_welcome_theme.dart';
+import '../../services/image_service.dart';
+import '../../models/chat_image.dart';
 
 /// AI欢迎页面的输入交互区域
 /// 对应设计图中的 block_3 区域
@@ -10,7 +13,7 @@ class AIInputArea extends StatefulWidget {
     required this.onMessageSent,
   });
 
-  final Function(String message, AIProvider? provider) onMessageSent;
+  final Function(String message, AIProvider? provider, List<ChatImage>? images) onMessageSent;
 
   @override
   State<AIInputArea> createState() => _AIInputAreaState();
@@ -26,6 +29,10 @@ class _AIInputAreaState extends State<AIInputArea> {
   bool _isDropdownOpen = false;
   List<AIProvider> _availableProviders = [];
   OverlayEntry? _overlayEntry;
+  
+  // 图片选择相关状态
+  final List<ChatImage> _selectedImages = [];
+  final ChatImageService _imageService = ChatImageService.instance;
 
   @override
   void initState() {
@@ -47,31 +54,44 @@ class _AIInputAreaState extends State<AIInputArea> {
     if (mounted) {
       setState(() {
         _availableProviders = AIConfigService.instance.getAvailableProviders();
-        // 不设置默认选中的提供商，保持为null以显示"选择模型"
+        // 默认选择豆包模型
+        _selectedProvider = _availableProviders.firstWhere(
+          (provider) => provider == AIProvider.doubao,
+          orElse: () => _availableProviders.isNotEmpty ? _availableProviders.first : AIProvider.doubao,
+        );
+        if (_selectedProvider != null) {
+          AIConfigService.instance.setProvider(_selectedProvider!);
+        }
       });
     }
   }
 
   void _sendMessage() {
     final text = _textController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && _selectedImages.isEmpty) return;
 
     // 确保已选择模型提供商
     if (_selectedProvider == null) {
-      // 如果有可用提供商，选择第一个作为默认
+      // 优先选择豆包，如果豆包不可用则选择第一个可用提供商
       if (_availableProviders.isNotEmpty) {
-        _selectProvider(_availableProviders.first);
+        final doubaoProvider = _availableProviders.firstWhere(
+          (provider) => provider == AIProvider.doubao,
+          orElse: () => _availableProviders.first,
+        );
+        _selectProvider(doubaoProvider);
       } else {
         // TODO: 显示错误提示，需要配置AI模型
         return;
       }
     }
 
-    // 清空输入框
+    // 清空输入框和图片
     _textController.clear();
+    final images = List<ChatImage>.from(_selectedImages);
+    _selectedImages.clear();
     
-    // 回调通知切换到聊天界面，传递消息和选择的模型
-    widget.onMessageSent(text, _selectedProvider);
+    // 回调通知切换到聊天界面，传递消息、选择的模型和图片
+    widget.onMessageSent(text, _selectedProvider, images.isNotEmpty ? images : null);
   }
 
   @override
@@ -86,15 +106,26 @@ class _AIInputAreaState extends State<AIInputArea> {
       child: Container(
         margin: AIWelcomeTheme.inputContainerPadding,
         width: AIWelcomeTheme.inputContainerWidth,
-        height: AIWelcomeTheme.inputContainerHeight,
+        constraints: BoxConstraints(
+          minHeight: AIWelcomeTheme.inputContainerHeight,
+          maxHeight: _selectedImages.isNotEmpty ? 
+            AIWelcomeTheme.inputContainerHeight + (_selectedImages.length <= 3 ? 80 : 140) : // 根据图片数量动态调整
+            AIWelcomeTheme.inputContainerHeight,
+        ),
         decoration: AIWelcomeTheme.inputContainerDecoration,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
+            // 选中图片预览区域
+            if (_selectedImages.isNotEmpty) _buildImagePreviewArea(),
             // 输入文本区域（对应 text-wrapper_5）
             Expanded(
               child: Container(
                 margin: AIWelcomeTheme.inputTextPadding,
+                constraints: const BoxConstraints(
+                  minHeight: 60, // 确保输入框有最小高度
+                ),
                 child: TextField(
                   controller: _textController,
                   focusNode: _focusNode,
@@ -125,8 +156,8 @@ class _AIInputAreaState extends State<AIInputArea> {
                   _buildModelSelector(),
                   const Spacer(),
                   // 功能图标按钮组
-                  _buildToolButton('assets/images/icons/tool_1.png'),
-                  const SizedBox(width: 20),
+                  _buildImagePickerButton(),
+                  const SizedBox(width: 22),
                   _buildToolButton('assets/images/icons/tool_2.png'),
                   const SizedBox(width: 20),
                   _buildToolButton('assets/images/icons/tool_3.png'),
@@ -312,6 +343,34 @@ class _AIInputAreaState extends State<AIInputArea> {
     _closeDropdown();
   }
 
+  /// 选择图片
+  Future<void> _selectImage() async {
+    if (_isDropdownOpen) {
+      _closeDropdown();
+    }
+    
+    final image = await _imageService.showImagePickerDialog(context);
+    if (image != null) {
+      setState(() {
+        _selectedImages.add(image);
+      });
+      
+      // 选择图片后自动聚焦到输入框，确保用户可以继续输入文字
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _focusNode.requestFocus();
+        }
+      });
+    }
+  }
+
+  /// 移除选中的图片
+  void _removeImage(ChatImage image) {
+    setState(() {
+      _selectedImages.remove(image);
+    });
+  }
+
   /// 构建工具按钮
   Widget _buildToolButton(String imageUrl) {
     return GestureDetector(
@@ -323,8 +382,8 @@ class _AIInputAreaState extends State<AIInputArea> {
         height: AIWelcomeTheme.iconSize,
         child: Image.asset(
           imageUrl,
-          width: AIWelcomeTheme.iconSize,
-          height: AIWelcomeTheme.iconSize,
+          width: AIWelcomeTheme.iconSize * 0.8,
+          height: AIWelcomeTheme.iconSize * 0.8,
           errorBuilder: (context, error, stackTrace) {
             return Container(
               width: AIWelcomeTheme.iconSize,
@@ -372,6 +431,161 @@ class _AIInputAreaState extends State<AIInputArea> {
             );
           },
         ),
+      ),
+    );
+  }
+
+  /// 构建图片选择按钮
+  Widget _buildImagePickerButton() {
+    return GestureDetector(
+      onTap: _selectImage,
+      child: Container(
+        width: AIWelcomeTheme.iconSize,
+        height: AIWelcomeTheme.iconSize,
+        decoration: BoxDecoration(
+          color: _selectedImages.isNotEmpty ? Colors.blue[50] : Colors.transparent,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Icon(
+                Icons.image,
+                size: AIWelcomeTheme.iconSize,
+                color: _selectedImages.isNotEmpty ? Colors.blue[700] : Colors.grey[600],
+              ),
+            ),
+            if (_selectedImages.isNotEmpty)
+              Positioned(
+                right: 0,
+                top: 0,
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[700],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${_selectedImages.length}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建图片预览区域
+  Widget _buildImagePreviewArea() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
+        ),
+      ),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: _selectedImages.map((image) => _buildImagePreviewItem(image)).toList(),
+      ),
+    );
+  }
+
+  /// 构建单个图片预览项
+  Widget _buildImagePreviewItem(ChatImage image) {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(7),
+            child: _buildImageWidget(image),
+          ),
+          Positioned(
+            right: 2,
+            top: 2,
+            child: GestureDetector(
+              onTap: () => _removeImage(image),
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建图片显示组件
+  Widget _buildImageWidget(ChatImage image) {
+    if (image.bytes != null) {
+      return Image.memory(
+        image.bytes!,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildErrorImageWidget(),
+      );
+    } else if (image.filePath != null) {
+      return Image.file(
+        File(image.filePath!),
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildErrorImageWidget(),
+      );
+    } else if (image.url != null) {
+      return Image.network(
+        image.url!,
+        width: 60,
+        height: 60,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildErrorImageWidget(),
+      );
+    }
+    return _buildErrorImageWidget();
+  }
+
+  /// 构建错误图片显示
+  Widget _buildErrorImageWidget() {
+    return Container(
+      width: 60,
+      height: 60,
+      decoration: BoxDecoration(
+        color: Colors.grey[200],
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Icon(
+        Icons.broken_image,
+        size: 30,
+        color: Colors.grey[500],
       ),
     );
   }
