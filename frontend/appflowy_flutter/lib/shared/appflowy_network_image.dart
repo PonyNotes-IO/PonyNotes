@@ -186,7 +186,7 @@ class FlowyNetworkImageState extends State<FlowyNetworkImage> {
   Map<String, String> _buildRequestHeader() {
     final header = <String, String>{};
     final token = widget.userProfilePB?.token;
-    if (token != null) {
+    if (token != null && token.isNotEmpty) {
       try {
         final decodedToken = jsonDecode(token);
         header['Authorization'] = 'Bearer ${decodedToken['access_token']}';

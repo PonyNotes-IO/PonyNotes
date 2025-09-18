@@ -8,6 +8,8 @@ import 'package:appflowy/shared/feature_flags.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/reminder/reminder_bloc.dart';
 import 'package:appflowy/user/application/user_listener.dart';
+import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
+import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/code.pbenum.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/errors.pb.dart';
@@ -160,6 +162,7 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
       })
       ..onFailure((f) {
         Log.error('create workspace error: $f');
+        print('UserWorkspaceBloc: Failed to create workspace: $f');
       });
   }
 
@@ -288,6 +291,18 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
         Log.info(
           'open workspace success: ${event.workspaceId}, current workspace: ${currentWorkspace?.toProto3Json()}',
         );
+        // Force expand the menu for new workspaces to ensure UI is visible
+        try {
+          final homeSettingBloc = getIt<HomeSettingBloc>();
+          if (homeSettingBloc.isMenuHidden) {
+            homeSettingBloc.add(HomeSettingEvent.changeMenuStatus(MenuStatus.expanded));
+          }
+        } catch (e) {
+          // HomeSettingBloc might not be available in some contexts
+        }
+        
+        // Notify TabsBloc about workspace switch to handle view loading
+        getIt<TabsBloc>().add(TabsEvent.switchWorkspace(event.workspaceId));
       })
       ..onFailure((f) {
         Log.error('open workspace error: $f');

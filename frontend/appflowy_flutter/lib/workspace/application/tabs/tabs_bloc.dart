@@ -12,8 +12,12 @@ import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
+import 'package:appflowy/plugins/homepage/homepage.dart';
+import 'package:appflowy/workspace/application/workspace/workspace_service.dart';
+import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
+import 'package:fixnum/fixnum.dart';
 import 'package:appflowy_result/appflowy_result.dart';
 import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
@@ -79,7 +83,9 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
             state.currentPageManager
               ..hideSecondaryPlugin()
               ..setSecondaryPlugin(BlankPagePlugin());
-            emit(state.openPlugin(plugin: plugin, setLatest: setLatest));
+            
+            final newState = state.openPlugin(plugin: plugin, setLatest: setLatest);
+            emit(newState);
             if (setLatest) {
               // the space view should be filtered out.
               if (view != null && view.isSpace) {
@@ -190,13 +196,15 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
               ..expandSecondaryPlugin();
             _setLatestOpenView();
           },
-          switchWorkspace: (workspaceId) {
-            final pluginId = state.currentPageManager.plugin.id;
-
-            // Close all tabs except current
+          switchWorkspace: (workspaceId) async {
+            // First, immediately open a loading/homepage plugin to avoid black screen
+            add(TabsEvent.openPlugin(plugin: HomePagePlugin()));
+            
+            // Then close other tabs (except current and pinned) without causing black screen
+            final currentPlugin = state.currentPageManager.plugin;
             final pagesToClose = [
               ...state._pageManagers
-                  .where((pm) => pm.plugin.id != pluginId && !pm.isPinned),
+                  .where((pm) => pm.plugin.id != currentPlugin.id && !pm.isPinned),
             ];
 
             if (pagesToClose.isNotEmpty) {
@@ -205,6 +213,43 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
                 newstate.closeView(pm.plugin.id);
               }
               emit(newstate.copyWith(currentIndex: 0));
+            }
+
+            // Load workspace content immediately without delay
+            try {
+              // Create workspace service to get views
+              final userResult = await getIt<AuthService>().getUser();
+              final userId = userResult.fold(
+                (user) => user.id,
+                (_) => Int64(0),
+              );
+              
+              final workspaceService = WorkspaceService(
+                workspaceId: workspaceId,
+                userId: userId,
+              );
+              
+              // Add a small delay to allow workspace initialization, but much shorter
+              await Future.delayed(const Duration(milliseconds: 100));
+              
+              final result = await workspaceService.getPublicViews();
+              
+              result.fold(
+                (views) {
+                  if (views.isNotEmpty) {
+                    final firstView = views.first;
+                    add(TabsEvent.openPlugin(plugin: firstView.plugin()));
+                  }
+                  // If no views, keep the homepage that was already opened
+                },
+                (error) {
+                  // If error, keep the homepage that was already opened
+                  Log.error('Failed to load workspace views: $error');
+                },
+              );
+            } catch (e) {
+              // If any exception, keep the homepage that was already opened
+              Log.error('Exception during workspace switch: $e');
             }
           },
           initial: () {

@@ -23,7 +23,13 @@ class RustPageAccessLevelRepositoryImpl implements PageAccessLevelRepository {
         return FlowyResult.success(view);
       },
       (error) {
-        Log.error('failed to get view, error: $error');
+        // If it's a RecordNotFound error, it's likely the view was deleted
+        // This is expected during app startup when trying to access old views
+        if (error.code == ErrorCode.RecordNotFound) {
+          Log.debug('View not found: $pageId, this is expected if view was deleted');
+        } else {
+          Log.error('failed to get view, error: $error');
+        }
         return FlowyResult.failure(error);
       },
     );
@@ -172,9 +178,17 @@ class RustPageAccessLevelRepositoryImpl implements PageAccessLevelRepository {
         return FlowyResult.success(sectionType);
       },
       (failure) {
-        Log.error(
-          'failed to get shared section type: $failure, in page: $pageId',
-        );
+        // If it's a RecordNotFound error, it's likely the view was deleted
+        // This is expected during app startup when trying to access old views
+        if (failure.code == ErrorCode.RecordNotFound) {
+          Log.debug(
+            'View not found when getting shared section type: $pageId, this is expected if view was deleted',
+          );
+        } else {
+          Log.error(
+            'failed to get shared section type: $failure, in page: $pageId',
+          );
+        }
 
         return FlowyResult.failure(failure);
       },

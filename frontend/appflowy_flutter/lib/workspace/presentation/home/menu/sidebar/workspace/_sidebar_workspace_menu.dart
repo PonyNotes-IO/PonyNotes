@@ -333,7 +333,7 @@ class _WorkspaceInfo extends StatelessWidget {
   }
 }
 
-class CreateWorkspaceDialog extends StatelessWidget {
+class CreateWorkspaceDialog extends StatefulWidget {
   const CreateWorkspaceDialog({
     super.key,
     required this.onConfirm,
@@ -342,13 +342,43 @@ class CreateWorkspaceDialog extends StatelessWidget {
   final void Function(String name) onConfirm;
 
   @override
+  State<CreateWorkspaceDialog> createState() => _CreateWorkspaceDialogState();
+}
+
+class _CreateWorkspaceDialogState extends State<CreateWorkspaceDialog> {
+  @override
   Widget build(BuildContext context) {
-    return NavigatorTextFieldDialog(
-      title: LocaleKeys.workspace_create.tr(),
-      value: '',
-      hintText: '',
-      autoSelectAllText: true,
-      onConfirm: (name, _) => onConfirm(name),
+    return BlocListener<UserWorkspaceBloc, UserWorkspaceState>(
+      listenWhen: (previous, current) {
+        return previous.actionResult?.actionType != current.actionResult?.actionType ||
+            previous.actionResult?.isLoading != current.actionResult?.isLoading;
+      },
+      listener: (context, state) {
+        final actionResult = state.actionResult;
+        if (actionResult != null && 
+            actionResult.actionType == WorkspaceActionType.create && 
+            !actionResult.isLoading) {
+          // 工作空间创建完成，关闭对话框
+          Navigator.of(context).pop();
+          
+          // 如果创建失败，记录错误信息
+          actionResult.result?.fold(
+            (success) {
+              Log.info('Workspace created successfully');
+            },
+            (error) {
+              Log.error('Failed to create workspace: ${error.msg}');
+            },
+          );
+        }
+      },
+      child: NavigatorTextFieldDialog(
+        title: LocaleKeys.workspace_create.tr(),
+        value: '',
+        hintText: '',
+        autoSelectAllText: true,
+        onConfirm: (name, _) => widget.onConfirm(name),
+      ),
     );
   }
 }
@@ -362,9 +392,14 @@ class _CreateWorkspaceButton extends StatelessWidget {
       height: 40,
       child: FlowyButton(
         key: createWorkspaceButtonKey,
-        onTap: () {
-          _showCreateWorkspaceDialog(context);
+        onTap: () async {
+          Log.info('Create workspace button clicked');
           PopoverContainer.of(context).closeAll();
+          // 等待一个微任务，确保 popover 关闭完成
+          await Future.delayed(Duration.zero);
+          if (context.mounted) {
+            await _showCreateWorkspaceDialog(context);
+          }
         },
         margin: const EdgeInsets.symmetric(horizontal: 4.0),
         text: Row(
@@ -397,18 +432,93 @@ class _CreateWorkspaceButton extends StatelessWidget {
   }
 
   Future<void> _showCreateWorkspaceDialog(BuildContext context) async {
-    if (context.mounted) {
+    if (!context.mounted) {
+      Log.warn('Context is not mounted when trying to show create workspace dialog');
+      return;
+    }
+    
+    try {
       final workspaceBloc = context.read<UserWorkspaceBloc>();
-      await CreateWorkspaceDialog(
+      final userProfile = workspaceBloc.state.userProfile;
+      
+      Log.info('Showing create workspace dialog for user: ${userProfile.email}, auth type: ${userProfile.userAuthType}');
+      
+      final dialog = CreateWorkspaceDialog(
         onConfirm: (name) {
+          if (name.trim().isEmpty) {
+            Log.warn('Workspace name is empty, cannot create workspace');
+            return;
+          }
+          
+          // 智能选择工作空间类型：
+          // 1. 如果用户是本地认证类型，创建本地工作空间
+          // 2. 如果用户是服务器认证类型，优先创建本地工作空间（桌面端常用场景）
+          final workspaceType = userProfile.userAuthType == AuthTypePB.Local 
+              ? WorkspaceTypePB.LocalW 
+              : WorkspaceTypePB.LocalW; // 桌面端默认创建本地工作空间
+          
+          Log.info('Creating workspace: name="$name", type=$workspaceType');
+          
           workspaceBloc.add(
             UserWorkspaceEvent.createWorkspace(
               name: name,
-              workspaceType: WorkspaceTypePB.ServerW,
+              workspaceType: workspaceType,
             ),
           );
         },
-      ).show(context);
+      );
+      
+      Log.info('About to show dialog...');
+      await showDialog(
+        context: context,
+        builder: (dialogContext) => BlocProvider.value(
+          value: workspaceBloc,
+          child: dialog,
+        ),
+      );
+      Log.info('Dialog shown successfully');
+    } catch (e, stackTrace) {
+      Log.error('Failed to show create workspace dialog: $e');
+      Log.error('Stack trace: $stackTrace');
+      
+      // 如果对话框显示失败，尝试使用Flutter原生的showDialog作为后备方案
+      if (context.mounted) {
+        try {
+          Log.info('Trying fallback dialog approach...');
+          await showDialog(
+            context: context,
+            builder: (dialogContext) => BlocProvider.value(
+              value: context.read<UserWorkspaceBloc>(),
+              child: CreateWorkspaceDialog(
+              onConfirm: (name) {
+                if (name.trim().isEmpty) {
+                  Log.warn('Workspace name is empty, cannot create workspace');
+                  return;
+                }
+                
+                final workspaceBloc = context.read<UserWorkspaceBloc>();
+                final userProfile = workspaceBloc.state.userProfile;
+                final workspaceType = userProfile.userAuthType == AuthTypePB.Local 
+                    ? WorkspaceTypePB.LocalW 
+                    : WorkspaceTypePB.LocalW;
+                
+                Log.info('Creating workspace via fallback: name="$name", type=$workspaceType');
+                
+                workspaceBloc.add(
+                  UserWorkspaceEvent.createWorkspace(
+                    name: name,
+                    workspaceType: workspaceType,
+                  ),
+                );
+              },
+            ),
+            ),
+          );
+          Log.info('Fallback dialog worked');
+        } catch (fallbackError) {
+          Log.error('Fallback dialog also failed: $fallbackError');
+        }
+      }
     }
   }
 }
@@ -486,13 +596,16 @@ class _ImportNotionButton extends StatelessWidget {
 
     if (context.mounted) {
       PopoverContainer.of(context).closeAll();
-      await NavigatorCustomDialog(
-        hideCancelButton: true,
-        confirm: () {},
-        child: NotionImporter(
-          filePath: path,
+      await showDialog(
+        context: context,
+        builder: (context) => NavigatorCustomDialog(
+          hideCancelButton: true,
+          confirm: () {},
+          child: NotionImporter(
+            filePath: path,
+          ),
         ),
-      ).show(context);
+      );
     } else {
       Log.error('context is not mounted when showing import notion dialog');
     }

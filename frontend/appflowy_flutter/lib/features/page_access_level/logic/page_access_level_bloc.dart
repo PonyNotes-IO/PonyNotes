@@ -64,7 +64,11 @@ class PageAccessLevelBloc
     final sectionTypeResult = await repository.getSectionType(view.id);
     final sectionType = sectionTypeResult.fold(
       (sectionType) => sectionType,
-      (_) => SharedSectionType.public,
+      (error) {
+        // If view not found or other errors, default to public section
+        // This prevents startup errors when trying to access deleted views
+        return SharedSectionType.public;
+      },
     );
 
     if (!FeatureFlag.sharedSection.isOn || ignorePageAccessLevel) {

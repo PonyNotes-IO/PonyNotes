@@ -35,7 +35,15 @@ class DartKeyValue implements KeyValueStorage {
     if (value == null) {
       return null;
     }
-    return formatter(value);
+    try {
+      return formatter(value);
+    } catch (e) {
+      // If the stored value is corrupted or in an invalid format,
+      // log the error and return null to use default values
+      // This prevents FormatException from crashing the app during startup
+      print('Warning: Failed to parse stored value for key "$key": $value, error: $e');
+      return null;
+    }
   }
 
   @override

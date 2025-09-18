@@ -112,21 +112,51 @@ class _CreateWorkspaceButton extends StatelessWidget {
       showDivider: false,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       builder: (bottomSheetContext) {
-        return EditWorkspaceNameBottomSheet(
-          type: EditWorkspaceNameType.create,
-          workspaceName: LocaleKeys.workspace_defaultName.tr(),
-          onSubmitted: (name) {
-            // create a new workspace
-            Log.info('create a new workspace: $name');
-            bottomSheetContext.popToHome();
-
-            context.read<UserWorkspaceBloc>().add(
-                  UserWorkspaceEvent.createWorkspace(
-                    name: name,
-                    workspaceType: WorkspaceTypePB.ServerW,
-                  ),
-                );
+        return BlocListener<UserWorkspaceBloc, UserWorkspaceState>(
+          listenWhen: (previous, current) {
+            return previous.actionResult?.actionType != current.actionResult?.actionType ||
+                previous.actionResult?.isLoading != current.actionResult?.isLoading;
           },
+          listener: (context, state) {
+            final actionResult = state.actionResult;
+            if (actionResult != null && 
+                actionResult.actionType == WorkspaceActionType.create && 
+                !actionResult.isLoading) {
+              // 工作空间创建完成，关闭底部工作表
+              bottomSheetContext.popToHome();
+              
+              // 如果创建失败，记录错误信息
+              actionResult.result?.fold(
+                (success) {
+                  Log.info('Workspace created successfully');
+                },
+                (error) {
+                  Log.error('Failed to create workspace: ${error.msg}');
+                },
+              );
+            }
+          },
+          child: EditWorkspaceNameBottomSheet(
+            type: EditWorkspaceNameType.create,
+            workspaceName: LocaleKeys.workspace_defaultName.tr(),
+            onSubmitted: (name) {
+              // create a new workspace
+              Log.info('create a new workspace: $name');
+
+              // 智能选择工作空间类型：移动端也优先创建本地工作空间
+              final userProfile = context.read<UserWorkspaceBloc>().state.userProfile;
+              final workspaceType = userProfile.userAuthType == AuthTypePB.Local 
+                  ? WorkspaceTypePB.LocalW 
+                  : WorkspaceTypePB.LocalW; // 移动端默认创建本地工作空间
+                  
+              context.read<UserWorkspaceBloc>().add(
+                    UserWorkspaceEvent.createWorkspace(
+                      name: name,
+                      workspaceType: workspaceType,
+                    ),
+                  );
+            },
+          ),
         );
       },
     );

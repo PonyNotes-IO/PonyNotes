@@ -4,7 +4,6 @@ import 'package:appflowy/plugins/trash/application/trash_bloc.dart';
 import 'package:appflowy/plugins/trash/src/trash_cell.dart';
 import 'package:appflowy/plugins/trash/src/trash_search_bar.dart';
 import 'package:appflowy/startup/startup.dart';
-import 'package:appflowy/workspace/presentation/widgets/dialogs.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/plugins/database/tab_bar/tab_bar_view.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -18,7 +17,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/trash.pb.dart';
-import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:appflowy/plugins/document/application/document_bloc.dart';
 import 'package:appflowy/workspace/application/view/view_bloc.dart';
 import 'package:appflowy_editor/appflowy_editor.dart';
@@ -63,7 +61,7 @@ class TrashMainPlugin extends Plugin {
   PluginWidgetBuilder get widgetBuilder => TrashMainWidgetBuilder();
 
   @override
-  PluginId get id => "TrashMainStack"; // 使用固定ID，类似问AI的做法
+  PluginId get id => "trash_main_plugin"; // 使用不会与视图ID冲突的插件ID
 }
 
 class TrashMainWidgetBuilder extends PluginWidgetBuilder {
@@ -94,7 +92,12 @@ class TrashMainWidgetBuilder extends PluginWidgetBuilder {
   }) {
     // 不依赖context.userProfile，避免触发GET_VIEW_PB查询
     // 直接返回回收站面板，避免视图查找错误
-    return TrashMainPanel();
+    return Builder(
+      builder: (context) {
+        // 使用Builder确保有正确的上下文，但不触发视图查找
+        return TrashMainPanel();
+      },
+    );
   }
 }
 
@@ -246,11 +249,6 @@ class _TrashMainPanelState extends State<TrashMainPanel> {
       ..lastEdited = object.modifiedTime;
 
     return TrashDocumentView(view: tempView);
-  }
-  
-  String _formatDate($fixnum.Int64 timestamp) {
-    final date = DateTime.fromMillisecondsSinceEpoch(timestamp.toInt() * 1000);
-    return DateFormat('yyyy/MM/dd').format(date);
   }
 }
 

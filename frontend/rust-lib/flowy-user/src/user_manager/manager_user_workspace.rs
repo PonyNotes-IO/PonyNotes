@@ -255,26 +255,75 @@ impl UserManager {
     workspace_type: WorkspaceType,
   ) -> FlowyResult<UserWorkspace> {
     let auth_type = AuthType::from(workspace_type);
-    let token = self.token_from_auth_type(&auth_type)?;
-    let cloud_service = self.cloud_service()?;
-    cloud_service.set_server_auth_type(&auth_type, token)?;
+    
+    let new_workspace = match auth_type {
+      AuthType::Local => {
+        // For local workspaces, create directly without cloud service
+        let workspace_id = Uuid::new_v4();
+        let uid = self.user_id()?;
+        
+        info!("Creating local workspace: {}, name: {}", workspace_id, workspace_name);
+        
+        UserWorkspace {
+          id: workspace_id.to_string(),
+          name: workspace_name.to_string(),
+          created_at: chrono::Utc::now(),
+          workspace_database_id: Uuid::new_v4().to_string(),
+          icon: String::new(),
+        }
+      }
+      _ => {
+        // For cloud workspaces, use cloud service
+        let token = self.token_from_auth_type(&auth_type)?;
+        let cloud_service = self.cloud_service()?;
+        cloud_service.set_server_auth_type(&auth_type, token)?;
 
-    let new_workspace = self
-      .cloud_service()?
-      .get_user_service()?
-      .create_workspace(workspace_name)
-      .await?;
+        self
+          .cloud_service()?
+          .get_user_service()?
+          .create_workspace(workspace_name)
+          .await?
+      }
+    };
 
     info!(
-      "create workspace: {}, name:{}, auth_type: {:?}",
-      new_workspace.id, new_workspace.name, workspace_type
+      "create workspace: {}, name:{}, auth_type: {:?}, database_storage_id: {}",
+      new_workspace.id, new_workspace.name, workspace_type, new_workspace.workspace_database_id
     );
 
     // save the workspace to sqlite db
     let uid = self.user_id()?;
     let mut conn = self.db_connection(uid)?;
-    upsert_user_workspace(uid, workspace_type, new_workspace.clone(), &mut conn)?;
-    Ok(new_workspace)
+    
+    // Check if database_storage_id is empty and generate one if needed
+    let mut workspace_to_save = new_workspace.clone();
+    if workspace_to_save.workspace_database_id.is_empty() {
+      workspace_to_save.workspace_database_id = uuid::Uuid::new_v4().to_string();
+      info!(
+        "Generated database_storage_id for workspace {}: {}",
+        workspace_to_save.id, workspace_to_save.workspace_database_id
+      );
+    }
+    
+    match upsert_user_workspace(uid, workspace_type, workspace_to_save.clone(), &mut conn) {
+      Ok(_) => {
+        info!("Successfully saved workspace {} to database", workspace_to_save.id);
+      }
+      Err(e) => {
+        error!("Failed to save workspace {} to database: {:?}", workspace_to_save.id, e);
+        return Err(e);
+      }
+    }
+    
+    // Send notification to update workspace list
+    if let Ok(updated_list) = select_all_user_workspace(uid, &mut conn) {
+      let repeated_pb = RepeatedUserWorkspacePB::from(updated_list);
+      send_notification(uid, UserNotification::DidUpdateUserWorkspaces)
+        .payload(repeated_pb)
+        .send();
+    }
+    
+    Ok(workspace_to_save)
   }
 
   pub async fn patch_workspace(
