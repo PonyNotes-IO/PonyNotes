@@ -131,6 +131,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   
   StreamSubscription<String>? _streamSubscription;
   String _currentMessageId = '';
+  bool _isUserStopped = false; // 用户是否主动停止了流式输出
 
   StandaloneChatBloc() : super(const StandaloneChatState()) {
     on<StandaloneChatEvent>((event, emit) async {
@@ -185,6 +186,9 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         _configService.currentProvider;
     debugPrint('✅ 最终选择的提供商: ${selectedProvider.displayName}');
 
+    // 重置用户停止标志
+    _isUserStopped = false;
+    
     // 生成消息ID
     final userMessageId = DateTime.now().millisecondsSinceEpoch.toString();
     _currentMessageId = '${DateTime.now().millisecondsSinceEpoch + 1}'; // AI消息ID
@@ -250,6 +254,9 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         }
       }
 
+      // 重置用户停止标志
+      _isUserStopped = false;
+      
       // 生成消息ID
       final userMessageId = DateTime.now().millisecondsSinceEpoch.toString();
       _currentMessageId = '${DateTime.now().millisecondsSinceEpoch + 1}'; // AI消息ID
@@ -391,6 +398,12 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   ) {
     if (emit.isDone) return;
     
+    // 如果用户已经停止了，忽略后续的流式数据
+    if (_isUserStopped) {
+      debugPrint('⚠️ 用户已停止流式输出，忽略数据块: $chunk');
+      return;
+    }
+    
     final currentContent = state.currentStreamingMessage ?? '';
     final newContent = currentContent + chunk;
 
@@ -406,6 +419,14 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   Future<void> _handleFinishResponse(Emitter<StandaloneChatState> emit) async {
     debugPrint('🎯 _handleFinishResponse 方法被调用');
     debugPrint('📊 当前状态: isLoading=${state.isLoading}, isStreaming=${state.isStreaming}');
+    debugPrint('🛑 用户是否停止: $_isUserStopped');
+    
+    // 如果用户已经停止了，忽略这个完成事件
+    if (_isUserStopped) {
+      debugPrint('⚠️ 用户已停止流式输出，忽略完成事件');
+      return;
+    }
+    
     if (emit.isDone) return;
     
     final streamingContent = state.currentStreamingMessage ?? '';
@@ -447,6 +468,12 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
   Future<void> _handleStopStreaming(Emitter<StandaloneChatState> emit) async {
     debugPrint('🛑 _handleStopStreaming 方法被调用');
     debugPrint('📊 当前状态: isLoading=${state.isLoading}, isStreaming=${state.isStreaming}');
+    
+    // 设置用户停止标志
+    _isUserStopped = true;
+    
+    // 取消AI服务的当前请求
+    _aiService.cancelCurrentRequest();
     
     // 取消流式传输订阅
     await _streamSubscription?.cancel();

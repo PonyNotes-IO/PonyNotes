@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:appflowy/core/config/ai_config.dart';
 import 'package:appflowy/plugins/standalone_ai_chat/models/chat_image.dart';
@@ -15,6 +16,16 @@ class StandaloneAiService {
   static StandaloneAiService get instance => _instance;
 
   final AIConfigService _configService = AIConfigService.instance;
+  
+  // 当前的HTTP客户端，用于取消请求
+  http.Client? _currentClient;
+
+  /// 取消当前的AI请求
+  void cancelCurrentRequest() {
+    debugPrint('🛑 取消当前AI请求');
+    _currentClient?.close();
+    _currentClient = null;
+  }
 
   /// 发送消息到AI服务（支持多模态）
   /// 
@@ -64,7 +75,8 @@ class StandaloneAiService {
   ) async {
     try {
       print('🔗 开始调用DeepSeek API');
-      final client = http.Client();
+      _currentClient = http.Client();
+      final client = _currentClient!;
       final apiUrl = '${config.apiBase}/chat/completions'; // 添加chat/completions端点
       print('🌐 API URL: $apiUrl');
       print('🔑 API密钥: ${config.apiKey.substring(0, 10)}... (已截断显示)');
@@ -109,6 +121,7 @@ class StandaloneAiService {
       }
       
       client.close();
+      _currentClient = null;
       print('✅ DeepSeek API调用方法结束');
     } catch (e) {
       print('❌ DeepSeek API调用异常: $e');
@@ -126,7 +139,8 @@ class StandaloneAiService {
     List<ChatImage>? images,
   ) async {
     try {
-      final client = http.Client();
+      _currentClient = http.Client();
+      final client = _currentClient!;
       // 通义千问使用兼容模式的API端点
       final apiUrl = config.apiBase.contains('compatible-mode') 
           ? '${config.apiBase}/chat/completions'
@@ -189,6 +203,7 @@ class StandaloneAiService {
       }
       
       client.close();
+      _currentClient = null;
     } catch (e) {
       onError('通义千问API调用异常: $e');
     }
@@ -204,7 +219,8 @@ class StandaloneAiService {
     List<ChatImage>? images,
   ) async {
     try {
-      final client = http.Client();
+      _currentClient = http.Client();
+      final client = _currentClient!;
       final apiUrl = '${config.apiBase}/chat/completions'; // 添加chat/completions端点
       final request = http.Request(
         'POST',
@@ -240,6 +256,7 @@ class StandaloneAiService {
       }
       
       client.close();
+      _currentClient = null;
       print('✅ 豆包API调用方法结束');
     } catch (e) {
       onError('豆包API调用异常: $e');
