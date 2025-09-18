@@ -31,6 +31,8 @@ class StandaloneChatEvent with _$StandaloneChatEvent {
 
   const factory StandaloneChatEvent.finishResponse() = _FinishResponse;
 
+  const factory StandaloneChatEvent.stopStreaming() = _StopStreaming;
+
   const factory StandaloneChatEvent.errorOccurred({
     required String error,
   }) = _ErrorOccurred;
@@ -137,6 +139,7 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         sendMessageWithImages: (message, images, provider) => _handleSendMessageWithImages(message, images, provider, emit),
         receiveStreamChunk: (chunk) => _handleReceiveStreamChunk(chunk, emit),
         finishResponse: () => _handleFinishResponse(emit),
+        stopStreaming: () => _handleStopStreaming(emit),
         errorOccurred: (error) => _handleErrorOccurred(error, emit),
         loadHistory: () => _handleLoadHistory(emit),
         clearChat: () => _handleClearChat(emit),
@@ -437,6 +440,53 @@ class StandaloneChatBloc extends Bloc<StandaloneChatEvent, StandaloneChatState> 
         currentStreamingMessage: null,
       ));
       debugPrint('✅ _handleFinishResponse: 空响应状态已更新');
+    }
+  }
+
+  /// 处理停止流式传输
+  Future<void> _handleStopStreaming(Emitter<StandaloneChatState> emit) async {
+    debugPrint('🛑 _handleStopStreaming 方法被调用');
+    debugPrint('📊 当前状态: isLoading=${state.isLoading}, isStreaming=${state.isStreaming}');
+    
+    // 取消流式传输订阅
+    await _streamSubscription?.cancel();
+    _streamSubscription = null;
+    
+    if (emit.isDone) return;
+    
+    final streamingContent = state.currentStreamingMessage ?? '';
+    
+    if (streamingContent.isNotEmpty) {
+      // 如果有部分流式内容，保存为AI消息
+      final aiMessage = ChatMessage(
+        id: _currentMessageId,
+        content: streamingContent + '\n\n[响应已被用户中止]',
+        isUser: false,
+        timestamp: DateTime.now(),
+        aiProvider: state.selectedProvider,
+      );
+
+      // 更新UI状态并保存部分消息
+      debugPrint('🔄 _handleStopStreaming: 保存部分响应并设置 isLoading: false, isStreaming: false');
+      emit(state.copyWith(
+        messages: [...state.messages, aiMessage],
+        isLoading: false,
+        isStreaming: false,
+        currentStreamingMessage: null,
+      ));
+      debugPrint('✅ _handleStopStreaming: 状态已更新，isLoading: false');
+
+      // 异步保存到数据库
+      _saveMessageAsync(aiMessage);
+    } else {
+      // 如果没有内容，只是停止状态
+      debugPrint('🔄 _handleStopStreaming: 无内容，仅停止流式传输状态');
+      emit(state.copyWith(
+        isLoading: false,
+        isStreaming: false,
+        currentStreamingMessage: null,
+      ));
+      debugPrint('✅ _handleStopStreaming: 状态已更新');
     }
   }
 

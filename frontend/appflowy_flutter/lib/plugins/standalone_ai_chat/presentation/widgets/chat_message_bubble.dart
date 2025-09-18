@@ -136,6 +136,9 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
                 ),
                 child: _buildAiMessageContent(),
               ),
+              // 复制按钮（AI消息完成后显示）
+              if (!widget.message.isStreaming && !widget.message.hasError)
+                _buildCopyButton(),
               // 消息状态和时间戳
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -380,6 +383,62 @@ class _ChatMessageBubbleState extends State<ChatMessageBubble> {
         ),
       ),
     );
+  }
+
+  /// 构建复制按钮（在AI消息下方显示）
+  Widget _buildCopyButton() {
+    return Padding(
+      padding: const EdgeInsets.only(top: 6),
+      child: InkWell(
+        onTap: () => _copyMessageContent(),
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.copy,
+                size: 14,
+                color: Colors.grey[600],
+              ),
+              const SizedBox(width: 4),
+              Text(
+                '复制',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 复制消息内容
+  void _copyMessageContent() {
+    Clipboard.setData(ClipboardData(text: widget.message.content));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('已复制到剪贴板'),
+        duration: const Duration(seconds: 2),
+        backgroundColor: Colors.grey[800],
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
+    widget.onCopy?.call();
   }
 
   /// 格式化时间戳

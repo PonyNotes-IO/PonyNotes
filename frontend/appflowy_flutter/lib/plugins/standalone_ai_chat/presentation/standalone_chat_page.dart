@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
@@ -375,6 +376,12 @@ class _ChatInputBarState extends State<_ChatInputBar> {
     _updateSendButtonState();
   }
 
+  /// 停止AI流式输出
+  void _stopStreaming() {
+    final bloc = context.read<StandaloneChatBloc>();
+    bloc.add(const StandaloneChatEvent.stopStreaming());
+  }
+
   /// 选择图片
   Future<void> _selectImage() async {
     final imageService = ChatImageService.instance;
@@ -577,6 +584,30 @@ class _ChatInputBarState extends State<_ChatInputBar> {
   }
 
   Widget _buildSendButton(StandaloneChatState state) {
+    // 如果正在流式输出，显示停止按钮
+    if (state.isStreaming) {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: GestureDetector(
+          onTap: () => _stopStreaming(),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: Colors.red[600],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.stop,
+              size: 16,
+              color: Colors.white,
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 如果正在加载但不是流式输出，显示加载指示器
     if (state.isLoading) {
       return Padding(
         padding: const EdgeInsets.all(12),
@@ -591,6 +622,7 @@ class _ChatInputBarState extends State<_ChatInputBar> {
       );
     }
 
+    // 正常情况下显示发送按钮
     final isEnabled = !state.isLoading && state.selectedProvider != null && _canSend;
     
     return Padding(
@@ -729,69 +761,169 @@ class _ChatMessageListState extends State<_ChatMessageList> {
   Widget _buildMessageBubble(ChatMessage message, bool isLast, {bool isStreaming = false}) {
     return Container(
       margin: EdgeInsets.only(bottom: isLast ? 16 : 8, top: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          if (!message.isUser) ...[
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.blue[600],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.auto_awesome, size: 18, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-          ],
-          Flexible(
-            child: Container(
-              constraints: BoxConstraints(
-                maxWidth: MediaQuery.of(context).size.width * 0.7,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: message.isUser ? Colors.blue[600] : Colors.white,
-                borderRadius: BorderRadius.circular(18).copyWith(
-                  topLeft: message.isUser ? const Radius.circular(18) : const Radius.circular(4),
-                  topRight: message.isUser ? const Radius.circular(4) : const Radius.circular(18),
-                ),
-                border: message.isUser ? null : Border.all(color: Colors.grey[200]!),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (!message.isUser) ...[
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[600],
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                ],
-              ),
-              child: message.isUser 
-                ? SelectableText(
-                    message.content,
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: Colors.white,
+                  child: const Icon(Icons.auto_awesome, size: 18, color: Colors.white),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Flexible(
+                child: Container(
+                  constraints: BoxConstraints(
+                    maxWidth: MediaQuery.of(context).size.width * 0.7,
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: message.isUser ? Colors.blue[600] : Colors.white,
+                    borderRadius: BorderRadius.circular(18).copyWith(
+                      topLeft: message.isUser ? const Radius.circular(18) : const Radius.circular(4),
+                      topRight: message.isUser ? const Radius.circular(4) : const Radius.circular(18),
                     ),
-                  )
-                : _buildMarkdownContent(message.content),
-            ),
-          ),
-          if (message.isUser) ...[
-            const SizedBox(width: 12),
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.blue[100],
-                borderRadius: BorderRadius.circular(16),
+                    border: message.isUser ? null : Border.all(color: Colors.grey[200]!),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: message.isUser 
+                    ? SelectableText(
+                        message.content,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.4,
+                          color: Colors.white,
+                        ),
+                      )
+                    : _buildMarkdownContent(message.content),
+                ),
               ),
-              child: Icon(Icons.person, size: 18, color: Colors.blue[700]),
-            ),
-          ],
+              if (message.isUser) ...[
+                const SizedBox(width: 12),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.blue[100],
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(Icons.person, size: 18, color: Colors.blue[700]),
+                ),
+              ],
+            ],
+          ),
+          // 为AI消息添加复制按钮
+          if (!message.isUser && !isStreaming && message.content.trim().isNotEmpty)
+            _buildCopyButton(message),
         ],
       ),
     );
+  }
+
+  /// 构建复制按钮
+  Widget _buildCopyButton(ChatMessage message) {
+    return Container(
+      margin: const EdgeInsets.only(left: 44, top: 6), // 44 = 32 (avatar) + 12 (spacing)
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => _copyToClipboard(message.content),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.copy,
+                  size: 14,
+                  color: Colors.grey[600],
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '复制',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 复制到剪贴板
+  Future<void> _copyToClipboard(String text) async {
+    try {
+      await Clipboard.setData(ClipboardData(text: text));
+      
+      // 显示复制成功的提示
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('已复制到剪贴板'),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            backgroundColor: Colors.green[600],
+          ),
+        );
+      }
+    } catch (e) {
+      // 复制失败时的处理
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error, color: Colors.white, size: 16),
+                SizedBox(width: 8),
+                Text('复制失败'),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            backgroundColor: Colors.red[600],
+          ),
+        );
+      }
+    }
   }
 
   /// 构建Markdown内容
