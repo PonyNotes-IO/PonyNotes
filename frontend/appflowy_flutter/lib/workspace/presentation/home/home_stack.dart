@@ -731,9 +731,32 @@ class PageManager {
             return const BlankPage();
           }
 
+          final sandbox = getIt<PluginSandbox>();
+          final supportedTypes = sandbox.supportPluginTypes;
+          
+          // 确保当前插件类型在支持的类型列表中
+          if (!supportedTypes.contains(notifier.plugin.pluginType)) {
+            debugPrint('Plugin type ${notifier.plugin.pluginType} not found in supported types: $supportedTypes');
+            // 直接渲染插件，不使用IndexedStack
+            final builder = notifier.plugin.widgetBuilder;
+            final pluginWidget = builder.buildWidget(
+              context: PluginContext(
+                onDeleted: onDeleted,
+                userProfile: userProfile,
+              ),
+              shrinkWrap: false,
+            );
+            return Padding(
+              padding: builder.contentPadding,
+              child: pluginWidget,
+            );
+          }
+          
+          final pluginIndex = supportedTypes.indexOf(notifier.plugin.pluginType);
+          
           return FadingIndexedStack(
-            index: getIt<PluginSandbox>().indexOf(notifier.plugin.pluginType),
-            children: getIt<PluginSandbox>().supportPluginTypes.map(
+            index: pluginIndex,
+            children: supportedTypes.map(
               (pluginType) {
                 if (pluginType == notifier.plugin.pluginType) {
                   final builder = notifier.plugin.widgetBuilder;
