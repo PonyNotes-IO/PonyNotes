@@ -270,6 +270,9 @@ impl UserManager {
           created_at: chrono::Utc::now(),
           workspace_database_id: Uuid::new_v4().to_string(),
           icon: String::new(),
+          member_count: 1, // 本地工作空间默认为1个成员（当前用户）
+          role: Some(flowy_user_pub::entities::Role::Owner), // 本地工作空间创建者为所有者
+          workspace_type: flowy_user_pub::entities::WorkspaceType::Local, // 设置为本地类型
         }
       }
       _ => {

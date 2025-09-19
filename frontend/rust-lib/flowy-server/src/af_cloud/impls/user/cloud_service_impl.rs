@@ -14,7 +14,7 @@ use client_api::entity::workspace_dto::{
 };
 use client_api::entity::{
   AFWorkspace, AFWorkspaceInvitation, AFWorkspaceSettings, AFWorkspaceSettingsChange, AuthProvider,
-  CollabParams, CreateCollabParams, GotrueTokenResponse, QueryWorkspaceMember, User, Factor, Identity,
+  CollabParams, CreateCollabParams, GotrueTokenResponse, QueryWorkspaceMember, User,
 };
 
 use client_api::entity::{QueryCollab, QueryCollabParams};
