@@ -282,27 +282,34 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
 
     result
       ..onSuccess((s) {
+        Log.info(
+          'open workspace success: ${event.workspaceId}, current workspace: ${currentWorkspace?.toProto3Json()}',
+        );
+        
+        // Schedule UI updates after state emission to prevent blocking
+        Future.microtask(() {
+          try {
+            // Switch tabs to new workspace
+            Log.info('Switching tabs to workspace: ${event.workspaceId}');
+            getIt<TabsBloc>().add(TabsEvent.switchWorkspace(event.workspaceId));
+            
+            // Force expand the menu for new workspaces to ensure UI is visible
+            final homeSettingBloc = getIt<HomeSettingBloc>();
+            if (homeSettingBloc.isMenuHidden) {
+              Log.info('Expanding menu for new workspace');
+              homeSettingBloc.add(HomeSettingEvent.changeMenuStatus(MenuStatus.expanded));
+            }
+          } catch (e) {
+            Log.error('Error updating UI after workspace open: $e');
+          }
+        });
+
+        // Finally, fetch subscription info (non-critical for UI)
         add(
           UserWorkspaceEvent.fetchWorkspaceSubscriptionInfo(
             workspaceId: event.workspaceId,
           ),
         );
-
-        Log.info(
-          'open workspace success: ${event.workspaceId}, current workspace: ${currentWorkspace?.toProto3Json()}',
-        );
-        // Force expand the menu for new workspaces to ensure UI is visible
-        try {
-          final homeSettingBloc = getIt<HomeSettingBloc>();
-          if (homeSettingBloc.isMenuHidden) {
-            homeSettingBloc.add(HomeSettingEvent.changeMenuStatus(MenuStatus.expanded));
-          }
-        } catch (e) {
-          // HomeSettingBloc might not be available in some contexts
-        }
-        
-        // Notify TabsBloc about workspace switch to handle view loading
-        getIt<TabsBloc>().add(TabsEvent.switchWorkspace(event.workspaceId));
       })
       ..onFailure((f) {
         Log.error('open workspace error: $f');

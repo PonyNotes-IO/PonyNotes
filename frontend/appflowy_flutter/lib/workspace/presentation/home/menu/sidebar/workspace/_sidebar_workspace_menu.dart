@@ -5,7 +5,6 @@ import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/auth/auth_service.dart';
-import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/_sidebar_workspace_actions.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/workspace/_sidebar_workspace_icon.dart';
 import 'package:appflowy/workspace/presentation/settings/widgets/members/workspace_member_bloc.dart';
@@ -318,9 +317,7 @@ class _WorkspaceInfo extends StatelessWidget {
     if (!isSelected) {
       Log.info('open workspace: ${workspace.workspaceId}');
 
-      // Persist and close other tabs when switching workspace, restore tabs for new workspace
-      getIt<TabsBloc>().add(TabsEvent.switchWorkspace(workspace.workspaceId));
-
+      // Only trigger workspace opening - TabsBloc will be handled in UserWorkspaceBloc
       context.read<UserWorkspaceBloc>().add(
             UserWorkspaceEvent.openWorkspace(
               workspaceId: workspace.workspaceId,
@@ -469,6 +466,11 @@ class _CreateWorkspaceButton extends StatelessWidget {
       );
       
       Log.info('About to show dialog...');
+      
+      // 确保键盘状态清理以避免输入问题
+      FocusScope.of(context).unfocus();
+      await Future.delayed(const Duration(milliseconds: 50));
+      
       await showDialog(
         context: context,
         builder: (dialogContext) => BlocProvider.value(

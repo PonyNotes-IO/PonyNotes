@@ -13,11 +13,8 @@ import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
 import 'package:appflowy/plugins/homepage/homepage.dart';
-import 'package:appflowy/workspace/application/workspace/workspace_service.dart';
-import 'package:appflowy/user/application/auth/auth_service.dart';
 import 'package:appflowy_backend/log.dart';
-import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
-import 'package:fixnum/fixnum.dart';
+import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:appflowy_result/appflowy_result.dart';
 import 'package:bloc/bloc.dart';
 import 'package:collection/collection.dart';
@@ -197,60 +194,40 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
             _setLatestOpenView();
           },
           switchWorkspace: (workspaceId) async {
-            // First, immediately open a loading/homepage plugin to avoid black screen
-            add(TabsEvent.openPlugin(plugin: HomePagePlugin()));
+            Log.info('TabsBloc: Starting workspace switch to $workspaceId');
             
-            // Then close other tabs (except current and pinned) without causing black screen
-            final currentPlugin = state.currentPageManager.plugin;
-            final pagesToClose = [
-              ...state._pageManagers
-                  .where((pm) => pm.plugin.id != currentPlugin.id && !pm.isPinned),
-            ];
+            // Create a proper new state to avoid mutation issues
+            TabsState newState = state;
+            
+            // Close ALL non-pinned tabs to clean up previous workspace state
+            final pagesToClose = state._pageManagers
+                .where((pm) => !pm.isPinned)
+                .toList();
 
-            if (pagesToClose.isNotEmpty) {
-              final newstate = state;
-              for (final pm in pagesToClose) {
-                newstate.closeView(pm.plugin.id);
-              }
-              emit(newstate.copyWith(currentIndex: 0));
+            for (final pm in pagesToClose) {
+              newState = newState.closeView(pm.plugin.id);
             }
+            
+            // Add a small delay to ensure workspace backend is fully initialized
+            // This prevents race conditions when creating new workspace UI
+            await Future.delayed(const Duration(milliseconds: 50));
+            
+            // Ensure we have a valid home page tab for the new workspace
+            // Always open the home page plugin to provide a consistent starting point
+            final homePlugin = HomePagePlugin();
+            newState = newState.openPlugin(plugin: homePlugin, setLatest: false);
+            
+            // If we ended up with no current tab, select the first one
+            if (newState.currentIndex >= newState.pages && newState.pages > 0) {
+              newState = newState.copyWith(currentIndex: 0);
+            }
+            
+            Log.info('TabsBloc: Emitting new state with ${newState.pages} tabs');
+            emit(newState);
+            
+            // Schedule backend operations after emit to avoid BLoC violations
+            _initializeWorkspaceAsync(workspaceId);
 
-            // Load workspace content immediately without delay
-            try {
-              // Create workspace service to get views
-              final userResult = await getIt<AuthService>().getUser();
-              final userId = userResult.fold(
-                (user) => user.id,
-                (_) => Int64(0),
-              );
-              
-              final workspaceService = WorkspaceService(
-                workspaceId: workspaceId,
-                userId: userId,
-              );
-              
-              // Add a small delay to allow workspace initialization, but much shorter
-              await Future.delayed(const Duration(milliseconds: 100));
-              
-              final result = await workspaceService.getPublicViews();
-              
-              result.fold(
-                (views) {
-                  if (views.isNotEmpty) {
-                    final firstView = views.first;
-                    add(TabsEvent.openPlugin(plugin: firstView.plugin()));
-                  }
-                  // If no views, keep the homepage that was already opened
-                },
-                (error) {
-                  // If error, keep the homepage that was already opened
-                  Log.error('Failed to load workspace views: $error');
-                },
-              );
-            } catch (e) {
-              // If any exception, keep the homepage that was already opened
-              Log.error('Exception during workspace switch: $e');
-            }
           },
           initial: () {
             // 在应用初始化时，检查当前打开的视图并添加到最近访问
@@ -373,6 +350,26 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
         Log.debug('已添加视图到最近访问: $viewId');
       } catch (e) {
         Log.error('添加视图到最近访问失败: $viewId, 错误: $e');
+      }
+    });
+  }
+
+  /// 后台初始化工作区的异步方法
+  void _initializeWorkspaceAsync(String workspaceId) {
+    // 这是一个后台操作，不应该阻塞UI
+    // 主要用于工作区切换后的清理和初始化工作
+    Future.microtask(() async {
+      try {
+        Log.info('TabsBloc: Initializing workspace async: $workspaceId');
+        
+        // 这里可以添加任何需要的后台初始化逻辑
+        // 例如：清理缓存、预加载数据等
+        // 目前保持简单，只记录日志
+        
+        Log.info('TabsBloc: Workspace initialization completed: $workspaceId');
+      } catch (e, stackTrace) {
+        Log.error('TabsBloc: Failed to initialize workspace async: $e');
+        Log.error('Stack trace: $stackTrace');
       }
     });
   }

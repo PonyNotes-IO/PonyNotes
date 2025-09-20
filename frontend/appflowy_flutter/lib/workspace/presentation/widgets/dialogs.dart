@@ -12,6 +12,7 @@ import 'package:flowy_infra_ui/widget/buttons/secondary_button.dart';
 import 'package:flowy_infra_ui/widget/dialog/styled_dialogs.dart';
 import 'package:flowy_infra_ui/widget/spacing.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:toastification/toastification.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -114,6 +115,21 @@ class _NavigatorTextFieldDialogState extends State<NavigatorTextFieldDialog> {
         extentOffset: newValue.length,
       );
     }
+    
+    // 延迟初始化以确保键盘状态正确
+    // 这可以修复键盘事件冲突导致无法输入的问题
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 强制重新聚焦文本输入框以确保键盘状态正确
+      if (mounted) {
+        // 短暂失去焦点再重新聚焦，这样可以重置键盘状态
+        FocusScope.of(context).unfocus();
+        Future.delayed(const Duration(milliseconds: 10), () {
+          if (mounted) {
+            FocusScope.of(context).requestFocus();
+          }
+        });
+      }
+    });
   }
 
   @override

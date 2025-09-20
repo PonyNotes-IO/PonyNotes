@@ -2,9 +2,8 @@
 
 ## 重要禁止事项
 - **绝对禁止运行任何构建调试或执行程序的命令**
+  - 用户在使用vscode的调试模式调试代码
   - 禁止使用: flutter run, flutter build 等
-  - 禁止使用: 任何会启动应用程序或服务器的命令
-  - 只做代码修改，不要执行程序
 
 ## 工作方式
 - 只进行代码编辑和文件操作
@@ -18,5 +17,10 @@
 - flutter主要工作目录: frontend/appflowy_flutter/
 - 如果需要验证修改，只检查代码和lint，不要运行程序
 
-## 特别提醒
-用户已经多次强调不要运行程序，这是最重要的规则！
+## 调试日志位置
+- 你可以并且一定要参考调试日志解决问题
+- 调试日志位置:/Users/kuncao/PonyNotesDatas/PonyNotesDataDoNotRename_api.xiaomabiji.com
+
+## 本地sqlite数据库位置
+- 必要的时候你可以打开数据库文件查看数据
+- 本地sqlite数据库位置:/Users/kuncao/PonyNotesDatas/PonyNotesDataDoNotRename_api.xiaomabiji.com/504958197639942144

@@ -131,8 +131,8 @@ xiaoma-note/
 
 1. **克隆仓库**
 ```bash
-git clone https://gitee.com/beijing-grimoire/xiaoma-note.git
-cd xiaoma-note
+git clone https://github.com/PonyNotes-IO/PonyNotes.git
+cd PonyNotes
 ```
 
 2. **安装依赖**
