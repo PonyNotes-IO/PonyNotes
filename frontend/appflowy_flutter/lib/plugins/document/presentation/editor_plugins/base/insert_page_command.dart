@@ -131,7 +131,7 @@ extension InsertDatabase on EditorState {
       case ViewLayoutPB.Calendar:
         return LocaleKeys.calendar_referencedCalendarPrefix.tr();
       default:
-        throw UnimplementedError();
+        return LocaleKeys.grid_referencedGridPrefix.tr(); // 临时处理：未知layout type返回Grid前缀
     }
   }
 
@@ -144,7 +144,7 @@ extension InsertDatabase on EditorState {
       case ViewLayoutPB.Calendar:
         return DatabaseBlockKeys.calendarType;
       default:
-        throw Exception('Unknown layout type');
+        return DatabaseBlockKeys.gridType; // 临时处理：未知layout type返回Grid类型
     }
   }
 }

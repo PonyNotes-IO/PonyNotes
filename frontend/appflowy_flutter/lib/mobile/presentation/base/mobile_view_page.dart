@@ -134,7 +134,7 @@ class _MobileViewPageState extends State<MobileViewPage> {
                   create: (_) => DocumentPageStyleBloc(view: view)
                     ..add(const DocumentPageStyleEvent.initial()),
                 ),
-              if (view.layout.isDocumentView || view.layout.isDatabaseView)
+              if (view.layout.isDocumentView || view.layout.isDatabaseView || view.layout.isWhiteboardView)
                 BlocProvider(
                   create: (_) => PageAccessLevelBloc(view: view)
                     ..add(const PageAccessLevelEvent.initial()),

@@ -160,6 +160,9 @@ dependencies:
   talker_bloc_logger: ^4.8.1
   talker: ^4.7.1
 
+  # Whiteboard drawing dependencies (using Flutter built-in Canvas)
+  # Using CustomPainter for drawing functionality
+
   analyzer: 6.11.0
 
 dev_dependencies:

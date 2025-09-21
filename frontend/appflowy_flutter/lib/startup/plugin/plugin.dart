@@ -25,6 +25,7 @@ enum PluginType {
   importPage,
   inbox,
   fileLibrary,
+  whiteboard,
 }
 
 typedef PluginId = String;

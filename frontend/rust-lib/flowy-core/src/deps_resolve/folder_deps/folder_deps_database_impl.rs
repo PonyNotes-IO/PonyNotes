@@ -203,9 +203,9 @@ impl FolderOperationHandler for DatabaseFolderOperation {
           ViewLayoutPB::Board => DatabaseLayoutPB::Board,
           ViewLayoutPB::Calendar => DatabaseLayoutPB::Calendar,
           ViewLayoutPB::Grid => DatabaseLayoutPB::Grid,
-          ViewLayoutPB::Document | ViewLayoutPB::Chat | ViewLayoutPB::Folder | ViewLayoutPB::Notebook => {
+          ViewLayoutPB::Document | ViewLayoutPB::Chat | ViewLayoutPB::Folder | ViewLayoutPB::Notebook | ViewLayoutPB::Whiteboard => {
             return Err(
-              FlowyError::invalid_data().with_context("Can't handle document/folder/notebook layout type"),
+              FlowyError::invalid_data().with_context("Can't handle document/folder/notebook/whiteboard layout type"),
             );
           },
         };

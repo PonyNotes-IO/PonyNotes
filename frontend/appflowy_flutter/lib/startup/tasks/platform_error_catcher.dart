@@ -25,12 +25,22 @@ class PlatformErrorCatcherTask extends LaunchTask {
     ErrorWidget.builder = (details) {
       if (kDebugMode) {
         return Container(
-          width: double.infinity,
-          height: 30,
+          constraints: const BoxConstraints(
+            minWidth: 100,
+            maxWidth: 500,
+            minHeight: 30,
+            maxHeight: 60,
+          ),
           color: Colors.red,
-          child: FlowyText(
-            'ERROR: ${details.exceptionAsString()}',
-            color: Colors.white,
+          padding: const EdgeInsets.all(4.0),
+          child: Center(
+            child: FlowyText(
+              'ERROR: ${details.exceptionAsString()}',
+              color: Colors.white,
+              fontSize: 12,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         );
       }

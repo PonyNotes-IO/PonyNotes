@@ -2214,11 +2214,17 @@ impl FolderManager {
     }
   }
 
-  /// Returns a handler based on ViewLayoutPB, with special handling for Folder and Notebook
+  /// Returns a handler based on ViewLayoutPB, with special handling for Folder, Notebook, and Whiteboard
   fn get_handler_for_layout_pb(&self, layout_pb: &ViewLayoutPB) -> FlowyResult<Arc<dyn FolderOperationHandler>> {
     match layout_pb {
       ViewLayoutPB::Folder | ViewLayoutPB::Notebook => {
         // Create a simple folder handler that doesn't need special data handling
+        use crate::view_operation::SimpleFolderHandler;
+        Ok(Arc::new(SimpleFolderHandler))
+      }
+      ViewLayoutPB::Whiteboard => {
+        // For Whiteboard, we need to check if a whiteboard handler is registered
+        // If not, fall back to a simple handler for now
         use crate::view_operation::SimpleFolderHandler;
         Ok(Arc::new(SimpleFolderHandler))
       }

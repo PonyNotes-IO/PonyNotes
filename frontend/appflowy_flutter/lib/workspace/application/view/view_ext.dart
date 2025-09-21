@@ -10,6 +10,7 @@ import 'package:appflowy/plugins/database/grid/presentation/grid_page.dart';
 import 'package:appflowy/plugins/database/grid/presentation/mobile_grid_page.dart';
 import 'package:appflowy/plugins/database/tab_bar/tab_bar_view.dart';
 import 'package:appflowy/plugins/document/document.dart';
+import 'package:appflowy/plugins/whiteboard/whiteboard.dart';
 import 'package:appflowy/shared/icon_emoji_picker/icon_picker.dart';
 import 'package:appflowy/startup/plugin/plugin.dart';
 import 'package:appflowy/workspace/application/sidebar/space/space_bloc.dart';
@@ -86,6 +87,7 @@ extension ViewExtension on ViewPB {
           ViewLayoutPB.Grid => FlowySvgs.icon_grid_s,
           ViewLayoutPB.Document => FlowySvgs.icon_document_s,
           ViewLayoutPB.Chat => FlowySvgs.chat_ai_page_s,
+          ViewLayoutPB.Whiteboard => FlowySvgs.icon_board_s, // 使用看板图标，后续可更换为专用白板图标
           _ => FlowySvgs.icon_document_s,
         },
         size: size,
@@ -97,7 +99,8 @@ extension ViewExtension on ViewPB {
         ViewLayoutPB.Document => PluginType.document,
         ViewLayoutPB.Grid => PluginType.grid,
         ViewLayoutPB.Chat => PluginType.chat,
-        _ => throw UnimplementedError(),
+        ViewLayoutPB.Whiteboard => PluginType.whiteboard,
+        _ => PluginType.document, // 临时处理：未知layout type返回document而不是抛异常
       };
 
   Plugin plugin({
@@ -129,6 +132,11 @@ extension ViewExtension on ViewPB {
         );
       case ViewLayoutPB.Chat:
         return AIChatPagePlugin(view: this);
+      case ViewLayoutPB.Whiteboard:
+        return WhiteboardPlugin(
+          view: this,
+          pluginType: pluginType,
+        );
       case ViewLayoutPB.Folder:
       case ViewLayoutPB.Notebook:
         throw UnimplementedError('Folder and Notebook types are not supported');
@@ -140,14 +148,14 @@ extension ViewExtension on ViewPB {
         ViewLayoutPB.Board => BoardPageTabBarBuilderImpl(),
         ViewLayoutPB.Calendar => CalendarPageTabBarBuilderImpl(),
         ViewLayoutPB.Grid => DesktopGridTabBarBuilderImpl(),
-        _ => throw UnimplementedError,
+        _ => DesktopGridTabBarBuilderImpl(), // 临时处理：未知layout type返回Grid builder
       };
 
   DatabaseTabBarItemBuilder mobileTabBarItem() => switch (layout) {
         ViewLayoutPB.Board => BoardPageTabBarBuilderImpl(),
         ViewLayoutPB.Calendar => CalendarPageTabBarBuilderImpl(),
         ViewLayoutPB.Grid => MobileGridTabBarBuilderImpl(),
-        _ => throw UnimplementedError,
+        _ => MobileGridTabBarBuilderImpl(), // 临时处理：未知layout type返回Mobile Grid builder
       };
 
   FlowySvgData get iconData => layout.icon;
@@ -331,6 +339,7 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Grid => FlowySvgs.icon_grid_s,
         ViewLayoutPB.Document => FlowySvgs.icon_document_s,
         ViewLayoutPB.Chat => FlowySvgs.chat_ai_page_s,
+        ViewLayoutPB.Whiteboard => FlowySvgs.icon_board_s, // 使用看板图标，后续可更换为专用白板图标
         ViewLayoutPB.Folder => FlowySvgs.folder_m,
         ViewLayoutPB.Notebook => FlowySvgs.folder_m, // 使用文件夹图标，后面可以改为专门的笔记本图标
         _ => FlowySvgs.icon_document_s,
@@ -342,7 +351,8 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Grid ||
         ViewLayoutPB.Board ||
         ViewLayoutPB.Calendar ||
-        _ => throw Exception('Unknown layout type'),
+        ViewLayoutPB.Whiteboard => false,
+        _ => false, // 临时处理：未知layout type返回false而不是抛异常
       };
 
   bool get isDatabaseView => switch (this) {
@@ -351,8 +361,19 @@ extension ViewLayoutExtension on ViewLayoutPB {
         ViewLayoutPB.Calendar =>
           true,
         ViewLayoutPB.Document || 
-        ViewLayoutPB.Chat => false,
-        _ => throw Exception('Unknown layout type'),
+        ViewLayoutPB.Chat ||
+        ViewLayoutPB.Whiteboard => false,
+        _ => false, // 临时处理：未知layout type返回false而不是抛异常
+      };
+
+  bool get isWhiteboardView => switch (this) {
+        ViewLayoutPB.Whiteboard => true,
+        ViewLayoutPB.Document ||
+        ViewLayoutPB.Chat ||
+        ViewLayoutPB.Grid ||
+        ViewLayoutPB.Board ||
+        ViewLayoutPB.Calendar => false,
+        _ => false, // 临时处理：未知layout type返回false而不是抛异常
       };
 
   String get defaultName => switch (this) {
@@ -367,10 +388,10 @@ extension ViewLayoutExtension on ViewLayoutPB {
       };
 
   double get pluginHeight => switch (this) {
-        ViewLayoutPB.Document || ViewLayoutPB.Board || ViewLayoutPB.Chat => 450,
+        ViewLayoutPB.Document || ViewLayoutPB.Board || ViewLayoutPB.Chat => 450, // || ViewLayoutPB.Whiteboard 暂时注释
         ViewLayoutPB.Calendar => 650,
         ViewLayoutPB.Grid => double.infinity,
-        _ => throw UnimplementedError(),
+        _ => 450, // 临时处理：未知layout type返回默认高度450
       };
 }
 

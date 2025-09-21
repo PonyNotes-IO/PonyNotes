@@ -71,10 +71,14 @@ pub fn register_handlers(
 
   let database_folder_operation = Arc::new(DatabaseFolderOperation(database_manager));
   let chat_folder_operation = Arc::new(ChatFolderOperation(chat_manager));
+  
   folder_manager.register_operation_handler(ViewLayout::Board, database_folder_operation.clone());
   folder_manager.register_operation_handler(ViewLayout::Grid, database_folder_operation.clone());
   folder_manager.register_operation_handler(ViewLayout::Calendar, database_folder_operation);
   folder_manager.register_operation_handler(ViewLayout::Chat, chat_folder_operation);
+  
+  // Note: Whiteboard uses Document layout internally and will be handled by DocumentFolderOperation
+  // The view_type in extra field will be used to distinguish whiteboard from regular documents
 }
 
 struct FolderUserImpl {

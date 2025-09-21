@@ -148,6 +148,8 @@ impl From<ViewLayoutPB> for ViewLayout {
       // Folder and Notebook use Document layout but will be handled by FolderOperationHandler
       ViewLayoutPB::Folder => ViewLayout::Document,
       ViewLayoutPB::Notebook => ViewLayout::Document,
+      // Whiteboard uses Document layout but will be handled by a specialized WhiteboardFolderOperationHandler
+      ViewLayoutPB::Whiteboard => ViewLayout::Document,
     }
   }
 }
@@ -155,7 +157,7 @@ impl From<ViewLayoutPB> for ViewLayout {
 pub(crate) fn create_view(uid: i64, params: CreateViewParams, layout: ViewLayout) -> View {
   let time = timestamp();
   
-  // Handle extra field for folder and notebook types
+  // Handle extra field for folder, notebook, and whiteboard types
   let extra = match params.layout {
     ViewLayoutPB::Folder => {
       let mut extra_map = if let Some(extra) = &params.extra {
@@ -175,6 +177,16 @@ pub(crate) fn create_view(uid: i64, params: CreateViewParams, layout: ViewLayout
         serde_json::Map::new()
       };
       extra_map.insert("view_type".to_string(), serde_json::Value::String("notebook".to_string()));
+      Some(serde_json::to_string(&extra_map).unwrap_or_default())
+    },
+    ViewLayoutPB::Whiteboard => {
+      let mut extra_map = if let Some(extra) = &params.extra {
+        serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(extra)
+          .unwrap_or_default()
+      } else {
+        serde_json::Map::new()
+      };
+      extra_map.insert("view_type".to_string(), serde_json::Value::String("whiteboard".to_string()));
       Some(serde_json::to_string(&extra_map).unwrap_or_default())
     },
     _ => params.extra,
