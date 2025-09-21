@@ -21,7 +21,6 @@ import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar
 
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_file_library_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_inbox_button.dart';
-import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_integration_button.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_ioi_button.dart';
 
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/shared/sidebar_trash_item.dart';
@@ -61,9 +60,6 @@ class SidebarFolder extends StatelessWidget {
             // inbox button
             const VSpace(4.0),
             const SidebarInboxButton(),
-            // integration button
-            const VSpace(4.0),
-            const SidebarIntegrationButton(),
             // favorite
             const VSpace(4.0),
             const SidebarFavoriteButton(),
