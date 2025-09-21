@@ -206,37 +206,43 @@ class _WhiteboardPageState extends State<WhiteboardPage> {
                     color: Colors.white,
                     border: Border.all(color: Colors.grey.shade300),
                   ),
-                  child: GestureDetector(
-                    onPanStart: (details) {
-                      final renderBox = context.findRenderObject() as RenderBox;
-                      final localPosition = renderBox.globalToLocal(details.globalPosition);
-                      bloc.add(StartDrawing(localPosition));
-                    },
-                    onPanUpdate: (details) {
-                      final renderBox = context.findRenderObject() as RenderBox;
-                      final localPosition = renderBox.globalToLocal(details.globalPosition);
-                      bloc.add(UpdateDrawing(localPosition));
-                    },
-                    onPanEnd: (details) {
-                      bloc.add(const EndDrawing());
-                    },
-                    child: Stack(
-                      children: [
-                        // 网格背景
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: GridPainter(),
+                  child: ClipRect(
+                    child: Builder(
+                      builder: (drawingContext) {
+                        return GestureDetector(
+                          onPanStart: (details) {
+                            final renderBox = drawingContext.findRenderObject() as RenderBox;
+                            final localPosition = renderBox.globalToLocal(details.globalPosition);
+                            bloc.add(StartDrawing(localPosition));
+                          },
+                          onPanUpdate: (details) {
+                            final renderBox = drawingContext.findRenderObject() as RenderBox;
+                            final localPosition = renderBox.globalToLocal(details.globalPosition);
+                            bloc.add(UpdateDrawing(localPosition));
+                          },
+                          onPanEnd: (details) {
+                            bloc.add(const EndDrawing());
+                          },
+                          child: Stack(
+                            children: [
+                              // 网格背景
+                              Positioned.fill(
+                                child: CustomPaint(
+                                  painter: GridPainter(),
+                                ),
+                              ),
+                              // 绘图层
+                              Positioned.fill(
+                                child: CustomPaint(
+                                  painter: WhiteboardPainter(
+                                    drawingData: state.drawingData,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        // 绘图层
-                        Positioned.fill(
-                          child: CustomPaint(
-                            painter: WhiteboardPainter(
-                              drawingData: state.drawingData,
-                            ),
-                          ),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
                 ),
