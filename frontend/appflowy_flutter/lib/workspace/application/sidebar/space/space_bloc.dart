@@ -503,6 +503,27 @@ class SpaceBloc extends Bloc<SpaceEvent, SpaceState> {
 
     this.userProfile = userProfile;
     this.workspaceId = workspaceId;
+    
+    // CRITICAL: Re-create WorkspaceService with new workspaceId
+    // This prevents accessing old workspace data during workspace switching
+    _workspaceService = WorkspaceService(
+      workspaceId: workspaceId,
+      userId: userProfile.id,
+    );
+    
+    // CRITICAL: Re-create WorkspaceSectionsListener with new workspaceId
+    // This prevents the listener from still monitoring the old workspace
+    _listener = WorkspaceSectionsListener(
+      user: userProfile,
+      workspaceId: workspaceId,
+    )..start(
+        sectionChanged: (result) async {
+          if (isClosed) {
+            return;
+          }
+          add(const SpaceEvent.didReceiveSpaceUpdate());
+        },
+      );
   }
 
   Future<ViewPB?> _getLastOpenedSpace(List<ViewPB> spaces) async {

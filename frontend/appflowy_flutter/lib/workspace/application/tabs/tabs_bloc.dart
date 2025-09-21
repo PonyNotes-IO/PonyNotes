@@ -13,6 +13,7 @@ import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:appflowy/workspace/presentation/home/home_stack.dart';
 import 'package:appflowy/workspace/presentation/home/menu/menu_shared_state.dart';
 import 'package:appflowy/plugins/homepage/homepage.dart';
+import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:appflowy_result/appflowy_result.dart';
@@ -194,39 +195,120 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
             _setLatestOpenView();
           },
           switchWorkspace: (workspaceId) async {
-            Log.info('TabsBloc: Starting workspace switch to $workspaceId');
+            Log.info('[TABS_SWITCH] 🚀 Starting workspace switch process');
+            Log.info('[TABS_SWITCH] 📝 Target workspace ID: $workspaceId');
+            Log.info('[TABS_SWITCH] 📝 Current state pages: ${state.pages}');
+            Log.info('[TABS_SWITCH] 📝 Current index: ${state.currentIndex}');
             
-            // Create a proper new state to avoid mutation issues
-            TabsState newState = state;
+            // 🔧 FIX: Add state validation to prevent race conditions
+            if (workspaceId.isEmpty) {
+              Log.error('[TABS_SWITCH] ❌ Invalid workspace ID, aborting switch');
+              return;
+            }
             
-            // Close ALL non-pinned tabs to clean up previous workspace state
-            final pagesToClose = state._pageManagers
-                .where((pm) => !pm.isPinned)
-                .toList();
+            try {
+              // Close ALL non-pinned tabs first to clean up previous workspace state
+              final pagesToClose = state._pageManagers
+                  .where((pm) => !pm.isPinned)
+                  .toList();
 
-            for (final pm in pagesToClose) {
-              newState = newState.closeView(pm.plugin.id);
+              Log.info('[TABS_SWITCH] 🗑️ Closing ${pagesToClose.length} non-pinned tabs');
+              for (final pm in pagesToClose) {
+                Log.info('[TABS_SWITCH] 📝 Closing tab: ${pm.plugin.runtimeType}');
+              }
+
+              // 创建一个干净的新状态来避免混乱
+              TabsState newState = TabsState();
+              Log.info('[TABS_SWITCH] 🔄 Created clean new TabsState');
+              
+              // 保留固定的标签页
+              final pinnedPageManagers = state._pageManagers
+                  .where((pm) => pm.isPinned)
+                  .toList();
+              
+              Log.info('[TABS_SWITCH] 📌 Found ${pinnedPageManagers.length} pinned tabs to preserve');
+              for (final pm in pinnedPageManagers) {
+                Log.info('[TABS_SWITCH] 📝 Preserving pinned tab: ${pm.plugin.runtimeType}');
+                newState = newState.openView(pm.plugin);
+              }
+              
+              // 总是添加主页作为默认页面
+              Log.info('[TABS_SWITCH] 🏠 Adding homepage as default tab');
+              newState = newState.openPlugin(plugin: HomePagePlugin(), setLatest: false);
+              
+              // 🔧 FIX: Ensure valid index and state consistency
+              if (newState._pageManagers.isNotEmpty) {
+                final validIndex = newState._pageManagers.length - 1; // 选择主页
+                Log.info('[TABS_SWITCH] 📍 Setting current index to: $validIndex (homepage)');
+                newState = newState.copyWith(currentIndex: validIndex);
+              } else {
+                Log.warn('[TABS_SWITCH] ⚠️ No page managers found in new state!');
+                // Fallback: create a minimal state with homepage
+                newState = TabsState().openPlugin(plugin: HomePagePlugin(), setLatest: false);
+                newState = newState.copyWith(currentIndex: 0);
+                Log.info('[TABS_SWITCH] 🔧 Created fallback state with homepage');
+              }
+              
+              Log.info('[TABS_SWITCH] 🔄 About to emit new state');
+              Log.info('[TABS_SWITCH] 📝 New state pages: ${newState._pageManagers.length}');
+              Log.info('[TABS_SWITCH] 📝 New state current index: ${newState.currentIndex}');
+              
+              emit(newState);
+              
+              Log.info('[TABS_SWITCH] ✅ New state emitted successfully');
+              
+              // 🔧 NEW FIX: Notify HomeBloc about workspace switch
+              Log.info('[TABS_SWITCH] 🔔 Notifying HomeBloc about workspace switch');
+              try {
+                // 🔧 CRITICAL FIX: Force workspace refresh via backend
+                // This will trigger all workspace listeners including HomeBloc
+                Log.info('[TABS_SWITCH] 🚀 Triggering workspace refresh to notify all listeners');
+                
+                // Read the current workspace to trigger all workspace listeners
+                final readResult = await FolderEventReadCurrentWorkspace().send();
+                readResult.fold(
+                  (workspace) {
+                    Log.info('[TABS_SWITCH] ✅ Current workspace read successfully: ${workspace.name}');
+                    Log.info('[TABS_SWITCH] 📝 Workspace ID: ${workspace.id}');
+                    Log.info('[TABS_SWITCH] 📝 This should trigger HomeBloc workspace listeners');
+                  },
+                  (error) {
+                    Log.error('[TABS_SWITCH] ❌ Failed to read current workspace: $error');
+                  },
+                );
+                
+                // Also try to get workspace settings to trigger more listeners
+                final settingsResult = await FolderEventGetCurrentWorkspaceSetting().send();
+                settingsResult.fold(
+                  (settings) {
+                    Log.info('[TABS_SWITCH] ✅ Workspace settings retrieved successfully');
+                    Log.info('[TABS_SWITCH] 📝 Latest view: ${settings.latestView.name}');
+                  },
+                  (error) {
+                    Log.error('[TABS_SWITCH] ❌ Failed to get workspace settings: $error');
+                  },
+                );
+                
+                Log.info('[TABS_SWITCH] ✅ Workspace refresh completed - all listeners should be notified');
+              } catch (e) {
+                Log.error('[TABS_SWITCH] ❌ Failed to refresh workspace: $e');
+              }
+              
+              Log.info('[TABS_SWITCH] ✅ Workspace switch process completed');
+              
+            } catch (e, stackTrace) {
+              Log.error('[TABS_SWITCH] ❌ Error during workspace switch: $e');
+              Log.error('[TABS_SWITCH] ❌ Stack trace: $stackTrace');
+              
+              // Fallback: emit a safe minimal state
+              try {
+                final fallbackState = TabsState().openPlugin(plugin: HomePagePlugin(), setLatest: false);
+                emit(fallbackState.copyWith(currentIndex: 0));
+                Log.info('[TABS_SWITCH] 🔧 Emitted fallback state after error');
+              } catch (fallbackError) {
+                Log.error('[TABS_SWITCH] ❌ Fallback also failed: $fallbackError');
+              }
             }
-            
-            // Add a small delay to ensure workspace backend is fully initialized
-            // This prevents race conditions when creating new workspace UI
-            await Future.delayed(const Duration(milliseconds: 50));
-            
-            // Ensure we have a valid home page tab for the new workspace
-            // Always open the home page plugin to provide a consistent starting point
-            final homePlugin = HomePagePlugin();
-            newState = newState.openPlugin(plugin: homePlugin, setLatest: false);
-            
-            // If we ended up with no current tab, select the first one
-            if (newState.currentIndex >= newState.pages && newState.pages > 0) {
-              newState = newState.copyWith(currentIndex: 0);
-            }
-            
-            Log.info('TabsBloc: Emitting new state with ${newState.pages} tabs');
-            emit(newState);
-            
-            // Schedule backend operations after emit to avoid BLoC violations
-            _initializeWorkspaceAsync(workspaceId);
 
           },
           initial: () {
@@ -354,25 +436,6 @@ class TabsBloc extends Bloc<TabsEvent, TabsState> {
     });
   }
 
-  /// 后台初始化工作区的异步方法
-  void _initializeWorkspaceAsync(String workspaceId) {
-    // 这是一个后台操作，不应该阻塞UI
-    // 主要用于工作区切换后的清理和初始化工作
-    Future.microtask(() async {
-      try {
-        Log.info('TabsBloc: Initializing workspace async: $workspaceId');
-        
-        // 这里可以添加任何需要的后台初始化逻辑
-        // 例如：清理缓存、预加载数据等
-        // 目前保持简单，只记录日志
-        
-        Log.info('TabsBloc: Workspace initialization completed: $workspaceId');
-      } catch (e, stackTrace) {
-        Log.error('TabsBloc: Failed to initialize workspace async: $e');
-        Log.error('Stack trace: $stackTrace');
-      }
-    });
-  }
 }
 
 @freezed

@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:appflowy/core/helpers/url_launcher.dart';
 import 'package:appflowy/features/share_tab/presentation/widgets/guest_tag.dart';
 import 'package:appflowy/features/workspace/logic/workspace_bloc.dart';
@@ -442,6 +444,9 @@ class _CreateWorkspaceButton extends StatelessWidget {
       
       final dialog = CreateWorkspaceDialog(
         onConfirm: (name) {
+          // DEBUG BREAKPOINT 3: onConfirm 回调被调用
+          Log.info('=== DEBUG BREAKPOINT 3 === onConfirm 回调被调用，工作空间名称: $name');
+          
           if (name.trim().isEmpty) {
             Log.warn('Workspace name is empty, cannot create workspace');
             return;
@@ -456,12 +461,18 @@ class _CreateWorkspaceButton extends StatelessWidget {
           
           Log.info('Creating workspace: name="$name", type=$workspaceType');
           
+          // DEBUG BREAKPOINT 4: 即将发送创建工作空间事件
+          Log.info('=== DEBUG BREAKPOINT 4 === 即将发送创建工作空间事件到 BLoC');
+          
           workspaceBloc.add(
             UserWorkspaceEvent.createWorkspace(
               name: name,
               workspaceType: workspaceType,
             ),
           );
+          
+          // DEBUG BREAKPOINT 5: 创建工作空间事件已发送
+          Log.info('=== DEBUG BREAKPOINT 5 === 创建工作空间事件已发送到 BLoC');
         },
       );
       

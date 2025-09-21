@@ -17,7 +17,6 @@ import 'package:appflowy_backend/dispatch/dispatch.dart';
 import 'package:appflowy/workspace/application/recent/recent_views_bloc.dart';
 import 'package:appflowy/workspace/application/view/view_ext.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:appflowy_backend/log.dart';
 
 class HomePagePluginBuilder extends PluginBuilder {
   @override
@@ -75,22 +74,7 @@ class HomePagePluginWidgetBuilder extends PluginWidgetBuilder
     Map<String, dynamic>? data,
   }) =>
       BlocProvider(
-        create: (context) {
-          try {
-            final bloc = RecentViewsBloc();
-            // Add delay to ensure workspace is fully initialized before fetching recent views
-            Future.delayed(const Duration(milliseconds: 100), () {
-              if (!bloc.isClosed) {
-                bloc.add(const RecentViewsEvent.initial());
-              }
-            });
-            return bloc;
-          } catch (e) {
-            Log.error('Failed to create RecentViewsBloc: $e');
-            // Return a bloc without initialization to prevent crashes
-            return RecentViewsBloc();
-          }
-        },
+        create: (context) => RecentViewsBloc()..add(const RecentViewsEvent.initial()),
         child: HomePage(userProfile: context.userProfile),
       );
 
@@ -329,61 +313,45 @@ class _HomePageState extends State<HomePage> {
   Widget _buildRecentSection() {
     return BlocBuilder<RecentViewsBloc, RecentViewsState>(
       builder: (context, state) {
-        // Add error handling wrapper
-        try {
-          if (state.isLoading) {
-            return const SizedBox(
-              height: 132,
-              child: Center(
-                child: CircularProgressIndicator(),
-              ),
-            );
-          }
-
-          // 过滤掉可能的无效视图，并限制显示数量
-          final validRecentViews = state.views
-              .where((sectionView) => sectionView.item.name.isNotEmpty) // 基本验证
-              .take(6)
-              .toList();
-
-          if (validRecentViews.isEmpty) {
-            // 如果没有最近访问的项目，只显示"添加笔记本"卡片
-            return Align(
-              alignment: Alignment.centerLeft,
-              child: _buildAddNotebookCard(),
-            );
-          }
-
-          return SizedBox(
+        if (state.isLoading) {
+          return const SizedBox(
             height: 132,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: validRecentViews.length + 1, // +1 for the "添加笔记本" card
-              itemBuilder: (context, index) {
-                try {
-                  if (index == validRecentViews.length) {
-                    // 最后一个位置显示"添加笔记本"卡片
-                    return _buildAddNotebookCard();
-                  }
-                  
-                  final recentView = validRecentViews[index];
-                  return _buildRecentViewCard(recentView.item);
-                } catch (e) {
-                  Log.error('Error building recent view card at index $index: $e');
-                  // Return a fallback widget instead of crashing
-                  return const SizedBox(width: 160);
-                }
-              },
+            child: Center(
+              child: CircularProgressIndicator(),
             ),
           );
-        } catch (e) {
-          Log.error('Error building recent section: $e');
-          // Fallback to just showing the add notebook card
+        }
+
+        // 过滤掉可能的无效视图，并限制显示数量
+        final validRecentViews = state.views
+            .where((sectionView) => sectionView.item.name.isNotEmpty) // 基本验证
+            .take(6)
+            .toList();
+
+        if (validRecentViews.isEmpty) {
+          // 如果没有最近访问的项目，只显示"添加笔记本"卡片
           return Align(
             alignment: Alignment.centerLeft,
             child: _buildAddNotebookCard(),
           );
         }
+
+        return SizedBox(
+          height: 132,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: validRecentViews.length + 1, // +1 for the "添加笔记本" card
+            itemBuilder: (context, index) {
+              if (index == validRecentViews.length) {
+                // 最后一个位置显示"添加笔记本"卡片
+                return _buildAddNotebookCard();
+              }
+              
+              final recentView = validRecentViews[index];
+              return _buildRecentViewCard(recentView.item);
+            },
+          ),
+        );
       },
     );
   }

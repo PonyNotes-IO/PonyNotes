@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:appflowy/plugins/homepage/application/todo_models.dart';
 import 'package:appflowy_backend/protobuf/flowy-database2/calendar_entities.pb.dart';
+import 'package:appflowy_backend/protobuf/flowy-folder/view.pb.dart';
 import 'package:appflowy_backend/dispatch/dispatch.dart';
+import 'package:appflowy/workspace/application/view/view_service.dart';
 import 'package:flowy_infra/uuid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,7 +26,45 @@ class TodoService {
   Future<void> initialize() async {
     // 初始化日历视图ID
     _calendarViewId = fixedUuid(12345, UuidType.privateSpace);
+    // 确保日历视图存在
+    await _ensureCalendarViewExists();
     await _loadTodos();
+  }
+
+  // 确保日历视图存在
+  Future<void> _ensureCalendarViewExists() async {
+    if (_calendarViewId == null) return;
+    
+    try {
+      // 先检查视图是否已存在
+      final result = await ViewBackendService.getView(_calendarViewId!);
+      await result.fold(
+        (view) async {
+          // 视图已存在，无需操作
+        },
+        (error) async {
+          // 视图不存在，尝试创建
+          final createResult = await ViewBackendService.createOrphanView(
+            viewId: _calendarViewId!,
+            name: 'Todo Calendar View',
+            layoutType: ViewLayoutPB.Calendar,
+          );
+          
+          createResult.fold(
+            (view) {
+              // 视图创建成功
+            },
+            (createError) {
+              // 创建失败，清空视图ID以避免后续错误
+              _calendarViewId = null;
+            },
+          );
+        },
+      );
+    } catch (e) {
+      // 异常情况下，清空视图ID
+      _calendarViewId = null;
+    }
   }
 
   Future<List<TodoItem>> getAllTodos() async {
