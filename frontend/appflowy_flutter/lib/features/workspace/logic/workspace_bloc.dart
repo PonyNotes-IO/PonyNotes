@@ -8,7 +8,6 @@ import 'package:appflowy/shared/feature_flags.dart';
 import 'package:appflowy/startup/startup.dart';
 import 'package:appflowy/user/application/reminder/reminder_bloc.dart';
 import 'package:appflowy/user/application/user_listener.dart';
-import 'package:appflowy/workspace/application/home/home_setting_bloc.dart';
 import 'package:appflowy/workspace/application/tabs/tabs_bloc.dart';
 import 'package:appflowy_backend/log.dart';
 import 'package:appflowy_backend/protobuf/flowy-error/code.pbenum.dart';
@@ -152,13 +151,52 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
 
     result
       ..onSuccess((s) {
+     
         Log.info('create workspace success: $s');
-        add(
-          UserWorkspaceEvent.openWorkspace(
-            workspaceId: s.workspaceId,
-            workspaceType: s.workspaceType,
-          ),
-        );
+        
+        // DEBUG: Add comprehensive logging for new workspace creation flow
+        Log.info('[WORKSPACE_CREATE] ✅ Workspace creation successful');
+        Log.info('[WORKSPACE_CREATE] 📝 WorkspaceId: ${s.workspaceId}');
+        Log.info('[WORKSPACE_CREATE] 📝 WorkspaceName: ${s.name}');
+        Log.info('[WORKSPACE_CREATE] 📝 WorkspaceType: ${s.workspaceType}');
+        Log.info('[WORKSPACE_CREATE] 🔄 About to trigger workspace switch...');
+        
+        // 🔧 FIX: Immediate workspace switch for better UX
+        Log.info('[WORKSPACE_CREATE] 🚀 Triggering immediate workspace switch');
+        
+        // 🔧 CRITICAL FIX: Force immediate workspace switch without waiting for async openWorkspace
+        // This ensures the UI switches immediately after workspace creation
+        try {
+          // 1. Update current workspace immediately
+          emit(state.copyWith(currentWorkspace: s));
+          Log.info('[WORKSPACE_CREATE] ✅ Current workspace updated immediately');
+          
+          // 2. Force TabsBloc to switch
+          final tabsBloc = getIt<TabsBloc>();
+          tabsBloc.add(TabsEvent.switchWorkspace(s.workspaceId));
+          Log.info('[WORKSPACE_CREATE] ✅ TabsBloc switch event dispatched');
+          
+          // 3. Still trigger the full openWorkspace process in background for completeness
+          add(
+            UserWorkspaceEvent.openWorkspace(
+              workspaceId: s.workspaceId,
+              workspaceType: s.workspaceType,
+            ),
+          );
+          Log.info('[WORKSPACE_CREATE] ✅ Background openWorkspace event dispatched');
+        } catch (e, stackTrace) {
+          Log.error('[WORKSPACE_CREATE] ❌ Failed to force immediate switch: $e');
+          Log.error('[WORKSPACE_CREATE] ❌ Stack trace: $stackTrace');
+          
+          // Fallback to original logic
+          add(
+            UserWorkspaceEvent.openWorkspace(
+              workspaceId: s.workspaceId,
+              workspaceType: s.workspaceType,
+            ),
+          );
+        }
+        
       })
       ..onFailure((f) {
         Log.error('create workspace error: $f');
@@ -260,6 +298,13 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
     WorkspaceEventOpenWorkspace event,
     Emitter<UserWorkspaceState> emit,
   ) async {
+    // DEBUG: Comprehensive logging for workspace opening
+    Log.info('[WORKSPACE_OPEN] 🚀 Starting workspace open process');
+    Log.info('[WORKSPACE_OPEN] 📝 Target WorkspaceId: ${event.workspaceId}');
+    Log.info('[WORKSPACE_OPEN] 📝 Target WorkspaceType: ${event.workspaceType}');
+    Log.info('[WORKSPACE_OPEN] 📝 Current WorkspaceId: ${state.currentWorkspace?.workspaceId}');
+    Log.info('[WORKSPACE_OPEN] 📝 Current UserProfile: ${state.userProfile.id}');
+    
     emit(
       state.copyWith(
         actionResult: const WorkspaceActionResult(
@@ -270,51 +315,23 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
       ),
     );
 
+    Log.info('[WORKSPACE_OPEN] 🔄 Calling repository.openWorkspace...');
     final result = await repository.openWorkspace(
       workspaceId: event.workspaceId,
       workspaceType: event.workspaceType,
     );
+    
+    Log.info('[WORKSPACE_OPEN] ✅ Repository.openWorkspace completed');
+    Log.info('[WORKSPACE_OPEN] 📊 Result type: ${result.isSuccess ? "Success" : "Failure"}');
 
     final currentWorkspace = result.fold(
       (s) => _findWorkspaceById(event.workspaceId),
       (e) => state.currentWorkspace,
     );
 
-    result
-      ..onSuccess((s) {
-        Log.info(
-          'open workspace success: ${event.workspaceId}, current workspace: ${currentWorkspace?.toProto3Json()}',
-        );
-        
-        // Schedule UI updates after state emission to prevent blocking
-        Future.microtask(() {
-          try {
-            // Switch tabs to new workspace
-            Log.info('Switching tabs to workspace: ${event.workspaceId}');
-            getIt<TabsBloc>().add(TabsEvent.switchWorkspace(event.workspaceId));
-            
-            // Force expand the menu for new workspaces to ensure UI is visible
-            final homeSettingBloc = getIt<HomeSettingBloc>();
-            if (homeSettingBloc.isMenuHidden) {
-              Log.info('Expanding menu for new workspace');
-              homeSettingBloc.add(HomeSettingEvent.changeMenuStatus(MenuStatus.expanded));
-            }
-          } catch (e) {
-            Log.error('Error updating UI after workspace open: $e');
-          }
-        });
-
-        // Finally, fetch subscription info (non-critical for UI)
-        add(
-          UserWorkspaceEvent.fetchWorkspaceSubscriptionInfo(
-            workspaceId: event.workspaceId,
-          ),
-        );
-      })
-      ..onFailure((f) {
-        Log.error('open workspace error: $f');
-      });
-
+    // 🔧 CRITICAL FIX: Update state FIRST before processing callbacks
+    Log.info('[WORKSPACE_OPEN] 🔄 Emitting workspace state update...');
+    Log.info('[WORKSPACE_OPEN] 📝 Setting currentWorkspace: ${currentWorkspace?.workspaceId}');
     emit(
       state.copyWith(
         currentWorkspace: currentWorkspace,
@@ -325,6 +342,53 @@ class UserWorkspaceBloc extends Bloc<UserWorkspaceEvent, UserWorkspaceState> {
         ),
       ),
     );
+
+    result
+      ..onSuccess((s) {
+        Log.info('[WORKSPACE_OPEN] 🎉 Repository success callback triggered');
+        Log.info('[WORKSPACE_OPEN] 📝 Success result received');
+        Log.info('[WORKSPACE_OPEN] 📝 Current workspace found: ${currentWorkspace != null}');
+        if (currentWorkspace != null) {
+          Log.info('[WORKSPACE_OPEN] 📝 Current workspace name: ${currentWorkspace.name}');
+          Log.info('[WORKSPACE_OPEN] 📝 Current workspace ID: ${currentWorkspace.workspaceId}');
+        }
+        
+        // Trigger tabs switch immediately since state is already updated
+        Log.info('[WORKSPACE_OPEN] 🔄 Triggering immediate TabsBloc.switchWorkspace');
+        Log.info('[WORKSPACE_OPEN] 📝 Switching to workspace: ${event.workspaceId}');
+        
+        // 🔧 DEBUG: Add more detailed logging for TabsBloc interaction
+        try {
+          final tabsBloc = getIt<TabsBloc>();
+          Log.info('[WORKSPACE_OPEN] 📝 TabsBloc instance retrieved successfully');
+          Log.info('[WORKSPACE_OPEN] 📝 TabsBloc current state: ${tabsBloc.state}');
+          
+          tabsBloc.add(TabsEvent.switchWorkspace(event.workspaceId));
+          Log.info('[WORKSPACE_OPEN] ✅ TabsBloc.switchWorkspace event dispatched successfully');
+        } catch (e, stackTrace) {
+          Log.error('[WORKSPACE_OPEN] ❌ Failed to dispatch TabsBloc.switchWorkspace: $e');
+          Log.error('[WORKSPACE_OPEN] ❌ Stack trace: $stackTrace');
+        }
+        
+        // Force expand the menu for new workspaces to ensure UI is visible
+        // Note: HomeSettingBloc will be handled by the UI layer directly
+        // since it requires context-specific parameters and is not globally registered
+
+        // Finally, fetch subscription info (non-critical for UI)
+        add(
+          UserWorkspaceEvent.fetchWorkspaceSubscriptionInfo(
+            workspaceId: event.workspaceId,
+          ),
+        );
+      })
+      ..onFailure((f) {
+        Log.error('[WORKSPACE_OPEN] ❌ Repository failure callback triggered');
+        Log.error('[WORKSPACE_OPEN] 📝 Error details: $f');
+        Log.error('[WORKSPACE_OPEN] 📝 Error code: ${f.code}');
+        Log.error('[WORKSPACE_OPEN] 📝 Error message: ${f.msg}');
+      });
+    
+    Log.info('[WORKSPACE_OPEN] ✅ Workspace open process completed');
 
     getIt<ReminderBloc>().add(
       ReminderEvent.started(),

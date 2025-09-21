@@ -1,8 +1,11 @@
+import 'dart:developer';
+
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/startup/tasks/app_widget.dart';
 import 'package:appflowy/util/theme_extension.dart';
 import 'package:appflowy/workspace/presentation/home/menu/sidebar/space/shared_widget.dart';
+import 'package:appflowy_backend/log.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra/size.dart';
 import 'package:flowy_infra_ui/style_widget/text.dart';
@@ -171,14 +174,33 @@ class _NavigatorTextFieldDialogState extends State<NavigatorTextFieldDialog> {
           VSpace(Insets.xl),
           OkCancelButton(
             onOkPressed: () {
+              // DEBUG BREAKPOINT 1: 用户点击确定按钮
+              Log.info('=== DEBUG BREAKPOINT 1 === 用户点击确定按钮创建工作空间: $newValue');             
               if (newValue.isEmpty) {
                 showToastNotification(
                   message: LocaleKeys.space_spaceNameCannotBeEmpty.tr(),
                 );
                 return;
               }
-              widget.onConfirm(newValue, context);
-              Navigator.of(context).pop();
+                    
+              // 🔧 FIX: Ensure dialog stays open until workspace creation process starts
+              try {
+                Log.info('[DIALOG] 🚀 Calling onConfirm callback...');
+                widget.onConfirm(newValue, context);
+                Log.info('[DIALOG] ✅ onConfirm callback completed');
+                
+                // 🔧 FIX: Add small delay to ensure the workspace creation process starts
+                // before closing the dialog to prevent UI state conflicts
+                Future.delayed(const Duration(milliseconds: 100), () {
+                  if (context.mounted) {
+                    Log.info('[DIALOG] 🔄 Closing dialog after delay');
+                    Navigator.of(context).pop();
+                  }
+                });
+              } catch (e) {
+                Log.error('[DIALOG] ❌ Error in onConfirm callback: $e');
+                Navigator.of(context).pop();
+              }
             },
             onCancelPressed: () {
               widget.onCancel?.call();

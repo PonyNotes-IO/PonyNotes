@@ -54,9 +54,22 @@ class Dispatch {
     FFIRequest request,
   ) async {
     Future<FlowyResult<Uint8List, Uint8List>> _asyncRequest() async {
+      // DEBUG: 详细记录 Dart 端请求处理
+      Log.info('=== DEBUG BREAKPOINT 29 === 🚀 Dart 发送请求到 Rust: ${request.event}');
+      
       final bytesFuture = _sendToRust(request);
+      
+      Log.info('=== DEBUG BREAKPOINT 30 === 📡 等待 Rust 响应...');
       final response = await _extractResponse(bytesFuture);
+      
+      Log.info('=== DEBUG BREAKPOINT 31 === 📦 收到 Rust 响应，解析中...');
       final payload = _extractPayload(response);
+      
+      payload.fold(
+        (success) => Log.info('=== DEBUG BREAKPOINT 32 === ✅ Dart 成功收到响应数据，大小: ${success.length} bytes'),
+        (failure) => Log.error('=== DEBUG BREAKPOINT 32 === ❌ Dart 收到错误响应，大小: ${failure.length} bytes'),
+      );
+      
       return payload;
     }
 

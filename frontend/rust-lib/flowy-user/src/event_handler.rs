@@ -15,7 +15,7 @@ use serde_json::Value;
 use std::str::FromStr;
 use std::sync::Weak;
 use std::{convert::TryInto, sync::Arc};
-use tracing::event;
+use tracing::{event, info};
 use uuid::Uuid;
 
 pub mod inbox_handler;
@@ -475,9 +475,17 @@ pub async fn open_workspace_handler(
   let manager = upgrade_manager(manager)?;
   let params = data.try_into_inner()?;
   let workspace_id = Uuid::from_str(&params.workspace_id)?;
+  
+  // DEBUG BREAKPOINT 33: Rust 事件处理器开始处理打开工作空间请求
+  info!("=== DEBUG BREAKPOINT 33 === Rust 事件处理器开始处理打开工作空间请求: workspace_id={}, type={:?}", workspace_id, params.workspace_type);
+  
   manager
     .open_workspace(&workspace_id, WorkspaceType::from(params.workspace_type))
     .await?;
+    
+  // DEBUG BREAKPOINT 34: 工作空间打开完成
+  info!("=== DEBUG BREAKPOINT 34 === 工作空间打开完成: {}", workspace_id);
+  
   Ok(())
 }
 
@@ -647,9 +655,26 @@ pub async fn create_workspace_handler(
 ) -> DataResult<UserWorkspacePB, FlowyError> {
   let data = data.try_into_inner()?;
   let workspace_type = WorkspaceType::from(data.workspace_type);
+  
+  // DEBUG BREAKPOINT 22: Rust 事件处理器开始处理创建工作空间请求
+  info!("=== DEBUG BREAKPOINT 22 === Rust 事件处理器开始处理创建工作空间请求: name={}, type={:?}", data.name, workspace_type);
+  
   let manager = upgrade_manager(manager)?;
+  
+  // DEBUG BREAKPOINT 23: 即将调用 manager.create_workspace
+  info!("=== DEBUG BREAKPOINT 23 === 即将调用 manager.create_workspace");
+  
   let new_workspace = manager.create_workspace(&data.name, workspace_type).await?;
-  data_result_ok(UserWorkspacePB::from(new_workspace))
+  
+  // DEBUG BREAKPOINT 24: manager.create_workspace 调用完成
+  info!("=== DEBUG BREAKPOINT 24 === manager.create_workspace 调用完成: {:?}", new_workspace);
+  
+  let result = data_result_ok(UserWorkspacePB::from(new_workspace.clone()));
+  
+  // DEBUG BREAKPOINT 25: 即将返回结果到 FFI 层
+  info!("=== DEBUG BREAKPOINT 25 === 🚀 即将返回 DataResult 到 FFI 层，workspace_id: {}", new_workspace.id);
+  
+  result
 }
 
 #[tracing::instrument(level = "debug", skip_all, err)]

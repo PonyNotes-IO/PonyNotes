@@ -58,7 +58,22 @@ class _SidebarWorkspaceState extends State<SidebarWorkspace> {
       builder: (context, state) {
         final currentWorkspace = state.currentWorkspace;
         if (currentWorkspace == null) {
-          return const SizedBox.shrink();
+          // 在工作区切换时显示占位符，保持UI布局稳定
+          return Container(
+            height: 40,
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              ),
+            ),
+          );
         }
         return MouseRegion(
           onEnter: (_) => onHover.value = true,

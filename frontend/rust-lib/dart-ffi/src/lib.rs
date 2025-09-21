@@ -258,19 +258,26 @@ pub extern "C" fn link_me_please() {}
 #[inline(always)]
 #[allow(clippy::blocks_in_conditions)]
 async fn post_to_flutter(response: AFPluginEventResponse, port: i64) {
+  // DEBUG: 详细记录 FFI 响应传递过程
+  info!("=== DEBUG BREAKPOINT 26 === 🚀 FFI 即将发送响应到 Dart，port: {}", port);
+  info!("=== DEBUG BREAKPOINT 26 === 响应状态码: {:?}", response.status_code);
+  
   let isolate = allo_isolate::Isolate::new(port);
   match isolate
     .catch_unwind(async {
       let ffi_resp = FFIResponse::from(response);
+      info!("=== DEBUG BREAKPOINT 27 === FFI 响应转换成功，准备发送字节数据");
       ffi_resp.into_bytes().unwrap().to_vec()
     })
     .await
   {
     Ok(_) => {
+      info!("=== DEBUG BREAKPOINT 28 === ✅ FFI 成功发送数据到 Dart！");
       #[cfg(feature = "verbose_log")]
       trace!("[FFI]: Post data to dart success");
     },
     Err(err) => {
+      error!("=== DEBUG BREAKPOINT 28 === ❌ FFI 发送数据到 Dart 失败: {:?}", err);
       error!("[FFI]: allo_isolate post failed: {:?}", err);
     },
   }

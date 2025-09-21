@@ -122,8 +122,30 @@ class HomeSideBar extends StatelessWidget {
             (previous.currentWorkspace == null &&
                 current.currentWorkspace != null),
         builder: (context, state) {
+          // 在工作区切换过程中显示加载状态，而不是空白
           if (state.currentWorkspace == null) {
-            return const SizedBox.shrink();
+            return const Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Switching workspace...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
           final workspaceId = state.currentWorkspace?.workspaceId ??
@@ -192,24 +214,27 @@ class HomeSideBar extends StatelessWidget {
                     if (actionType == WorkspaceActionType.create ||
                         actionType == WorkspaceActionType.delete ||
                         actionType == WorkspaceActionType.open) {
-                      if (context.read<SpaceBloc>().state.spaces.isEmpty) {
-                        context.read<SidebarSectionsBloc>().add(
-                              SidebarSectionsEvent.reload(
-                                userProfile,
-                                state.currentWorkspace?.workspaceId ??
-                                    workspaceSetting.workspaceId,
-                              ),
-                            );
-                      } else {
-                        context.read<SpaceBloc>().add(
-                              SpaceEvent.reset(
-                                userProfile,
-                                state.currentWorkspace?.workspaceId ??
-                                    workspaceSetting.workspaceId,
-                                true,
-                              ),
-                            );
-                      }
+                      // CRITICAL FIX: Always reset both SpaceBloc and SidebarSectionsBloc
+                      // to prevent old workspace data access during workspace switching
+                      final newWorkspaceId = state.currentWorkspace?.workspaceId ??
+                          workspaceSetting.workspaceId;
+                      
+                      // Reset SpaceBloc to ensure WorkspaceService uses new workspace ID
+                      context.read<SpaceBloc>().add(
+                            SpaceEvent.reset(
+                              userProfile,
+                              newWorkspaceId,
+                              true,
+                            ),
+                          );
+                      
+                      // Reset SidebarSectionsBloc to ensure it also uses new workspace ID
+                      context.read<SidebarSectionsBloc>().add(
+                            SidebarSectionsEvent.reset(
+                              userProfile,
+                              newWorkspaceId,
+                            ),
+                          );
 
                       context
                           .read<FavoriteBloc>()

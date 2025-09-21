@@ -117,22 +117,85 @@ class DesktopHomeScreen extends StatelessWidget {
               body: BlocListener<HomeBloc, HomeState>(
                 listenWhen: (p, c) => 
                   p.latestView != c.latestView,
-                listener: (context, state) {
+                listener: (context, state) async {
                   final currentPageManager =
                       context.read<TabsBloc>().state.currentPageManager;
 
-                  // If there's a new latest view, always open it (this handles newly created views)
+                  Log.info('[DESKTOP_HOME] 📋 HomeBloc state changed:');
+                  Log.info('[DESKTOP_HOME] 📝 latestView: ${state.latestView?.id ?? 'null'}');
+                  Log.info('[DESKTOP_HOME] 📝 currentPlugin: ${currentPageManager.plugin.id} (${currentPageManager.plugin.pluginType})');
+
+                  // If there's a new latest view, validate it exists before opening
                   if (state.latestView != null && 
+                      state.latestView!.id.isNotEmpty &&
                       state.latestView!.id != currentPageManager.plugin.id) {
-                    // Open the latest view (newly created view)
-                    getIt<TabsBloc>().add(
-                      TabsEvent.openPlugin(
-                        plugin: state.latestView!.plugin(),
-                        view: state.latestView,
-                      ),
-                    );
+                    
+                    // 🔧 FIX: Validate view exists before opening
+                    try {
+                      Log.info('[DESKTOP_HOME] 🔍 Validating view: ${state.latestView!.id}');
+                      // Check if the view actually exists in the current workspace
+                      final viewResult = await ViewBackendService.getView(state.latestView!.id);
+                      
+                      viewResult.fold(
+                        (view) {
+                          // View exists, safe to open
+                          Log.info('[DESKTOP_HOME] ✅ View validated, opening: ${view.name} (${view.id})');
+                          getIt<TabsBloc>().add(
+                            TabsEvent.openPlugin(
+                              plugin: view.plugin(),
+                              view: view,
+                            ),
+                          );
+                        },
+                        (error) {
+                          // View doesn't exist, show homepage instead
+                          Log.warn('[DESKTOP_HOME] ⚠️ View not found (${error}), showing homepage instead');
+                          
+                          // Clear the invalid latest view from HomeBloc state
+                          // This prevents repeated attempts to open non-existent views
+                          
+                          // Show homepage if current plugin is blank or invalid
+                          if (currentPageManager.plugin.pluginType == PluginType.blank) {
+                            final homePlugin = makePlugin(
+                              pluginType: PluginType.homepage,
+                              data: null,
+                            );
+                            getIt<TabsBloc>().add(
+                              TabsEvent.openPlugin(plugin: homePlugin),
+                            );
+                          }
+                        },
+                      );
+                    } catch (e) {
+                      Log.error('[DESKTOP_HOME] ❌ Error validating view: $e');
+                      
+                      // Fallback to homepage on any error
+                      if (currentPageManager.plugin.pluginType == PluginType.blank) {
+                        final homePlugin = makePlugin(
+                          pluginType: PluginType.homepage,
+                          data: null,
+                        );
+                        getIt<TabsBloc>().add(
+                          TabsEvent.openPlugin(plugin: homePlugin),
+                        );
+                      }
+                    }
+                  } else if (state.latestView == null || state.latestView!.id.isEmpty) {
+                    // No valid latest view, show homepage if current plugin is blank
+                    Log.info('[DESKTOP_HOME] 📝 No valid latest view, checking current plugin');
+                    if (currentPageManager.plugin.pluginType == PluginType.blank) {
+                      Log.info('[DESKTOP_HOME] 🏠 Opening homepage (no valid latest view)');
+                      final homePlugin = makePlugin(
+                        pluginType: PluginType.homepage,
+                        data: null,
+                      );
+                      getIt<TabsBloc>().add(
+                        TabsEvent.openPlugin(plugin: homePlugin),
+                      );
+                    }
                   } else if (currentPageManager.plugin.pluginType == PluginType.blank) {
                     // Only open homepage if current plugin is blank and no latest view
+                    Log.info('[DESKTOP_HOME] 🏠 Opening homepage (blank plugin)');
                     final homePlugin = makePlugin(
                       pluginType: PluginType.homepage,
                       data: null,
@@ -163,6 +226,19 @@ class DesktopHomeScreen extends StatelessWidget {
                           workspaceBloc: workspaceBloc,
                           spaceBloc: spaceBloc,
                         );
+                        
+                        // 🔧 NEW FIX: Notify HomeBloc about workspace change
+                        final currentWorkspace = state.currentWorkspace;
+                        if (currentWorkspace != null) {
+                          Log.info('[DESKTOP_HOME] 🔔 Notifying HomeBloc about workspace change: ${currentWorkspace.workspaceId}');
+                          try {
+                            final homeBloc = context.read<HomeBloc?>();
+                            homeBloc?.add(HomeEvent.switchWorkspace(currentWorkspace.workspaceId));
+                            Log.info('[DESKTOP_HOME] ✅ HomeBloc notified successfully');
+                          } catch (e) {
+                            Log.error('[DESKTOP_HOME] ❌ Failed to notify HomeBloc: $e');
+                          }
+                        }
                       },
                       child: HomeHotKeys(
                         userProfile: userProfile,

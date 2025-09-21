@@ -254,15 +254,27 @@ impl UserManager {
     workspace_name: &str,
     workspace_type: WorkspaceType,
   ) -> FlowyResult<UserWorkspace> {
+    // DEBUG BREAKPOINT 25: UserManager 开始处理创建工作空间
+    info!("=== DEBUG BREAKPOINT 25 === UserManager 开始处理创建工作空间: name={}, type={:?}", workspace_name, workspace_type);
+    
     let auth_type = AuthType::from(workspace_type);
+    
+    // DEBUG BREAKPOINT 26: 确定认证类型，即将创建工作空间
+    info!("=== DEBUG BREAKPOINT 26 === 确定认证类型: {:?}，即将创建工作空间", auth_type);
     
     let new_workspace = match auth_type {
       AuthType::Local => {
+        // DEBUG BREAKPOINT 27: 创建本地工作空间
+        info!("=== DEBUG BREAKPOINT 27 === 创建本地工作空间");
+        
         // For local workspaces, create directly without cloud service
         let workspace_id = Uuid::new_v4();
         let uid = self.user_id()?;
         
         info!("Creating local workspace: {}, name: {}", workspace_id, workspace_name);
+        
+        // DEBUG BREAKPOINT 28: 即将构建 UserWorkspace 对象
+        info!("=== DEBUG BREAKPOINT 28 === 即将构建 UserWorkspace 对象");
         
         UserWorkspace {
           id: workspace_id.to_string(),
@@ -289,6 +301,9 @@ impl UserManager {
       }
     };
 
+    // DEBUG BREAKPOINT 29: 工作空间对象创建完成，即将保存到数据库
+    info!("=== DEBUG BREAKPOINT 29 === 工作空间对象创建完成: {:?}，即将保存到数据库", new_workspace);
+
     info!(
       "create workspace: {}, name:{}, auth_type: {:?}, database_storage_id: {}",
       new_workspace.id, new_workspace.name, workspace_type, new_workspace.workspace_database_id
@@ -297,6 +312,9 @@ impl UserManager {
     // save the workspace to sqlite db
     let uid = self.user_id()?;
     let mut conn = self.db_connection(uid)?;
+    
+    // DEBUG BREAKPOINT 30: 即将保存到 SQLite 数据库
+    info!("=== DEBUG BREAKPOINT 30 === 即将保存到 SQLite 数据库，uid: {}", uid);
     
     // Check if database_storage_id is empty and generate one if needed
     let mut workspace_to_save = new_workspace.clone();
@@ -308,8 +326,13 @@ impl UserManager {
       );
     }
     
+    // DEBUG BREAKPOINT 31: 即将调用 upsert_user_workspace
+    info!("=== DEBUG BREAKPOINT 31 === 即将调用 upsert_user_workspace");
+    
     match upsert_user_workspace(uid, workspace_type, workspace_to_save.clone(), &mut conn) {
       Ok(_) => {
+        // DEBUG BREAKPOINT 32: 工作空间保存成功
+        info!("=== DEBUG BREAKPOINT 32 === 工作空间保存成功到数据库: {}", workspace_to_save.id);
         info!("Successfully saved workspace {} to database", workspace_to_save.id);
       }
       Err(e) => {
