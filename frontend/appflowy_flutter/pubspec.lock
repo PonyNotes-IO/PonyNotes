@@ -95,7 +95,7 @@ packages:
     source: git
     version: "0.1.2"
   appflowy_editor:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       path: "."
       ref: "470c4e7"
@@ -104,7 +104,7 @@ packages:
     source: git
     version: "5.2.0"
   appflowy_editor_plugins:
-    dependency: "direct main"
+    dependency: "direct overridden"
     description:
       path: "packages/appflowy_editor_plugins"
       ref: "4efcff7"

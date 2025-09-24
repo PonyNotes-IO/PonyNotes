@@ -1,4 +1,3 @@
-import 'dart:developer';
 
 import 'package:appflowy/core/helpers/url_launcher.dart';
 import 'package:appflowy/features/share_tab/presentation/widgets/guest_tag.dart';
@@ -17,6 +16,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flowy_infra/file_picker/file_picker_service.dart';
 import 'package:flowy_infra_ui/flowy_infra_ui.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -357,8 +357,15 @@ class _CreateWorkspaceDialogState extends State<CreateWorkspaceDialog> {
         if (actionResult != null && 
             actionResult.actionType == WorkspaceActionType.create && 
             !actionResult.isLoading) {
-          // 工作空间创建完成，关闭对话框
-          Navigator.of(context).pop();
+          // 工作空间创建完成，检查context是否仍然mounted
+          if (context.mounted) {
+            // 使用SchedulerBinding确保在下一帧执行，避免Navigator状态冲突
+            SchedulerBinding.instance.addPostFrameCallback((_) {
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            });
+          }
           
           // 如果创建失败，记录错误信息
           actionResult.result?.fold(
@@ -482,13 +489,15 @@ class _CreateWorkspaceButton extends StatelessWidget {
       FocusScope.of(context).unfocus();
       await Future.delayed(const Duration(milliseconds: 50));
       
-      await showDialog(
-        context: context,
-        builder: (dialogContext) => BlocProvider.value(
-          value: workspaceBloc,
-          child: dialog,
-        ),
-      );
+      if (context.mounted) {
+        await showDialog(
+          context: context,
+          builder: (dialogContext) => BlocProvider.value(
+            value: workspaceBloc,
+            child: dialog,
+          ),
+        );
+      }
       Log.info('Dialog shown successfully');
     } catch (e, stackTrace) {
       Log.error('Failed to show create workspace dialog: $e');

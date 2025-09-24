@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:appflowy/generated/flowy_svgs.g.dart';
 import 'package:appflowy/generated/locale_keys.g.dart';
 import 'package:appflowy/startup/tasks/app_widget.dart';
@@ -15,7 +13,6 @@ import 'package:flowy_infra_ui/widget/buttons/secondary_button.dart';
 import 'package:flowy_infra_ui/widget/dialog/styled_dialogs.dart';
 import 'package:flowy_infra_ui/widget/spacing.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:toastification/toastification.dart';
 import 'package:universal_platform/universal_platform.dart';
 
@@ -189,17 +186,14 @@ class _NavigatorTextFieldDialogState extends State<NavigatorTextFieldDialog> {
                 widget.onConfirm(newValue, context);
                 Log.info('[DIALOG] ✅ onConfirm callback completed');
                 
-                // 🔧 FIX: Add small delay to ensure the workspace creation process starts
-                // before closing the dialog to prevent UI state conflicts
-                Future.delayed(const Duration(milliseconds: 100), () {
-                  if (context.mounted) {
-                    Log.info('[DIALOG] 🔄 Closing dialog after delay');
-                    Navigator.of(context).pop();
-                  }
-                });
+                // 🔧 FIX: Don't close dialog here - let BlocListener handle it
+                // This prevents Navigator state conflicts
+                Log.info('[DIALOG] 🔄 Dialog will be closed by BlocListener');
               } catch (e) {
                 Log.error('[DIALOG] ❌ Error in onConfirm callback: $e');
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                }
               }
             },
             onCancelPressed: () {

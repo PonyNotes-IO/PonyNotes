@@ -185,7 +185,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             
             // Request the latest workspace setting for the new workspace
             // 🔧 FIX: Add retry mechanism for folder initialization
-            await _requestWorkspaceSettingWithRetry(value.workspaceId);
+            // await _requestWorkspaceSettingWithRetry(value.workspaceId);
           },
         );
       },
@@ -195,8 +195,8 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   /// 🔧 FIX: Retry mechanism for workspace setting request
   /// This handles the "folder is not initialized" error that occurs during workspace switching
   Future<void> _requestWorkspaceSettingWithRetry(String workspaceId) async {
-    const maxRetries = 5;
-    const retryDelay = Duration(milliseconds: 200);
+    const maxRetries = 10; // 增加重试次数
+    const retryDelay = Duration(milliseconds: 500); // 增加重试间隔
     
     for (int attempt = 1; attempt <= maxRetries; attempt++) {
       Log.info('[HOME_BLOC] 🔄 Requesting workspace setting (attempt $attempt/$maxRetries)');

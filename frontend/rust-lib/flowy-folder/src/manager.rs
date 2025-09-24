@@ -1321,7 +1321,8 @@ impl FolderManager {
       return Err(FlowyError::record_not_found());
     }
 
-    let view = self.get_current_view().await;
+    // Get the view directly without calling get_current_view to avoid recursion
+    let view = self.get_view_pb(&view_id).await.ok();
     if let Some(view) = &view {
       let view_layout: ViewLayout = view.layout.clone().into();
       if let Some(handle) = self.operation_handlers.get(&view_layout) {
@@ -1353,7 +1354,28 @@ impl FolderManager {
       drop(folder);
       view
     };
-    self.get_view_pb(&view_id).await.ok()
+    
+    // Try to get the view, but handle the case where it doesn't exist
+    match self.get_view_pb(&view_id).await {
+      Ok(view) => Some(view),
+      Err(err) => {
+        // If the current view doesn't exist, try to find any available view
+        tracing::warn!("Current view {} not found: {:?}, trying to find alternative view", view_id, err);
+        
+        // Get all public views and use the first one as fallback
+        if let Ok(public_views) = self.get_workspace_public_views().await {
+          if let Some(first_view) = public_views.first() {
+            info!("Using fallback view: {} ({})", first_view.name, first_view.id);
+            // Just return the fallback view without setting it as current to avoid recursion
+            return Some(first_view.clone());
+          }
+        }
+        
+        // If no public views are available, return None
+        tracing::warn!("No alternative views found, returning None");
+        None
+      }
+    }
   }
 
   /// Toggles the favorite status of a view identified by `view_id`If the view is not a favorite, it will be added to the favorites list; otherwise, it will be removed from the list.

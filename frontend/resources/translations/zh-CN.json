@@ -408,7 +408,7 @@
     "editContact": "编辑联系人"
   },
   "button": {
-    "ok": "OK",
+    "ok": "确认",
     "confirm": "确认",
     "done": "完成",
     "cancel": "取消",
@@ -469,8 +469,7 @@
     "retry": "重试",
     "uploadFailed": "上传失败",
     "Done": "完成",
-    "Cancel": "取消",
-    "OK": "确认"
+    "Cancel": "取消"
   },
   "label": {
     "welcome": "欢迎!",

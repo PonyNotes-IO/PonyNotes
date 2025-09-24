@@ -221,6 +221,8 @@ class FlowyOverlayState extends State<FlowyOverlay> {
   }
 
   void remove(String identifier) {
+    if (!mounted) return;
+    
     setState(() {
       final index =
           _overlayList.indexWhere((item) => item.identifier == identifier);
@@ -233,31 +235,19 @@ class FlowyOverlayState extends State<FlowyOverlay> {
   }
 
   void removeAll() {
+    if (!mounted) return;
+    
     setState(() {
       if (_overlayList.isEmpty) {
         return;
       }
 
-      final reveredList = _overlayList.reversed.toList();
-      final firstItem = reveredList.removeAt(0);
-      _overlayList.remove(firstItem);
-      if (firstItem.delegate != null) {
-        firstItem.delegate!.didRemove();
-        firstItem.dispose();
-        if (firstItem.delegate!.asBarrier()) {
-          return;
-        }
+      // Dispose all items in the correct order
+      for (final item in _overlayList.reversed) {
+        item.delegate?.didRemove();
+        item.dispose();
       }
-
-      for (final element in reveredList) {
-        if (element.delegate?.asBarrier() ?? false) {
-          return;
-        } else {
-          element.delegate?.didRemove();
-          element.dispose();
-          _overlayList.remove(element);
-        }
-      }
+      _overlayList.clear();
     });
   }
 
@@ -279,6 +269,8 @@ class FlowyOverlayState extends State<FlowyOverlay> {
     OverlapBehaviour? overlapBehaviour,
     FlowyOverlayDelegate? delegate,
   }) {
+    if (!mounted) return;
+    
     Widget overlay = widget;
     final offset = anchorOffset ?? Offset.zero;
     final focusNode = FocusNode();
@@ -350,6 +342,26 @@ class FlowyOverlayState extends State<FlowyOverlay> {
   }
 
   @override
+  void dispose() {
+    // Clean up all overlay items before disposing
+    for (final item in _overlayList.reversed) {
+      item.delegate?.didRemove();
+      item.dispose();
+    }
+    _overlayList.clear();
+    
+    // Clear keyboard shortcut bindings
+    _keyboardShortcutBindings.clear();
+    
+    // Ensure all focus nodes are properly disposed
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // This ensures any remaining focus nodes are cleaned up
+    });
+    
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final overlays = _overlayList.map((item) {
       Widget widget = item.widget;
@@ -387,11 +399,7 @@ class FlowyOverlayState extends State<FlowyOverlay> {
     // // );
     // // ...
 
-    return MaterialApp(
-      theme: Theme.of(context),
-      debugShowCheckedModeBanner: false,
-      home: Stack(children: children..addAll(overlays)),
-    );
+    return Stack(children: children..addAll(overlays));
   }
 
   void _handleTapOnBackground() => removeAll();

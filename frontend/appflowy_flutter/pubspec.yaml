@@ -19,8 +19,6 @@ dependencies:
     git:
       url: https://github.com/AppFlowy-IO/appflowy-board.git
       ref: e8317c0d1af8d23dc5707b02ea43864536b6de91
-  appflowy_editor:
-  appflowy_editor_plugins:
   appflowy_popover:
     path: packages/appflowy_popover
   appflowy_result:
@@ -136,7 +134,7 @@ dependencies:
   scrollable_positioned_list: ^0.3.8
   share_plus: ^10.0.2
   shared_preferences: ^2.2.2
-  sheet:
+  sheet: ^1.0.0
   sized_context: ^1.0.0+4
   string_validator: ^1.0.0
   styled_widget: ^0.4.1
@@ -187,14 +185,11 @@ dev_dependencies:
   url_launcher_platform_interface: any
 
 dependency_overrides:
+  # 核心依赖覆盖 - 保持稳定性
   http: ^1.0.0
   device_info_plus: ^11.2.2
 
-  url_protocol:
-    git:
-      url: https://github.com/LucasXu0/flutter_url_protocol.git
-      commit: 737681d
-
+  # 编辑器相关 - 使用稳定版本
   appflowy_editor:
     git:
       url: https://github.com/AppFlowy-IO/appflowy-editor.git
@@ -206,6 +201,7 @@ dependency_overrides:
       path: "packages/appflowy_editor_plugins"
       ref: "4efcff7"
 
+  # UI 组件 - 修复兼容性问题
   sheet:
     git:
       url: https://github.com/jamesblasco/modal_bottom_sheet
@@ -218,24 +214,23 @@ dependency_overrides:
       ref: "5a43aed"
       path: packages/window_manager
 
-  uuid: ^4.4.0
-
+  # 缓存管理 - 使用修复版本
   flutter_cache_manager:
     git:
       url: https://github.com/LucasXu0/flutter_cache_manager.git
       commit: fbab857b1b1d209240a146d32f496379b9f62276
       path: flutter_cache_manager
 
+  # 修复 hashValues 错误
   flutter_sticky_header: ^0.7.0
 
-  reorderable_tabbar:
-    git:
-      url: https://github.com/LucasXu0/reorderable_tabbar
-      ref: 93c4977
-  # Don't upgrade file_picker until the issue is fixed
-  # https://github.com/miguelpruivo/flutter_file_picker/issues/1652
+  # 文件选择器 - 保持稳定版本
   file_picker: 8.1.4
 
+  # 其他必要覆盖
+  uuid: ^4.4.0
+
+  # 自动更新 - 使用修复版本
   auto_updater:
     git:
       url: https://github.com/LucasXu0/auto_updater.git
@@ -254,18 +249,25 @@ dependency_overrides:
       path: packages/auto_updater_platform_interface
       ref: 1d81a824f3633f1d0200ba51b78fe0f9ce429458
 
-  unsplash_client:
-    git:
-      url: https://github.com/LucasXu0/unsplash_client.git
-      ref: a8411fc
-
-  # https://github.com/LucasXu0/flutter-permission-handler/commit/faef1c97970de29995642bfae61b884591798684
-  # Prevent the location from being accessed continuously on Windows
+  # 权限处理 - 修复 Windows 位置访问问题
   permission_handler:
     git:
       url: https://github.com/LucasXu0/flutter-permission-handler.git
       path: permission_handler
       ref: faef1c9
+
+  reorderable_tabbar:
+    git:
+      url: https://github.com/LucasXu0/reorderable_tabbar
+      ref: 93c4977
+  unsplash_client:
+    git:
+      url: https://github.com/LucasXu0/unsplash_client.git
+      ref: a8411fc
+  url_protocol:
+    git:
+      url: https://github.com/LucasXu0/flutter_url_protocol.git
+      commit: 737681d
 
 flutter:
   generate: true
