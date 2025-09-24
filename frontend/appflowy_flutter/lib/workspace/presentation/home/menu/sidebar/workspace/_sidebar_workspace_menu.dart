@@ -378,13 +378,28 @@ class _CreateWorkspaceDialogState extends State<CreateWorkspaceDialog> {
           );
         }
       },
-      child: NavigatorTextFieldDialog(
-        title: LocaleKeys.workspace_create.tr(),
-        value: '',
-        hintText: '',
-        autoSelectAllText: true,
-        onConfirm: (name, _) => widget.onConfirm(name),
+      child: _WorkspaceDialogContent(
+        onConfirm: widget.onConfirm,
       ),
+    );
+  }
+}
+
+class _WorkspaceDialogContent extends StatelessWidget {
+  const _WorkspaceDialogContent({
+    required this.onConfirm,
+  });
+
+  final void Function(String) onConfirm;
+
+  @override
+  Widget build(BuildContext context) {
+    return NavigatorTextFieldDialog(
+      title: LocaleKeys.workspace_create.tr(),
+      value: '',
+      hintText: '',
+      autoSelectAllText: true,
+      onConfirm: (name, _) => onConfirm(name),
     );
   }
 }

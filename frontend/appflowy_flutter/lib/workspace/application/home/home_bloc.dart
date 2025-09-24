@@ -185,7 +185,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
             
             // Request the latest workspace setting for the new workspace
             // 🔧 FIX: Add retry mechanism for folder initialization
-            // await _requestWorkspaceSettingWithRetry(value.workspaceId);
+            await _requestWorkspaceSettingWithRetry(value.workspaceId);
           },
         );
       },

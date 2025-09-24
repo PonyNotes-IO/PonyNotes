@@ -452,7 +452,7 @@ class _WorkspaceMenuItemTrailing extends StatelessWidget {
 
     _showConfirmDialog(
       context,
-      '${LocaleKeys.button_delete.tr()}: ${workspace.name}',
+      '${LocaleKeys.space_delete.tr()}: ${workspace.name}',
       LocaleKeys.workspace_deleteWorkspaceHintText.tr(),
       LocaleKeys.button_delete.tr(),
       (_) async {
