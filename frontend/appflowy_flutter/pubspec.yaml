@@ -119,7 +119,7 @@ dependencies:
   # Advanced PDF processing and rendering
   pdf_render: ^1.4.11
   printing: ^5.13.2
-  pdfx: ^2.6.0
+  pdfx: 2.6.0 # 修改Android运行兼容问题
   google_mlkit_text_recognition: ^0.13.1
   percent_indicator: 4.2.3
   permission_handler: ^11.3.1
