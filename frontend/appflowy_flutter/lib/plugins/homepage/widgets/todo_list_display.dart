@@ -24,18 +24,18 @@ class TodoListDisplay extends StatelessWidget {
         // 标题
         Row(
           children: [
-            const Icon(
+            Icon(
               Icons.checklist,
               size: 18,
-              color: Color(0xFF636363),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             const SizedBox(width: 8),
-            const Text(
+            Text(
               "待办",
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF333333),
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
           ],
@@ -49,7 +49,7 @@ class TodoListDisplay extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 今天的待办
-                _buildTodaySection(),
+                _buildTodaySection(context),
                 
                 // 间距
                 if (todayTodos.isNotEmpty && upcomingTodos.isNotEmpty)
@@ -57,11 +57,11 @@ class TodoListDisplay extends StatelessWidget {
                 
                 // 即将到来的待办
                 if (upcomingTodos.isNotEmpty)
-                  _buildUpcomingSection(),
+                  _buildUpcomingSection(context),
                 
                 // 空状态
                 if (todayTodos.isEmpty && upcomingTodos.isEmpty)
-                  _buildEmptyState(),
+                  _buildEmptyState(context),
               ],
             ),
           ),
@@ -70,7 +70,7 @@ class TodoListDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildTodaySection() {
+  Widget _buildTodaySection(BuildContext context) {
     if (todayTodos.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -79,17 +79,18 @@ class TodoListDisplay extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
+          context,
           "今天",
           DateFormat('M月d日').format(DateTime.now()),
           todayTodos.length,
         ),
         const SizedBox(height: 8),
-        ...todayTodos.map((todo) => _buildTodoItem(todo)),
+        ...todayTodos.map((todo) => _buildTodoItem(context, todo)),
       ],
     );
   }
 
-  Widget _buildUpcomingSection() {
+  Widget _buildUpcomingSection(BuildContext context) {
     if (upcomingTodos.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -110,6 +111,7 @@ class TodoListDisplay extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSectionHeader(
+          context,
           "即将到来",
           "",
           upcomingTodos.length,
@@ -124,17 +126,17 @@ class TodoListDisplay extends StatelessWidget {
               // 日期标题
               Padding(
                 padding: const EdgeInsets.only(bottom: 4, top: 8),
-                child: Text(
+                                 child: Text(
                   _formatUpcomingDate(date),
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF888888),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                   ),
                 ),
               ),
               // 该日期的待办事项
-              ...todos.map((todo) => _buildTodoItem(todo)),
+              ...todos.map((todo) => _buildTodoItem(context, todo)),
             ],
           );
         }),
@@ -142,7 +144,7 @@ class TodoListDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title, String subtitle, int count) {
+  Widget _buildSectionHeader(BuildContext context, String title, String subtitle, int count) {
     return Row(
       children: [
         Column(
@@ -150,18 +152,18 @@ class TodoListDisplay extends StatelessWidget {
           children: [
             Text(
               title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF666666),
+                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               ),
             ),
             if (subtitle.isNotEmpty)
               Text(
                 subtitle,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: Color(0xFF888888),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
           ],
@@ -173,14 +175,14 @@ class TodoListDisplay extends StatelessWidget {
             vertical: 2,
           ),
           decoration: BoxDecoration(
-            color: Colors.grey[200],
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Text(
             count.toString(),
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 11,
-              color: Color(0xFF666666),
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -189,7 +191,7 @@ class TodoListDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildTodoItem(TodoItem todo) {
+  Widget _buildTodoItem(BuildContext context, TodoItem todo) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(
@@ -198,13 +200,13 @@ class TodoListDisplay extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: todo.isCompleted 
-            ? Colors.grey[50] 
-            : Colors.white,
+            ? Theme.of(context).colorScheme.surfaceContainerHighest
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
           color: todo.isCompleted 
-              ? Colors.grey[300]! 
-              : const Color(0xFFE9E9E9),
+              ? Theme.of(context).colorScheme.outline.withOpacity(0.3)
+              : Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -251,8 +253,8 @@ class TodoListDisplay extends StatelessWidget {
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
                     color: todo.isCompleted 
-                        ? Colors.grey[600] 
-                        : const Color(0xFF333333),
+                        ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                        : Theme.of(context).colorScheme.onSurface,
                     decoration: todo.isCompleted 
                         ? TextDecoration.lineThrough 
                         : null,
@@ -274,14 +276,14 @@ class TodoListDisplay extends StatelessWidget {
                             Icon(
                               Icons.schedule,
                               size: 10,
-                              color: Colors.grey[500],
+                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                             ),
                             const SizedBox(width: 2),
                             Text(
                               _formatTodoTime(todo),
                               style: TextStyle(
                                 fontSize: 10,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                               ),
                             ),
                           ],
@@ -323,7 +325,7 @@ class TodoListDisplay extends StatelessWidget {
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Column(
@@ -332,14 +334,14 @@ class TodoListDisplay extends StatelessWidget {
           Icon(
             Icons.task_alt,
             size: 48,
-            color: Colors.grey[300],
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.3),
           ),
           const SizedBox(height: 12),
           Text(
             "暂无待办事项",
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -348,7 +350,7 @@ class TodoListDisplay extends StatelessWidget {
             "点击左侧创建你的第一个待办",
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4),
             ),
           ),
         ],

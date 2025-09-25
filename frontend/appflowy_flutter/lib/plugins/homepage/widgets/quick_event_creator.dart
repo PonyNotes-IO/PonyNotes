@@ -83,12 +83,12 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
           ),
         ),
         const SizedBox(height: 12),
-        const Text(
+        Text(
           "快速创建",
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w600,
-            color: Color(0xFF333333),
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],
@@ -99,12 +99,12 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "标题",
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
         const SizedBox(height: 4),
@@ -114,19 +114,19 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
             hintText: "输入待办事项...",
             hintStyle: TextStyle(
               fontSize: 13,
-              color: Colors.grey[400],
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
             ),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(
-                color: Color(0xFFE9E9E9),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
                 width: 1,
               ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(6),
-              borderSide: const BorderSide(
-                color: Color(0xFFE9E9E9),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
                 width: 1,
               ),
             ),
@@ -154,12 +154,12 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           "时间",
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
         const SizedBox(height: 4),
@@ -176,17 +176,21 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFFE9E9E9),
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(6),
-                    color: _isAllDay ? Colors.grey[50] : Colors.white,
+                    color: _isAllDay 
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Theme.of(context).colorScheme.surface,
                   ),
                   child: Text(
                     DateFormat('MM/dd').format(_selectedDate),
                     style: TextStyle(
                       fontSize: 13,
-                      color: _isAllDay ? Colors.grey[400] : Colors.black87,
+                      color: _isAllDay 
+                          ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -204,17 +208,21 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
                   ),
                   decoration: BoxDecoration(
                     border: Border.all(
-                      color: const Color(0xFFE9E9E9),
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.3),
                       width: 1,
                     ),
                     borderRadius: BorderRadius.circular(6),
-                    color: _isAllDay ? Colors.grey[50] : Colors.white,
+                    color: _isAllDay 
+                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        : Theme.of(context).colorScheme.surface,
                   ),
                   child: Text(
                     _isAllDay ? "全天" : _selectedTime.format(context),
                     style: TextStyle(
                       fontSize: 13,
-                      color: _isAllDay ? Colors.grey[400] : Colors.black87,
+                      color: _isAllDay 
+                          ? Theme.of(context).colorScheme.onSurface.withOpacity(0.5)
+                          : Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                 ),
@@ -240,11 +248,11 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         const SizedBox(width: 8),
-        const Text(
+        Text(
           "全天",
           style: TextStyle(
             fontSize: 13,
-            color: Color(0xFF666666),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
           ),
         ),
       ],
@@ -294,10 +302,10 @@ class _QuickEventCreatorState extends State<QuickEventCreator> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.calendar_today,
               size: 12,
-              color: const Color(0xFFFF8D69),
+              color: Color(0xFFFF8D69),
             ),
             const SizedBox(width: 4),
             const Text(

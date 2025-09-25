@@ -32,10 +32,10 @@ class TodoPlanSectionContent extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(16.0),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(10.0),
         border: Border.all(
-          color: const Color(0xFFE9E9E9),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -90,7 +90,7 @@ class TodoPlanSectionContent extends StatelessWidget {
                 Container(
                   width: 1,
                   margin: const EdgeInsets.symmetric(horizontal: 15),
-                  color: const Color(0xFFE9E9E9),
+                  color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
                 ),
                 // 右侧：待办列表展示区域
                 Expanded(

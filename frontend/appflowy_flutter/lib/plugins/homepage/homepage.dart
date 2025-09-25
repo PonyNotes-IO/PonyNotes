@@ -214,18 +214,18 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.access_time,
                     size: 18,
-                    color: Color(0xFF636363),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                   const SizedBox(width: 8.0),
-                  const Text(
+                  Text(
                     "最近访问",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF636363),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -242,18 +242,18 @@ class _HomePageState extends State<HomePage> {
               padding: const EdgeInsets.only(bottom: 16.0),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.calendar_today_outlined,
                     size: 18,
-                    color: Color(0xFF636363),
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
                   const SizedBox(width: 8.0),
-                  const Text(
+                  Text(
                     "待办计划",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
-                      color: Color(0xFF636363),
+                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
                   ),
                 ],
@@ -460,10 +460,10 @@ class _HomePageState extends State<HomePage> {
         onTap: () => _openView(view),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(10.0),
             border: Border.all(
-              color: const Color(0xFFE9E9E9),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -476,9 +476,9 @@ class _HomePageState extends State<HomePage> {
                 right: 1,
                 child: Container(
                   height: 65,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF7F7F7),
-                    borderRadius: BorderRadius.only(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(9),
                       topRight: Radius.circular(9),
                     ),
@@ -514,10 +514,10 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       Text(
                         view.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF333333),
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                         textAlign: TextAlign.center,
                         maxLines: 2,
@@ -544,10 +544,10 @@ class _HomePageState extends State<HomePage> {
         onTap: _handleAddNotebook,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(10.0),
             border: Border.all(
-              color: const Color(0xFFE9E9E9),
+              color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
               width: 1,
             ),
           ),
@@ -568,12 +568,12 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 "添加笔记本",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: Color(0xFF888888),
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
                 textAlign: TextAlign.center,
               ),
