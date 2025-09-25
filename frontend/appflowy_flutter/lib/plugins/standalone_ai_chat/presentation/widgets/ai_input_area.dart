@@ -112,7 +112,7 @@ class _AIInputAreaState extends State<AIInputArea> {
             AIWelcomeTheme.inputContainerHeight + (_selectedImages.length <= 3 ? 80 : 140) : // 根据图片数量动态调整
             AIWelcomeTheme.inputContainerHeight,
         ),
-        decoration: AIWelcomeTheme.inputContainerDecoration,
+        decoration: AIWelcomeTheme.inputContainerDecoration(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -132,12 +132,12 @@ class _AIInputAreaState extends State<AIInputArea> {
                   maxLines: null,
                   expands: true,
                   textAlignVertical: TextAlignVertical.top,
-                  style: AIWelcomeTheme.placeholderStyle.copyWith(
-                    color: AIWelcomeTheme.primaryTextColor,
+                  style: AIWelcomeTheme.placeholderStyle(context).copyWith(
+                    color: AIWelcomeTheme.primaryTextColor(context),
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: '在小马笔记可以问或找到每一件事…',
-                    hintStyle: AIWelcomeTheme.placeholderStyle,
+                    hintStyle: AIWelcomeTheme.placeholderStyle(context),
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
                   ),
@@ -168,7 +168,7 @@ class _AIInputAreaState extends State<AIInputArea> {
                   Container(
                     width: 1,
                     height: 20,
-                    decoration: AIWelcomeTheme.dividerDecoration,
+                    decoration: AIWelcomeTheme.dividerDecoration(context),
                   ),
                   const SizedBox(width: 20),
                   // 发送按钮（对应 label_9）
@@ -190,14 +190,14 @@ class _AIInputAreaState extends State<AIInputArea> {
       child: Container(
         width: 130,
         height: AIWelcomeTheme.toolbarButtonSize,
-        decoration: AIWelcomeTheme.modelSelectorDecoration,
+        decoration: AIWelcomeTheme.modelSelectorDecoration(context),
         child: Row(
           children: [
             const SizedBox(width: 10),
             Expanded(
               child: Text(
                 _selectedProvider?.displayName ?? '选择模型',
-                style: AIWelcomeTheme.modelSelectorStyle,
+                style: AIWelcomeTheme.modelSelectorStyle(context),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -212,7 +212,7 @@ class _AIInputAreaState extends State<AIInputArea> {
                   return Icon(
                     Icons.arrow_drop_down,
                     size: 12,
-                    color: Colors.grey[600],
+                    color: AIWelcomeTheme.secondaryTextColor(context),
                   );
                 },
               ),
@@ -262,18 +262,7 @@ class _AIInputAreaState extends State<AIInputArea> {
             constraints: const BoxConstraints(
               maxHeight: 200, // 最大高度限制
             ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+            decoration: AIWelcomeTheme.dropdownDecoration(context),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -297,7 +286,7 @@ class _AIInputAreaState extends State<AIInputArea> {
                       ),
                       decoration: BoxDecoration(
                         color: _selectedProvider == provider
-                            ? Colors.blue[50]
+                            ? AIWelcomeTheme.selectedItemColor(context)
                             : Colors.transparent,
                       ),
                       child: Text(
@@ -305,8 +294,8 @@ class _AIInputAreaState extends State<AIInputArea> {
                         style: TextStyle(
                           fontSize: 14,
                           color: _selectedProvider == provider
-                              ? Colors.blue[700]
-                              : Colors.black87,
+                              ? AIWelcomeTheme.selectedItemTextColor(context)
+                              : AIWelcomeTheme.primaryTextColor(context),
                           fontWeight: _selectedProvider == provider
                               ? FontWeight.w500
                               : FontWeight.normal,
@@ -389,13 +378,13 @@ class _AIInputAreaState extends State<AIInputArea> {
               width: AIWelcomeTheme.iconSize,
               height: AIWelcomeTheme.iconSize,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: AIWelcomeTheme.containerColor(context),
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Icon(
                 Icons.image_not_supported,
                 size: AIWelcomeTheme.iconSize * 0.6,
-                color: Colors.grey[600],
+                color: AIWelcomeTheme.secondaryTextColor(context),
               ),
             );
           },
@@ -420,13 +409,13 @@ class _AIInputAreaState extends State<AIInputArea> {
               width: AIWelcomeTheme.sendButtonSize,
               height: AIWelcomeTheme.sendButtonSize,
               decoration: BoxDecoration(
-                color: Colors.blue,
+                color: Theme.of(context).colorScheme.primary,
                 borderRadius: BorderRadius.circular(AIWelcomeTheme.sendButtonSize / 2),
               ),
               child: Icon(
                 Icons.send,
                 size: AIWelcomeTheme.sendButtonSize * 0.6,
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.onPrimary,
               ),
             );
           },
@@ -443,7 +432,7 @@ class _AIInputAreaState extends State<AIInputArea> {
         width: AIWelcomeTheme.iconSize,
         height: AIWelcomeTheme.iconSize,
         decoration: BoxDecoration(
-          color: _selectedImages.isNotEmpty ? Colors.blue[50] : Colors.transparent,
+          color: _selectedImages.isNotEmpty ? AIWelcomeTheme.selectedItemColor(context) : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Stack(
@@ -452,7 +441,7 @@ class _AIInputAreaState extends State<AIInputArea> {
               child: Icon(
                 Icons.image,
                 size: AIWelcomeTheme.iconSize,
-                color: _selectedImages.isNotEmpty ? Colors.blue[700] : Colors.grey[600],
+                color: _selectedImages.isNotEmpty ? AIWelcomeTheme.selectedItemTextColor(context) : AIWelcomeTheme.secondaryTextColor(context),
               ),
             ),
             if (_selectedImages.isNotEmpty)
@@ -463,14 +452,14 @@ class _AIInputAreaState extends State<AIInputArea> {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: Colors.blue[700],
+                    color: Theme.of(context).colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
                   child: Center(
                     child: Text(
                       '${_selectedImages.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
                       ),
@@ -489,12 +478,7 @@ class _AIInputAreaState extends State<AIInputArea> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
-        ),
-      ),
+      decoration: AIWelcomeTheme.imagePreviewAreaDecoration(context),
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -508,10 +492,7 @@ class _AIInputAreaState extends State<AIInputArea> {
     return Container(
       width: 60,
       height: 60,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey[300]!),
-      ),
+      decoration: AIWelcomeTheme.imagePreviewItemDecoration(context),
       child: Stack(
         children: [
           ClipRRect(
@@ -579,13 +560,13 @@ class _AIInputAreaState extends State<AIInputArea> {
       width: 60,
       height: 60,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: AIWelcomeTheme.containerColor(context),
         borderRadius: BorderRadius.circular(7),
       ),
       child: Icon(
         Icons.broken_image,
         size: 30,
-        color: Colors.grey[500],
+        color: AIWelcomeTheme.secondaryTextColor(context),
       ),
     );
   }

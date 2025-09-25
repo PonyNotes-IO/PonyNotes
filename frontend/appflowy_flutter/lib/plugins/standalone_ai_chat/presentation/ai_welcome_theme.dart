@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 
 /// AI欢迎页面的主题常量，基于设计图精确配置
+/// 支持深色主题适配
 class AIWelcomeTheme {
-  /// 颜色配置
-  static const Color backgroundColor = Color(0xFFFFFFFF);
-  static const Color primaryTextColor = Color(0xFF333333);
-  static const Color secondaryTextColor = Color(0xFF888888);
-  static const Color placeholderTextColor = Color(0xFFAAAAAA);
-  static const Color borderColor = Color(0xFFE9E9E9);
-  static const Color inputBorderColor = Color(0xFFCDCDCD);
-  static const Color dividerColor = Color(0xFFD8D8D8);
+  /// 动态颜色配置 - 根据当前主题返回相应颜色
+  static Color backgroundColor(BuildContext context) => Theme.of(context).colorScheme.surface;
+  static Color primaryTextColor(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+  static Color secondaryTextColor(BuildContext context) => Theme.of(context).colorScheme.onSurfaceVariant;
+  static Color placeholderTextColor(BuildContext context) => Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.7);
+  static Color borderColor(BuildContext context) => Theme.of(context).colorScheme.outline;
+  static Color inputBorderColor(BuildContext context) => Theme.of(context).colorScheme.outline;
+  static Color dividerColor(BuildContext context) => Theme.of(context).colorScheme.outline;
+  static Color containerColor(BuildContext context) => Theme.of(context).colorScheme.surfaceContainerHighest;
+  static Color avatarBackgroundColor(BuildContext context) => Theme.of(context).colorScheme.primaryContainer;
+  static Color avatarIconColor(BuildContext context) => Theme.of(context).colorScheme.onPrimaryContainer;
+  static Color tooltipTextColor(BuildContext context) => Theme.of(context).colorScheme.onSurfaceVariant.withOpacity(0.8);
+  static Color modelSelectorTextColor(BuildContext context) => Theme.of(context).colorScheme.onSurfaceVariant;
+  static Color dropdownBackgroundColor(BuildContext context) => Theme.of(context).colorScheme.surface;
+  static Color dropdownBorderColor(BuildContext context) => Theme.of(context).colorScheme.outline;
+  static Color selectedItemColor(BuildContext context) => Theme.of(context).colorScheme.primaryContainer;
+  static Color selectedItemTextColor(BuildContext context) => Theme.of(context).colorScheme.onPrimaryContainer;
 
   /// 字体大小配置（基于设计图）
   static const double titleFontSize = 24.0;        // text_15
@@ -43,73 +53,96 @@ class AIWelcomeTheme {
   static const double toolbarWidth = 910.0;        // group_2: width: 910px
   static const double toolbarHeight = 35.0;        // group_2: height: 35px
 
-  /// 文本样式
-  static const TextStyle titleStyle = TextStyle(
+  /// 动态文本样式 - 根据当前主题返回相应样式
+  static TextStyle titleStyle(BuildContext context) => TextStyle(
     fontSize: titleFontSize,
     fontWeight: titleFontWeight,
-    color: primaryTextColor,
+    color: primaryTextColor(context),
     height: 33 / 24, // line-height: 33px / font-size: 24px
   );
 
-  static const TextStyle subtitleStyle = TextStyle(
+  static TextStyle subtitleStyle(BuildContext context) => TextStyle(
     fontSize: subtitleFontSize,
     fontWeight: subtitleFontWeight,
-    color: primaryTextColor,
+    color: primaryTextColor(context),
     height: 25 / 18, // line-height: 25px / font-size: 18px
   );
 
-  static const TextStyle placeholderStyle = TextStyle(
+  static TextStyle placeholderStyle(BuildContext context) => TextStyle(
     fontSize: placeholderFontSize,
     fontWeight: placeholderFontWeight,
-    color: secondaryTextColor,
+    color: placeholderTextColor(context),
     height: 22 / 16, // line-height: 22px / font-size: 16px
   );
 
-  static const TextStyle tooltipStyle = TextStyle(
+  static TextStyle tooltipStyle(BuildContext context) => TextStyle(
     fontSize: tooltipFontSize,
     fontWeight: FontWeight.normal,
-    color: Color(0xFF939393), // 基于设计图的具体颜色
+    color: tooltipTextColor(context),
     height: 20 / 14, // line-height: 20px / font-size: 14px
   );
 
-  static const TextStyle modelSelectorStyle = TextStyle(
+  static TextStyle modelSelectorStyle(BuildContext context) => TextStyle(
     fontSize: tooltipFontSize,
     fontWeight: FontWeight.normal,
-    color: Color(0xFF636363), // text-group_14 color
+    color: modelSelectorTextColor(context),
     height: 20 / 14,
   );
 
-  /// 头像样式
-  static const BoxDecoration avatarDecoration = BoxDecoration(
+  /// 动态装饰样式 - 根据当前主题返回相应装饰
+  static BoxDecoration avatarDecoration(BuildContext context) => BoxDecoration(
+    color: avatarBackgroundColor(context),
     shape: BoxShape.circle,
-    border: Border.fromBorderSide(
-      BorderSide(
-        color: Color(0xFFECECEC), // rgba(236, 236, 236, 1)
-        width: 0.59, // 0.5911330049261083px
-      ),
+    border: Border.all(
+      color: borderColor(context),
+      width: 0.59,
     ),
   );
 
   /// 输入容器样式
-  static const BoxDecoration inputContainerDecoration = BoxDecoration(
-    color: backgroundColor,
-    borderRadius: BorderRadius.all(Radius.circular(containerBorderRadius)),
-    border: Border.fromBorderSide(
-      BorderSide(color: borderColor, width: 1.0),
-    ),
+  static BoxDecoration inputContainerDecoration(BuildContext context) => BoxDecoration(
+    color: backgroundColor(context),
+    borderRadius: const BorderRadius.all(Radius.circular(containerBorderRadius)),
+    border: Border.all(color: borderColor(context), width: 1.0),
   );
 
   /// 模型选择按钮样式
-  static const BoxDecoration modelSelectorDecoration = BoxDecoration(
-    color: backgroundColor,
-    borderRadius: BorderRadius.all(Radius.circular(buttonBorderRadius)),
-    border: Border.fromBorderSide(
-      BorderSide(color: inputBorderColor, width: 1.0),
-    ),
+  static BoxDecoration modelSelectorDecoration(BuildContext context) => BoxDecoration(
+    color: backgroundColor(context),
+    borderRadius: const BorderRadius.all(Radius.circular(buttonBorderRadius)),
+    border: Border.all(color: inputBorderColor(context), width: 1.0),
   );
 
   /// 分隔线样式
-  static const BoxDecoration dividerDecoration = BoxDecoration(
-    color: dividerColor,
+  static BoxDecoration dividerDecoration(BuildContext context) => BoxDecoration(
+    color: dividerColor(context),
+  );
+
+  /// 下拉框样式
+  static BoxDecoration dropdownDecoration(BuildContext context) => BoxDecoration(
+    color: dropdownBackgroundColor(context),
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(color: dropdownBorderColor(context)),
+    boxShadow: [
+      BoxShadow(
+        color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
+        blurRadius: 8,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
+
+  /// 图片预览区域样式
+  static BoxDecoration imagePreviewAreaDecoration(BuildContext context) => BoxDecoration(
+    color: containerColor(context),
+    border: Border(
+      bottom: BorderSide(color: borderColor(context), width: 1),
+    ),
+  );
+
+  /// 图片预览项样式
+  static BoxDecoration imagePreviewItemDecoration(BuildContext context) => BoxDecoration(
+    borderRadius: BorderRadius.circular(8),
+    border: Border.all(color: borderColor(context)),
   );
 }

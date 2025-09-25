@@ -18,7 +18,7 @@ class AIWelcomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AIWelcomeTheme.backgroundColor,
+      backgroundColor: AIWelcomeTheme.backgroundColor(context),
       body: Column(
         children: [
           // 顶部头像和欢迎文字区域
@@ -31,9 +31,9 @@ class AIWelcomePage extends StatelessWidget {
           // 底部提示文字（对应 text_18）
           Container(
             margin: const EdgeInsets.only(bottom: 64),
-            child: const Text(
+            child: Text(
               '内容由 AI 生成，请仔细甄别',
-              style: AIWelcomeTheme.tooltipStyle,
+              style: AIWelcomeTheme.tooltipStyle(context),
             ),
           ),
         ],

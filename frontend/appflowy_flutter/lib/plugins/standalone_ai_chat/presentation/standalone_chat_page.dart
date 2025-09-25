@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:appflowy_backend/protobuf/flowy-user/protobuf.dart';
 import 'package:appflowy/core/config/ai_config.dart';
 import '../application/standalone_chat_bloc.dart';
@@ -19,10 +20,10 @@ class StandaloneChatPageView extends StatelessWidget {
   final UserProfilePB userProfile;
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[50],
-      body: Column(
+      Widget build(BuildContext context) {
+      return Scaffold(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        body: Column(
         children: [
           // 顶部状态栏
           _buildTopBar(context),
@@ -39,19 +40,19 @@ class StandaloneChatPageView extends StatelessWidget {
     );
   }
 
-  /// 构建顶部状态栏
-  Widget _buildTopBar(BuildContext context) {
-    return Container(
-      height: 60,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey[200]!,
-            width: 1,
+      /// 构建顶部状态栏
+    Widget _buildTopBar(BuildContext context) {
+      return Container(
+        height: 60,
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          border: Border(
+            bottom: BorderSide(
+              color: Theme.of(context).colorScheme.outline,
+              width: 1,
+            ),
           ),
         ),
-      ),
       child: BlocBuilder<StandaloneChatBloc, StandaloneChatState>(
         builder: (context, state) {
           return Padding(
@@ -59,19 +60,19 @@ class StandaloneChatPageView extends StatelessWidget {
             child: Row(
               children: [
                 // AI头像
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Colors.blue[100],
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(
-                    Icons.smart_toy,
-                    color: Colors.blue[700],
-                    size: 20,
-                  ),
-                ),
+                                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Icon(
+                        Icons.smart_toy,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        size: 20,
+                      ),
+                    ),
                 const SizedBox(width: 12),
                 // 标题和状态
                 Expanded(
@@ -79,19 +80,19 @@ class StandaloneChatPageView extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
-                        '小马笔记AI',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                                              Text(
+                          '小马笔记AI',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                      ),
                       Text(
                         _getStatusText(state),
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -128,23 +129,23 @@ class StandaloneChatPageView extends StatelessWidget {
     final availableProviders = AIConfigService.instance.getAvailableProviders();
     
     if (availableProviders.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.red[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.red[200]!),
-        ),
+              return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.errorContainer,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Theme.of(context).colorScheme.error),
+          ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.warning, size: 14, color: Colors.red[600]),
+            Icon(Icons.warning, size: 14, color: Theme.of(context).colorScheme.error),
             const SizedBox(width: 4),
             Text(
               '未配置',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.red[600],
+                color: Theme.of(context).colorScheme.error,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -157,9 +158,9 @@ class StandaloneChatPageView extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.blue[50],
+          color: Theme.of(context).colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.blue[200]!),
+          border: Border.all(color: Theme.of(context).colorScheme.primary),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -170,12 +171,12 @@ class StandaloneChatPageView extends StatelessWidget {
               state.selectedProvider?.displayName ?? '选择模型',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.blue[600],
+                color: Theme.of(context).colorScheme.primary,
                 fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(width: 2),
-            Icon(Icons.arrow_drop_down, size: 16, color: Colors.blue[600]),
+            Icon(Icons.arrow_drop_down, size: 16, color: Theme.of(context).colorScheme.primary),
           ],
         ),
       ),
@@ -194,19 +195,23 @@ class StandaloneChatPageView extends StatelessWidget {
                 Icon(
                   Icons.auto_awesome,
                   size: 16,
-                  color: isSelected ? Colors.blue[600] : Colors.grey[600],
+                  color: isSelected 
+                      ? Theme.of(context).colorScheme.primary 
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 8),
                 Text(
                   provider.displayName,
                   style: TextStyle(
-                    color: isSelected ? Colors.blue[600] : Colors.black87,
+                    color: isSelected 
+                        ? Theme.of(context).colorScheme.primary 
+                        : Theme.of(context).colorScheme.onSurface,
                     fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
                   ),
                 ),
                 if (isSelected) ...[
                   const Spacer(),
-                  Icon(Icons.check, size: 16, color: Colors.blue[600]),
+                  Icon(Icons.check, size: 16, color: Theme.of(context).colorScheme.primary),
                 ],
               ],
             ),
@@ -219,7 +224,7 @@ class StandaloneChatPageView extends StatelessWidget {
   /// 构建更多操作按钮
   Widget _buildMoreButton(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: Icon(Icons.more_vert, color: Colors.grey[600]),
+      icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurfaceVariant),
       onSelected: (value) => _handleMoreAction(context, value),
       itemBuilder: (context) => [
         const PopupMenuItem(
@@ -409,9 +414,9 @@ class _ChatInputBarState extends State<_ChatInputBar> {
       builder: (context, state) {
         return Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             border: Border(
-              top: BorderSide(color: Colors.grey[200]!, width: 1),
+              top: BorderSide(color: Theme.of(context).colorScheme.outline, width: 1),
             ),
           ),
           child: SafeArea(
@@ -422,12 +427,12 @@ class _ChatInputBarState extends State<_ChatInputBar> {
                   // 显示选中的图片
                   if (_selectedImages.isNotEmpty) _buildSelectedImages(),
                   // 输入框和按钮
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.grey[200]!),
-                    ),
+                                      Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Theme.of(context).colorScheme.outline),
+                      ),
                     child: Row(
                       children: [
                         // 图片按钮
@@ -439,13 +444,19 @@ class _ChatInputBarState extends State<_ChatInputBar> {
                             enabled: !state.isLoading && state.selectedProvider != null,
                             maxLines: 5,
                             minLines: 1,
-                            decoration: InputDecoration(
-                              hintText: _getHintText(state),
-                              hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
-                              border: InputBorder.none,
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            ),
-                            style: const TextStyle(fontSize: 14),
+                                                          decoration: InputDecoration(
+                                hintText: _getHintText(state),
+                                hintStyle: TextStyle(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  fontSize: 14
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              ),
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
                             textInputAction: TextInputAction.send,
                             onSubmitted: (!state.isLoading && state.selectedProvider != null) ? (_) => _sendMessage() : null,
                           ),
@@ -488,13 +499,17 @@ class _ChatInputBarState extends State<_ChatInputBar> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: isEnabled ? Colors.grey[100] : Colors.grey[200],
+            color: isEnabled 
+                ? Theme.of(context).colorScheme.surfaceContainerHigh
+                : Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
             Icons.image,
             size: 16,
-            color: isEnabled ? Colors.grey[600] : Colors.grey[400],
+            color: isEnabled 
+                ? Theme.of(context).colorScheme.onSurfaceVariant
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
           ),
         ),
       ),
@@ -594,13 +609,13 @@ class _ChatInputBarState extends State<_ChatInputBar> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: Colors.red[600],
+              color: Theme.of(context).colorScheme.error,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.stop,
               size: 16,
-              color: Colors.white,
+              color: Theme.of(context).colorScheme.onError,
             ),
           ),
         ),
@@ -616,7 +631,7 @@ class _ChatInputBarState extends State<_ChatInputBar> {
           height: 20,
           child: CircularProgressIndicator(
             strokeWidth: 2,
-            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue[600]!),
+            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
           ),
         ),
       );
@@ -633,13 +648,17 @@ class _ChatInputBarState extends State<_ChatInputBar> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: isEnabled ? Colors.blue[600] : Colors.grey[300],
+            color: isEnabled 
+                ? Theme.of(context).colorScheme.primary 
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Icon(
             Icons.send,
             size: 16,
-            color: isEnabled ? Colors.white : Colors.grey[500],
+            color: isEnabled 
+                ? Theme.of(context).colorScheme.onPrimary 
+                : Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
           ),
         ),
       ),
@@ -696,13 +715,13 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   width: 80,
                   height: 80,
                   decoration: BoxDecoration(
-                    color: Colors.blue[50],
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(40),
                   ),
                   child: Icon(
                     Icons.chat_bubble_outline,
                     size: 40,
-                    color: Colors.blue[300],
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -711,7 +730,7 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -720,7 +739,7 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[500],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.4,
                   ),
                 ),
@@ -772,10 +791,14 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.blue[600],
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: const Icon(Icons.auto_awesome, size: 18, color: Colors.white),
+                  child: Icon(
+                    Icons.auto_awesome, 
+                    size: 18, 
+                    color: Theme.of(context).colorScheme.onPrimary
+                  ),
                 ),
                 const SizedBox(width: 12),
               ],
@@ -786,27 +809,31 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    color: message.isUser ? Colors.blue[600] : Colors.white,
+                    color: message.isUser 
+                        ? Theme.of(context).colorScheme.primary 
+                        : Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(18).copyWith(
                       topLeft: message.isUser ? const Radius.circular(18) : const Radius.circular(4),
                       topRight: message.isUser ? const Radius.circular(4) : const Radius.circular(18),
                     ),
-                    border: message.isUser ? null : Border.all(color: Colors.grey[200]!),
+                    border: message.isUser ? null : Border.all(
+                      color: Theme.of(context).colorScheme.outline
+                    ),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Theme.of(context).colorScheme.shadow.withOpacity(0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: message.isUser 
-                    ? SelectableText(
+                    ?                       SelectableText(
                         message.content,
                         style: TextStyle(
                           fontSize: 14,
                           height: 1.4,
-                          color: Colors.white,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       )
                     : _buildMarkdownContent(message.content),
@@ -818,10 +845,14 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: Colors.blue[100],
+                    color: Theme.of(context).colorScheme.primaryContainer,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(Icons.person, size: 18, color: Colors.blue[700]),
+                  child: Icon(
+                    Icons.person, 
+                    size: 18, 
+                    color: Theme.of(context).colorScheme.onPrimaryContainer
+                  ),
                 ),
               ],
             ],
@@ -846,9 +877,9 @@ class _ChatMessageListState extends State<_ChatMessageList> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: Colors.grey[50],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey[200]!),
+              border: Border.all(color: Theme.of(context).colorScheme.outline),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -856,14 +887,14 @@ class _ChatMessageListState extends State<_ChatMessageList> {
                 Icon(
                   Icons.copy,
                   size: 14,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   '复制',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -928,58 +959,60 @@ class _ChatMessageListState extends State<_ChatMessageList> {
 
   /// 构建Markdown内容
   Widget _buildMarkdownContent(String content) {
-    return Markdown(
-      data: content,
-      shrinkWrap: true,
-      selectable: true,
-      padding: EdgeInsets.zero,
-      styleSheet: MarkdownStyleSheet(
-        p: const TextStyle(
-          color: Colors.black87,
-          fontSize: 14,
-          height: 1.4,
+    return Builder(
+      builder: (context) => Markdown(
+        data: content,
+        shrinkWrap: true,
+        selectable: true,
+        padding: EdgeInsets.zero,
+        styleSheet: MarkdownStyleSheet(
+          p: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 14,
+            height: 1.4,
+          ),
+          h1: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            height: 1.2,
+          ),
+          h2: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            height: 1.2,
+          ),
+          h3: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            height: 1.2,
+          ),
+          strong: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          em: TextStyle(
+            fontStyle: FontStyle.italic,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          listBullet: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface,
+            fontSize: 14,
+          ),
+          code: TextStyle(
+            backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            fontFamily: 'monospace',
+            fontSize: 13,
+            color: Theme.of(context).colorScheme.onSurface,
+          ),
+          codeblockDecoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(4),
+          ),
+          codeblockPadding: const EdgeInsets.all(8),
         ),
-        h1: const TextStyle(
-          color: Colors.black87,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-          height: 1.2,
-        ),
-        h2: const TextStyle(
-          color: Colors.black87,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          height: 1.2,
-        ),
-        h3: const TextStyle(
-          color: Colors.black87,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          height: 1.2,
-        ),
-        strong: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-        em: const TextStyle(
-          fontStyle: FontStyle.italic,
-          color: Colors.black87,
-        ),
-        listBullet: const TextStyle(
-          color: Colors.black87,
-          fontSize: 14,
-        ),
-        code: TextStyle(
-          backgroundColor: Colors.grey.shade200,
-          fontFamily: 'monospace',
-          fontSize: 13,
-          color: Colors.black87,
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(4),
-        ),
-        codeblockPadding: const EdgeInsets.all(8),
       ),
     );
   }
