@@ -189,9 +189,15 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            // 问AI区域 - 复用AIInputArea组件
-            AIInputArea(
-              onMessageSent: _handleMessageSent,
+            // 问AI区域 - 复用AIInputArea组件，为主页定制更宽的显示
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return AIInputArea(
+                  onMessageSent: _handleMessageSent,
+                  customWidth: constraints.maxWidth, // 使用几乎全部可用宽度，只留8px左右边距
+                  customMargin: const EdgeInsets.symmetric(horizontal: 0.0), // 最小边距
+                );
+              },
             ),
             const SizedBox(height: 50),
 

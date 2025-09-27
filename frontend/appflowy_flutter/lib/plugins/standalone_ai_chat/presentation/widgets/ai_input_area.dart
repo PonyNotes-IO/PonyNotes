@@ -11,9 +11,13 @@ class AIInputArea extends StatefulWidget {
   const AIInputArea({
     super.key,
     required this.onMessageSent,
+    this.customWidth,
+    this.customMargin,
   });
 
   final Function(String message, AIProvider? provider, List<ChatImage>? images) onMessageSent;
+  final double? customWidth; // 可选的自定义宽度
+  final EdgeInsets? customMargin; // 可选的自定义边距
 
   @override
   State<AIInputArea> createState() => _AIInputAreaState();
@@ -104,8 +108,8 @@ class _AIInputAreaState extends State<AIInputArea> {
         }
       },
       child: Container(
-        margin: AIWelcomeTheme.inputContainerPadding,
-        width: AIWelcomeTheme.inputContainerWidth,
+        margin: widget.customMargin ?? AIWelcomeTheme.inputContainerPadding,
+        width: widget.customWidth ?? AIWelcomeTheme.inputContainerWidth,
         constraints: BoxConstraints(
           minHeight: AIWelcomeTheme.inputContainerHeight,
           maxHeight: _selectedImages.isNotEmpty ? 
