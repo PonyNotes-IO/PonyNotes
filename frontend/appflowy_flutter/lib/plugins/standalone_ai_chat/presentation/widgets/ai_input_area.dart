@@ -13,11 +13,15 @@ class AIInputArea extends StatefulWidget {
     required this.onMessageSent,
     this.customWidth,
     this.customMargin,
+    this.customToolbarPadding,
+    this.customToolbarWidth,
   });
 
   final Function(String message, AIProvider? provider, List<ChatImage>? images) onMessageSent;
   final double? customWidth; // 可选的自定义宽度
   final EdgeInsets? customMargin; // 可选的自定义边距
+  final EdgeInsets? customToolbarPadding; // 可选的自定义工具栏边距
+  final double? customToolbarWidth; // 可选的自定义工具栏宽度
 
   @override
   State<AIInputArea> createState() => _AIInputAreaState();
@@ -151,8 +155,8 @@ class _AIInputAreaState extends State<AIInputArea> {
             ),
             // 工具栏区域（对应 group_2）
             Container(
-              margin: AIWelcomeTheme.toolbarPadding,
-              width: AIWelcomeTheme.toolbarWidth,
+              margin: widget.customToolbarPadding ?? AIWelcomeTheme.toolbarPadding,
+              width: widget.customToolbarWidth ?? AIWelcomeTheme.toolbarWidth,
               height: AIWelcomeTheme.toolbarHeight,
               child: Row(
                 children: [
@@ -174,7 +178,7 @@ class _AIInputAreaState extends State<AIInputArea> {
                     height: 20,
                     decoration: AIWelcomeTheme.dividerDecoration(context),
                   ),
-                  const SizedBox(width: 20),
+                  const SizedBox(width: 21),
                   // 发送按钮（对应 label_9）
                   _buildSendButton(),
                 ],

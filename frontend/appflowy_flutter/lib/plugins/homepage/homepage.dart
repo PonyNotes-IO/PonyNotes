@@ -196,6 +196,8 @@ class _HomePageState extends State<HomePage> {
                   onMessageSent: _handleMessageSent,
                   customWidth: constraints.maxWidth, // 使用几乎全部可用宽度，只留8px左右边距
                   customMargin: const EdgeInsets.symmetric(horizontal: 0.0), // 最小边距
+                  customToolbarPadding: const EdgeInsets.fromLTRB(20, 15, 20, 13), // 左右边距各20px
+                  customToolbarWidth: constraints.maxWidth - 40, // 工具栏宽度 = 容器宽度 - 左右边距(40)
                 );
               },
             ),
