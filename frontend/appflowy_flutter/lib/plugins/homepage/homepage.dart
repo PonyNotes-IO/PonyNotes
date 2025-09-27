@@ -185,19 +185,6 @@ class _HomePageState extends State<HomePage> {
                       color: Color(0xFF636363),
                     ),
                   ),
-                  const Spacer(),
-                  // AI聊天按钮
-                  ElevatedButton.icon(
-                    onPressed: _openInteractiveAIChat,
-                    icon: const Icon(Icons.chat_bubble_outline, size: 16),
-                    label: const Text('AI聊天'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      textStyle: const TextStyle(fontSize: 14),
-                    ),
-                  ),
                 ],
               ),
             ),
