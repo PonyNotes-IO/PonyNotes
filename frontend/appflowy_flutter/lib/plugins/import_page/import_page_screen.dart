@@ -472,7 +472,7 @@ class _ImportPageScreenState extends State<ImportPageScreen> {
 
       // 显示增强的PDF导入对话框
       if (mounted) {
-        showDialog(
+        await showDialog(
           context: context,
           builder: (context) => EnhancedPdfImportDialog(
             parentViewId: externalImportView.id,

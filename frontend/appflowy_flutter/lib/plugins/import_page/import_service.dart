@@ -167,17 +167,17 @@ class ImportService {
       // Use enhanced PDF processor for maximum fidelity
       String content;
       try {
-        content = await EnhancedPdfProcessor.processPdfBytes(bytes);
-        Log.info('Successfully processed PDF with enhanced processor');
-      } catch (enhancedError) {
-        Log.error('Enhanced PDF processor failed, trying professional processor: $enhancedError');
+        content = await ProfessionalPdfProcessor.processPdfBytes(file);
+        Log.info('Successfully processed PDF with Rust processor');
+      } catch (rustError) {
+        Log.error('Rust PDF processor failed, trying enhanced processor: $rustError');
         
-        // Fallback to professional processor
+        // Fallback to enhanced processor
         try {
-          content = await ProfessionalPdfProcessor.processPdfBytes(bytes);
-          Log.info('Successfully processed PDF with professional processor');
-        } catch (professionalError) {
-          Log.error('Professional PDF processor failed, trying visual processor: $professionalError');
+          content = await EnhancedPdfProcessor.processPdfBytes(bytes);
+          Log.info('Successfully processed PDF with enhanced processor');
+        } catch (enhancedError) {
+          Log.error('Enhanced PDF processor failed, trying visual processor: $enhancedError');
           
           // Fallback to visual processor
           try {

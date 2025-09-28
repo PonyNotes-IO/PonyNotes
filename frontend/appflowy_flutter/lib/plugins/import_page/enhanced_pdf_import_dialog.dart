@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:appflowy/plugins/import_page/visual_pdf_processor.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:appflowy_backend/log.dart';
@@ -8,6 +9,8 @@ import 'package:appflowy_backend/protobuf/flowy-folder/protobuf.dart';
 import 'package:appflowy/workspace/application/settings/share/import_service.dart';
 import 'package:appflowy/plugins/document/application/document_data_pb_extension.dart';
 import 'package:path/path.dart' as p;
+import 'package:pdfx/pdfx.dart' as pdfx;
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'professional_pdf_processor.dart';
 import 'advanced_pdf_processor.dart';
 import 'ocr_pdf_processor.dart';
@@ -356,7 +359,7 @@ class _EnhancedPdfImportDialogState extends State<EnhancedPdfImportDialog> {
       // 根据选择的模式处理PDF
       switch (_importMode) {
         case PdfImportMode.professional:
-          content = await ProfessionalPdfProcessor.processPdfBytes(_pdfBytes!);
+          content = await ProfessionalPdfProcessor.processPdfBytes(_selectedFile!);
           break;
         case PdfImportMode.advanced:
           content = await AdvancedPdfProcessor.processPdfBytes(_pdfBytes!);
@@ -365,8 +368,7 @@ class _EnhancedPdfImportDialogState extends State<EnhancedPdfImportDialog> {
           content = await OcrPdfProcessor.processPdfBytes(_pdfBytes!);
           break;
         case PdfImportMode.visual:
-          // TODO: 实现视觉模式处理
-          content = await AdvancedPdfProcessor.processPdfBytes(_pdfBytes!);
+          content = await VisualPdfProcessor.processPdfBytes(_pdfBytes!);
           break;
       }
 
@@ -457,7 +459,7 @@ enum PdfImportMode {
 }
 
 /// PDF混合预览屏幕
-class PdfHybridPreviewScreen extends StatelessWidget {
+class PdfHybridPreviewScreen extends StatefulWidget {
   final Uint8List pdfBytes;
   final String extractedText;
   final String fileName;
@@ -470,16 +472,77 @@ class PdfHybridPreviewScreen extends StatelessWidget {
   });
 
   @override
+  State<PdfHybridPreviewScreen> createState() => _PdfHybridPreviewScreenState();
+}
+
+class _PdfHybridPreviewScreenState extends State<PdfHybridPreviewScreen> {
+  late pdfx.PdfController _pdfController;
+  bool _isLoading = true;
+  String? _error;
+  int _currentPage = 1;
+  int _totalPages = 0;
+  double _zoom = 1.0;
+  bool _showControls = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializePdf();
+  }
+
+  Future<void> _initializePdf() async {
+    try {
+      // 初始化PDF控制器
+      _pdfController = pdfx.PdfController(
+        document: pdfx.PdfDocument.openData(widget.pdfBytes),
+      );
+      
+      // 获取文档信息
+      final document = await pdfx.PdfDocument.openData(widget.pdfBytes);
+      _totalPages = document.pagesCount;
+      
+      setState(() {
+        _isLoading = false;
+      });
+      
+      Log.info('PDF混合预览初始化成功: ${widget.fileName}, $_totalPages 页');
+      
+    } catch (e) {
+      Log.error('PDF混合预览初始化失败: $e');
+      setState(() {
+        _error = 'PDF加载失败: $e';
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pdfController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('混合预览: $fileName'),
+        title: Text('混合预览: ${widget.fileName}'),
         actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                _showControls = !_showControls;
+              });
+            },
+            icon: Icon(_showControls ? Icons.visibility_off : Icons.visibility),
+            tooltip: _showControls ? '隐藏控制栏' : '显示控制栏',
+          ),
           IconButton(
             onPressed: () {
               // TODO: 实现保存功能
             },
             icon: const Icon(Icons.save),
+            tooltip: '保存',
           ),
         ],
       ),
@@ -494,26 +557,66 @@ class PdfHybridPreviewScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   color: Colors.grey[100],
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.picture_as_pdf, color: Colors.red),
-                      SizedBox(width: 8),
-                      Text('原文档', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Icon(Icons.picture_as_pdf, color: Colors.red),
+                      const SizedBox(width: 8),
+                      const Text('原文档', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Spacer(),
+                      if (_showControls && !_isLoading && _error == null) ...[
+                        IconButton(
+                          onPressed: _currentPage > 1 ? () => _pdfController.previousPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          ) : null,
+                          icon: const Icon(Icons.chevron_left),
+                          tooltip: '上一页',
+                        ),
+                        Text('$_currentPage / $_totalPages'),
+                        IconButton(
+                          onPressed: _currentPage < _totalPages ? () => _pdfController.nextPage(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                          ) : null,
+                          icon: const Icon(Icons.chevron_right),
+                          tooltip: '下一页',
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          onPressed: _zoom > 0.5 ? () => setState(() => _zoom -= 0.1) : null,
+                          icon: const Icon(Icons.zoom_out),
+                          tooltip: '缩小',
+                        ),
+                        Text('${(_zoom * 100).toInt()}%'),
+                        IconButton(
+                          onPressed: _zoom < 3.0 ? () => setState(() => _zoom += 0.1) : null,
+                          icon: const Icon(Icons.zoom_in),
+                          tooltip: '放大',
+                        ),
+                      ],
                     ],
                   ),
                 ),
                 Expanded(
                   child: Container(
                     color: Colors.grey[50],
-                    child: const Center(
-                      child: Text(
-                        'PDF原文显示区域\n(需要PDF查看器组件)',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
+                    child: _buildPdfViewer(),
                   ),
                 ),
+                if (_showControls && !_isLoading && _error == null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    color: Colors.grey[200],
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, size: 16),
+                        const SizedBox(width: 4),
+                        Text('PDF文档: ${widget.fileName}'),
+                        const Spacer(),
+                        Text('总页数: $_totalPages'),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
@@ -534,25 +637,157 @@ class PdfHybridPreviewScreen extends StatelessWidget {
                     children: [
                       Icon(Icons.text_fields, color: Colors.blue),
                       SizedBox(width: 8),
-                      Text('提取内容', style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('解析结果 (Markdown)', style: TextStyle(fontWeight: FontWeight.w600)),
                     ],
                   ),
                 ),
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    child: SingleChildScrollView(
-                      child: Text(
-                        extractedText,
-                        style: const TextStyle(fontFamily: 'monospace'),
-                      ),
-                    ),
+                    child: _buildMarkdownViewer(),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  color: Colors.blue[50],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.text_fields, size: 16, color: Colors.blue),
+                      const SizedBox(width: 4),
+                      Text('Markdown解析结果'),
+                      const Spacer(),
+                      Text('字符数: ${widget.extractedText.length}'),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPdfViewer() {
+    if (_isLoading) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('正在加载PDF...'),
+          ],
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 48, color: Colors.red.shade400),
+            const SizedBox(height: 16),
+            Text(
+              _error!,
+              style: TextStyle(color: Colors.red.shade600),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => _initializePdf(),
+              child: const Text('重试'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Transform.scale(
+      scale: _zoom,
+      child: pdfx.PdfView(
+        controller: _pdfController,
+        scrollDirection: Axis.vertical,
+        onDocumentLoaded: (document) {
+          Log.debug('PDF文档在混合预览中加载: ${document.pagesCount} 页');
+        },
+        onPageChanged: (page) {
+          setState(() {
+            _currentPage = page;
+          });
+        },
+        backgroundDecoration: BoxDecoration(
+          color: Colors.grey.shade200,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarkdownViewer() {
+    return Markdown(
+      data: widget.extractedText,
+      shrinkWrap: true,
+      selectable: true,
+      padding: EdgeInsets.zero,
+      styleSheet: MarkdownStyleSheet(
+        p: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+          height: 1.4,
+        ),
+        h1: const TextStyle(
+          color: Colors.black87,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        h2: const TextStyle(
+          color: Colors.black87,
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        h3: const TextStyle(
+          color: Colors.black87,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+          height: 1.2,
+        ),
+        strong: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        em: const TextStyle(
+          fontStyle: FontStyle.italic,
+          color: Colors.black87,
+        ),
+        listBullet: const TextStyle(
+          color: Colors.black87,
+          fontSize: 14,
+        ),
+        code: TextStyle(
+          backgroundColor: Colors.grey.shade200,
+          fontFamily: 'monospace',
+          fontSize: 13,
+          color: Colors.black87,
+        ),
+        codeblockDecoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        codeblockPadding: const EdgeInsets.all(8),
+        tableBorder: TableBorder.all(
+          color: Colors.grey.shade300,
+          width: 1,
+        ),
+        tableHead: const TextStyle(
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+        tableBody: const TextStyle(
+          color: Colors.black87,
+        ),
       ),
     );
   }
