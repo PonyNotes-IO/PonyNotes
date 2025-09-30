@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 /// AI模型提供商枚举
 enum AIProvider {
@@ -83,24 +84,38 @@ class AIConfigService {
     if (_isLoaded) return;
 
     try {
-      // 尝试从多个位置查找配置文件
-      File? configFile;
-      final possiblePaths = [
-        '.env.ai',
-        'frontend/appflowy_flutter/.env.ai',
-        '../.env.ai',
-      ];
+      String? content;
       
-      for (final path in possiblePaths) {
-        final file = File(path);
-        if (await file.exists()) {
-          configFile = file;
-          break;
+      // 首先尝试从Flutter资源系统读取
+      try {
+        content = await rootBundle.loadString('.env.ai');
+        debugPrint('✅ 从Flutter资源系统加载AI配置成功');
+      } catch (e) {
+        debugPrint('⚠️ 无法从Flutter资源系统加载.env.ai: $e');
+        
+        // 如果从资源系统读取失败，尝试从文件系统读取（开发环境）
+        final possiblePaths = [
+          '.env.ai',
+          'frontend/appflowy_flutter/.env.ai',
+          '../.env.ai',
+        ];
+        
+        File? configFile;
+        for (final path in possiblePaths) {
+          final file = File(path);
+          if (await file.exists()) {
+            configFile = file;
+            break;
+          }
+        }
+        
+        if (configFile != null) {
+          content = await configFile.readAsString();
+          debugPrint('✅ 从文件系统加载AI配置成功: ${configFile.path}');
         }
       }
       
-      if (configFile != null) {
-        final content = await configFile.readAsString();
+      if (content != null) {
         _parseEnvContent(content);
         _isLoaded = true;
         
@@ -108,11 +123,11 @@ class AIConfigService {
         final defaultModel = _envVars['AI_DEFAULT_MODEL'] ?? 'deepseek';
         _currentProvider = AIProvider.fromString(defaultModel);
         
-        debugPrint('✅ AI配置加载成功，配置文件: ${configFile.path}');
+        debugPrint('✅ AI配置解析成功');
         debugPrint('✅ 当前提供商: ${_currentProvider.displayName}');
       } else {
-        debugPrint('⚠️  AI配置文件不存在，已尝试路径: ${possiblePaths.join(', ')}');
-        debugPrint('📝 请复制 ai_config_example.env 为 .env.ai 并配置API密钥');
+        debugPrint('⚠️ AI配置文件未找到');
+        debugPrint('📝 请确保.env.ai文件存在并包含在Flutter资源中');
       }
     } catch (e) {
       debugPrint('❌ 加载AI配置失败: $e');

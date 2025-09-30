@@ -321,6 +321,7 @@ flutter:
     - assets/icons/icons.json
     - assets/fonts/
     - assets/built_in_prompts.json
+    - .env.ai
 
     # The following assets will be excluded in release.
     # BEGIN: EXCLUDE_IN_RELEASE
